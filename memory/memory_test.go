@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"io/ioutil"
 	"math/rand"
 	"testing"
 )
@@ -69,4 +70,39 @@ func TestRAMRead(t *testing.T) {
 	}()
 
 	ram.Read(error)
+}
+
+func TestMMU(t *testing.T) {
+	rompath := "../bin/DMG_ROM.bin"
+	rom := NewBootROM(rompath)
+	ram := NewRAM(0x10000)
+	boot := NewMMU([]AddressSpace{rom, ram})
+
+	romdump, err := ioutil.ReadFile(rompath)
+	if err != nil {
+		t.Errorf("Invalid ROM path '%s'", rompath)
+	}
+	for addr, want := range romdump {
+		if got := boot.Read(uint(addr)); got != want {
+			t.Errorf("Byte mismatch at offset %d (expected %x, read %x)", addr, want, got)
+		}
+	}
+
+	for romaddr := uint(0); romaddr < 0x100; romaddr++ {
+		want := boot.Read(romaddr)
+		boot.Write(romaddr, want+1)
+		got := boot.Read(romaddr)
+		if got != want {
+			t.Errorf("ROM write error at address %d (%x before write, %x after write)", romaddr, want, got)
+		}
+	}
+
+	for addr := uint(0x100); addr < 0x10000; addr++ {
+		want := boot.Read(addr) + 1
+		boot.Write(addr, want)
+		got := boot.Read(addr)
+		if got != want {
+			t.Errorf("RAM write failed at address %d (%x before write, %x after write)", addr, want, got)
+		}
+	}
 }

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"fmt"
+	"io/ioutil"
 )
 
 // AddressSpace interface provides functions to read/write bytes in a given address space.
@@ -68,24 +69,30 @@ type Boot struct {
 	RAM     AddressSpace
 }
 
-// NewBoot allocates new bootstrap memory from BootROM and Card ROM.
-func NewBoot(rom, cart RAM) *Boot {
-	return &Boot{rom, cart}
+// BootROM is the image of the DMG boot ROM, initialized from dum file.
+type BootROM []byte
+
+// NewBootROM instantiates a copy of a DMG ROM dump.
+func NewBootROM(filename string) BootROM {
+	rom, err := ioutil.ReadFile(filename)
+	if err != nil {
+		fmt.Printf(" !!! Invalid ROM path %s (%s)\n", filename, err)
+		return nil
+	}
+	return rom
 }
 
-func (m *Boot) Read(addr uint) uint8 {
-	if addr < 0x100 {
-		return m.BootROM.Read(addr)
-	}
-	return m.RAM.Read(addr)
+func (b BootROM) Read(addr uint) uint8 {
+	return b[addr]
 }
 
-func (m *Boot) Write(addr uint, value uint8) {
-	if addr < 0x100 {
-		fmt.Printf(" !!! Attempt to write to BootROM at %x\n", addr)
-		return
-	}
-	m.RAM.Write(addr, value)
+func (b BootROM) Write(addr uint, value uint8) {
+	fmt.Printf(" !!! Attempt to write %x to BootROM at %x\n", value, addr)
+}
+
+// Contains indicates true as long as address fits in the slice.
+func (b BootROM) Contains(addr uint) bool {
+	return addr >= 0 && addr < uint(len(b))
 }
 
 // RAM as an arbitrary long list of R/W bytes.
