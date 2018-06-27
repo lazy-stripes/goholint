@@ -8,9 +8,11 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x00: nop,
 	0x01: ldBcD16,
 	0x03: incBc,
+	0x04: incB,
 	0x05: decB,
 	0x06: ldBD8,
 	0x0c: incC,
+	0x0d: decC,
 	0x0e: ldCD8,
 	0x11: ldDeD16,
 	0x13: incDe,
@@ -19,6 +21,7 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x17: rlA,
 	0x1a: ldAAddrDe,
 	0x1c: incE,
+	0x1d: decE,
 	0x1e: ldED8,
 	0x20: jrNzR8,
 	0x21: ldHlD16,
@@ -26,13 +29,16 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x23: incHl,
 	0x25: decH,
 	0x26: ldHD8,
+	0x28: jrZR8,
 	0x2c: incL,
+	0x2d: decL,
 	0x2e: ldLD8,
 	0x31: ldSpD16,
 	0x32: lddHlA,
 	0x33: incSp,
 	0x35: decAddrHl,
 	0x3c: incA,
+	0x3d: decA,
 	0x3e: ldAD8,
 	0x40: ldBB,
 	0x41: ldBC,
@@ -50,6 +56,23 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x4d: ldCL,
 	0x4e: ldCAddrHl,
 	0x4f: ldCA,
+	0x57: ldDA,
+	0x60: ldHB,
+	0x61: ldHC,
+	0x62: ldHD,
+	0x63: ldHE,
+	0x64: ldHH,
+	0x65: ldHL,
+	0x66: ldHAddrHl,
+	0x67: ldHA,
+	0x68: ldLB,
+	0x69: ldLC,
+	0x6a: ldLD,
+	0x6b: ldLE,
+	0x6c: ldLH,
+	0x6d: ldLL,
+	0x6e: ldLAddrHl,
+	0x6f: ldLA,
 	0x70: ldAddrHlB,
 	0x71: ldAddrHlC,
 	0x72: ldAddrHlD,
@@ -84,8 +107,11 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0xe1: popHl,
 	0xe2: ldAddrFfCA,
 	0xe5: pushHl,
+	0xea: ldAddrA16A,
+	0xf0: ldAAddrFfA8,
 	0xf1: popAf,
 	0xf5: pushAf,
+	0xfa: ldAAddrA16,
 	0xfe: cpD8,
 }
 
@@ -96,7 +122,7 @@ var LR35902ExtendedInstructionSet = [0x100]Instruction{
 }
 
 // Instructions. Each takes a CPU pointer and will modify its internal state.
-// Opcode is hexadecimal. Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+// Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 
 // Helpers
 // LD rr,d16
@@ -130,7 +156,7 @@ func xorR(c *CPU, register *byte) {
 func jrXxR8(c *CPU, condition bool) {
 	offset := int8(c.Read())
 	if condition {
-		// Need cast to unsigned for the potential substraction
+		// Need cast to signed for the potential substraction
 		c.PC = uint16(int16(c.PC) + int16(offset))
 	}
 }
@@ -260,6 +286,11 @@ func incBc(c *CPU) {
 	incRr(c, &c.B, &c.C)
 }
 
+// 04: INC B
+func incB(c *CPU) {
+	incR(c, &c.B)
+}
+
 // 05: DEC B
 func decB(c *CPU) {
 	decR(c, &c.B)
@@ -273,6 +304,11 @@ func ldBD8(c *CPU) {
 // 0C: INC C
 func incC(c *CPU) {
 	incR(c, &c.C)
+}
+
+// 0D: DEC C
+func decC(c *CPU) {
+	decR(c, &c.C)
 }
 
 // 0E: LD C,d8
@@ -315,6 +351,11 @@ func incE(c *CPU) {
 	incR(c, &c.E)
 }
 
+// 1D: DEC E
+func decE(c *CPU) {
+	decR(c, &c.E)
+}
+
 // 1E: LD E,d8
 func ldED8(c *CPU) {
 	c.E = c.Read()
@@ -352,9 +393,19 @@ func ldHD8(c *CPU) {
 	c.H = c.Read()
 }
 
+// 28: JR Z,r8
+func jrZR8(c *CPU) {
+	jrXxR8(c, c.F&FlagZ == FlagZ)
+}
+
 // 2C: INC L
 func incL(c *CPU) {
 	incR(c, &c.L)
+}
+
+// 2D: DEC L
+func decL(c *CPU) {
+	decR(c, &c.L)
 }
 
 // 2E: LD L,d8
@@ -389,6 +440,11 @@ func decAddrHl(c *CPU) {
 // 3C: INC A
 func incA(c *CPU) {
 	incR(c, &c.A)
+}
+
+// 2D: DEC A
+func decA(c *CPU) {
+	decR(c, &c.A)
 }
 
 // 3E: LD A,d8
@@ -474,6 +530,91 @@ func ldCAddrHl(c *CPU) {
 // 4F: LD C,A
 func ldCA(c *CPU) {
 	c.C = c.A
+}
+
+// 57: LD D,A
+func ldDA(c *CPU) {
+	c.D = c.A
+}
+
+// 60: LD H,B
+func ldHB(c *CPU) {
+	c.H = c.B
+}
+
+// 61: LD H,C
+func ldHC(c *CPU) {
+	c.H = c.C
+}
+
+// 62: LD H,D
+func ldHD(c *CPU) {
+	c.H = c.D
+}
+
+// 63: LD H,E
+func ldHE(c *CPU) {
+	c.H = c.E
+}
+
+// 64: LD H,H
+func ldHH(c *CPU) {
+	c.H = c.H
+}
+
+// 65: LD H,L
+func ldHL(c *CPU) {
+	c.H = c.L
+}
+
+// 66: LD H,(HL)
+func ldHAddrHl(c *CPU) {
+	c.H = c.MMU.Read(uint(c.HL()))
+}
+
+// 67: LD H,A
+func ldHA(c *CPU) {
+	c.H = c.A
+}
+
+// 68: LD L,B
+func ldLB(c *CPU) {
+	c.L = c.B
+}
+
+// 69: LD L,C
+func ldLC(c *CPU) {
+	c.L = c.C
+}
+
+// 6A: LD L,D
+func ldLD(c *CPU) {
+	c.L = c.D
+}
+
+// 6B: LD L,E
+func ldLE(c *CPU) {
+	c.L = c.E
+}
+
+// 6C: LD L,H
+func ldLH(c *CPU) {
+	c.L = c.H
+}
+
+// 6D: LD L,L
+func ldLL(c *CPU) {
+	c.L = c.L
+}
+
+// 6E: LD L,(HL)
+func ldLAddrHl(c *CPU) {
+	c.L = c.MMU.Read(uint(c.HL()))
+}
+
+// 6F: LD L,A
+func ldLA(c *CPU) {
+	c.L = c.A
 }
 
 // 70: LD (HL),B
@@ -662,6 +803,16 @@ func pushHl(c *CPU) {
 	pushRr(c, c.H, c.L)
 }
 
+// EA: LD (a16),A
+func ldAddrA16A(c *CPU) {
+	c.MMU.Write(uint(c.ReadWord()), c.A)
+}
+
+// F0: LD A,(FF00+a8)
+func ldAAddrFfA8(c *CPU) {
+	c.A = c.MMU.Read(uint(0xff00 + uint16(c.Read())))
+}
+
 // F1: POP AF
 func popAf(c *CPU) {
 	popRr(c, &c.A, &c.F)
@@ -670,6 +821,11 @@ func popAf(c *CPU) {
 // F5: PUSH AF
 func pushAf(c *CPU) {
 	pushRr(c, c.A, c.F)
+}
+
+// FA: LD A,(a16)
+func ldAAddrA16(c *CPU) {
+	c.A = c.MMU.Read(uint(c.ReadWord()))
 }
 
 // FE: CP d8
