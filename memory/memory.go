@@ -3,6 +3,7 @@ package memory
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 )
 
 // AddressSpace interface provides functions to read/write bytes in a given address space.
@@ -95,23 +96,35 @@ func (b BootROM) Contains(addr uint) bool {
 	return addr >= 0 && addr < uint(len(b))
 }
 
-// RAM as an arbitrary long list of R/W bytes.
-type RAM []uint8
+// RAM as an arbitrary long list of R/W bytes at addresses starting from a given offset.
+type RAM struct {
+	bytes []uint8
+	start uint
+}
 
 // NewRAM instantiates a zeroed slice of the given size to represent RAM.
-func NewRAM(size uint) RAM {
-	return make(RAM, size)
+func NewRAM(start, size uint) *RAM {
+	return &RAM{make([]uint8, size), start}
 }
 
 func (r RAM) Read(addr uint) uint8 {
-	return r[addr]
+	return r.bytes[addr-r.start]
 }
 
 func (r RAM) Write(addr uint, value uint8) {
-	r[addr] = value
+	r.bytes[addr-r.start] = value
 }
 
 // Contains indicates true as long as address fits in the slice.
 func (r RAM) Contains(addr uint) bool {
-	return addr >= 0 && addr < uint(len(r))
+	return addr >= r.start && addr < r.start+uint(len(r.bytes))
+}
+
+// NewVRAM instantiates a slice of the given size to represent RAM, initialized with random values.
+func NewVRAM(start, size uint) *RAM {
+	vram := NewRAM(start, size)
+	for i := range vram.bytes {
+		vram.bytes[i] = uint8(rand.Intn(0xff))
+	}
+	return vram
 }
