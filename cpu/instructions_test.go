@@ -8,7 +8,7 @@ import (
 
 func TestLdRrD16(t *testing.T) {
 	want := uint16(0xABCD)
-	ram := memory.NewRAM(2)
+	ram := memory.NewRAM(0, 2)
 	ram.Write(0, 0xCD)
 	ram.Write(1, 0xAB)
 	cpu := New(memory.NewMMU([]memory.AddressSpace{ram}))

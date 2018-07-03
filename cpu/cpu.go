@@ -10,9 +10,10 @@ import (
 
 // A CPU implementation of the DMG-01's
 type CPU struct {
+	Clock                  chan bool
 	MMU                    *memory.MMU
 	IME                    bool // Interrupt Master Enable flag
-	A, B, C, D, E, F, H, L uint8
+	A, F, B, C, D, E, H, L uint8
 	SP                     uint16
 	PC                     uint16
 }
@@ -128,8 +129,11 @@ func (c *CPU) Execute() {
 // Run CPU on the current address space.
 func (c *CPU) Run() {
 	cycle := 0
-	debugFrom := 0xffff
+	debugFrom := 0xfffff
 	for {
+		if c.PC == 0x3b {
+			fmt.Println("BREAK")
+		}
 		c.Execute()
 		cycle++
 		if cycle > debugFrom {
@@ -146,5 +150,5 @@ func (c *CPU) Run() {
 
 // New CPU running DMG code in the given address space starting from 0.
 func New(mmu *memory.MMU) *CPU {
-	return &CPU{MMU: mmu}
+	return &CPU{Clock: make(Clock), MMU: mmu}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"tigris.fr/gameboy/cpu"
 	"tigris.fr/gameboy/memory"
+	"tigris.fr/gameboy/ppu"
 )
 
 func main() {
@@ -11,8 +12,9 @@ func main() {
 	if rom == nil {
 		return
 	}
-	ram := memory.NewRAM(0x10000)
-	mmu := memory.NewMMU([]memory.AddressSpace{rom, ram})
+	ppu := ppu.New()
+	ram := memory.NewRAM(0, 0x10000)
+	mmu := memory.NewMMU([]memory.AddressSpace{rom, ppu, ram})
 	cpu := cpu.New(mmu)
 	cpu.Run()
 }

@@ -18,10 +18,10 @@ func TestRAMContains(t *testing.T) {
 		{0xFFFF, false},
 	}
 
-	ram := NewRAM(128)
+	ram := NewRAM(0, 128)
 	for _, c := range cases {
 		if got := ram.Contains(c.in); got != c.want {
-			t.Errorf("RAM(%d).Contains(%d) == %t, want %t", len(ram), c.in, got, c.want)
+			t.Errorf("RAM(%d).Contains(%d) == %t, want %t", 128, c.in, got, c.want)
 		}
 	}
 }
@@ -35,7 +35,7 @@ func TestRAMWrite(t *testing.T) {
 
 	error := uint(0x0080)
 
-	ram := NewRAM(128)
+	ram := NewRAM(0, 128)
 	for _, c := range cases {
 		ram.Write(c, 42)
 	}
@@ -53,12 +53,12 @@ func TestRAMWrite(t *testing.T) {
 func TestRAMRead(t *testing.T) {
 	error := uint(0x0080)
 
-	ram := NewRAM(128)
-	for addr := uint(0); addr < uint(len(ram)); addr++ {
+	ram := NewRAM(0, 128)
+	for addr := uint(0); addr < uint(128); addr++ {
 		in := uint8(rand.Intn(0xFF))
 		ram.Write(addr, in)
 		if got := ram.Read(addr); got != in {
-			t.Errorf("RAM(%d).Read(%d) == %X, want %X", len(ram), addr, got, in)
+			t.Errorf("RAM(%d).Read(%d) == %X, want %X", 128, addr, got, in)
 		}
 	}
 
@@ -75,7 +75,7 @@ func TestRAMRead(t *testing.T) {
 func TestMMU(t *testing.T) {
 	rompath := "../bin/DMG_ROM.bin"
 	rom := NewBootROM(rompath)
-	ram := NewRAM(0x10000)
+	ram := NewRAM(0, 0x10000)
 	boot := NewMMU([]AddressSpace{rom, ram})
 
 	romdump, err := ioutil.ReadFile(rompath)

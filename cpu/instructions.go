@@ -19,6 +19,7 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x15: decD,
 	0x16: ldDD8,
 	0x17: rlA,
+	0x18: jrR8,
 	0x1a: ldAAddrDe,
 	0x1c: incE,
 	0x1d: decE,
@@ -177,6 +178,7 @@ func incR(c *CPU, register *byte) {
 // DEC r
 func decR(c *CPU, register *byte) {
 	// Flags z 1 h -
+	c.F &= FlagC
 	c.F |= FlagN
 	if *register > 0x0F {
 		c.F |= FlagH
@@ -339,6 +341,11 @@ func ldDD8(c *CPU) {
 // 17: RLA -- RL A
 func rlA(c *CPU) {
 	rlR(c, &c.A)
+}
+
+// 18: JR r8
+func jrR8(c *CPU) {
+	jrXxR8(c, true)
 }
 
 // 1A: LD A,(DE)
