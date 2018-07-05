@@ -2,7 +2,6 @@ package ppu
 
 import (
 	"bufio"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -10,15 +9,27 @@ import (
 	"os"
 
 	"tigris.fr/gameboy/cpu"
+	"tigris.fr/gameboy/lcd"
 	"tigris.fr/gameboy/memory"
+)
+
+const (
+	LCDCBGDisplay uint8 = 1 << iota
+	LCDCSpriteDisplayEnable
+	LCDCSpriteSize
+	LCDCBGTileMapDisplayeSelect
+	LCDCBGWindowTileDataSelect
+	LCDCWindowDisplayEnable
+	LCDCWindowTileMapDisplayeSelect
+	LCDCDisplayEnable
 )
 
 // PPU address space handling video RAM and display.
 type PPU struct {
 	*memory.MMU
+	*FIFO
 	vram       *memory.RAM
-	lcd        *LCD
-	registers  map[uint]*uint8
+	LCD        lcd.Display
 	Clock      cpu.Clock
 	LCDC       uint8
 	STAT       uint8
@@ -31,11 +42,10 @@ type PPU struct {
 	// TODO: DMA, address space to OAM, put in CPU
 }
 
-// New PPU instance, randomized because why not?
+// New PPU instance.
 func New() *PPU {
-	p := PPU{vram: memory.NewVRAM(0x8000, 0x2000)}
-	// Map addresses to their corresponding register.
-	var registers = map[uint]*uint8{
+	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: &FIFO{}}
+	p.Add(memory.Registers{
 		0xff40: &p.LCDC,
 		0xff41: &p.STAT,
 		0xff42: &p.SCY,
@@ -47,43 +57,37 @@ func New() *PPU {
 		0xff49: &p.OBP1,
 		0xff4a: &p.WY,
 		0xff4b: &p.WX,
-	}
-	p.registers = registers
+	})
+	p.Add(memory.NewVRAM(0x8000, 0x2000))
 	return &p
 }
 
-// Contains returns true if requested address is in VRAM or a register.
-func (p *PPU) Contains(addr uint) bool {
-	if p.registers[addr] != nil {
-		return true
-	}
-	return p.vram.Contains(addr)
+// FIXME: use FIFO
+func (p *PPU) Fetch() (pixel lcd.Pixel) {
+	addr := 0x8000 + int(p.SCY)*20 + int(p.SCX%20)
+	return p.Decode(uint(addr))
 }
 
-// Read returns the byte at the given address in VRAM or from register.
-func (p *PPU) Read(addr uint) uint8 {
-	if regPtr := p.registers[addr]; regPtr != nil {
-		return *regPtr
-	}
-	return p.vram.Read(addr)
-}
-
-// Write sets the byte at the given address in VRAM to the given value. TODO: checks
-func (p *PPU) Write(addr uint, value uint8) {
-	// FIXME: check for R/O registers.
-	if regPtr := p.registers[addr]; regPtr != nil {
-		*regPtr = value
-
-		// TODO: stuff on some registers?
-
-		// XXX: dump tiles when LCD is enabled
-		if addr == 0xff40 {
-			p.DumpTiles(0x8190, 8)
-			fmt.Println("Tiles dumped.")
-			os.Exit(0)
+// Run PPU process cadenced by the same clock driving the CPU.
+func (p *PPU) Run() {
+	for {
+		// Tick()
+		if p.LCDC&LCDCDisplayEnable == 0 {
+			continue
 		}
-	} else {
-		p.vram.Write(addr, value)
+
+		// New line.
+		for x := 0; x < 160; x++ {
+			// TODO: OAM search
+			// Just draw background for now. Enough for our purpose.
+			pixel := p.Fetch()
+			p.LCD.Write(pixel)
+		}
+
+		p.LY++
+		if p.LY == 144 {
+			p.LCD.VBlank()
+		}
 	}
 }
 
