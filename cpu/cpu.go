@@ -1,9 +1,9 @@
 package cpu
 
 import (
+	"bytes"
 	"fmt"
 	"os"
-	"strings"
 
 	"tigris.fr/gameboy/memory"
 )
@@ -78,7 +78,7 @@ func (c *CPU) SetHL(word uint16) {
 
 // String returns a human-readable representation of the CPU's current state.
 func (c *CPU) String() string {
-	var b strings.Builder
+	var b bytes.Buffer
 	fmt.Fprintf(&b, "A: %#02x - F: %#02x - AF: %#04x\n", c.A, c.F, c.AF())
 	fmt.Fprintf(&b, "B: %#02x - C: %#02x - BC: %#04x\n", c.B, c.C, c.BC())
 	fmt.Fprintf(&b, "D: %#02x - E: %#02x - DE: %#04x\n", c.D, c.E, c.DE())
