@@ -74,7 +74,7 @@ func TestRAMRead(t *testing.T) {
 
 func TestMMU(t *testing.T) {
 	rompath := "../bin/DMG_ROM.bin"
-	rom := NewBootROM(rompath)
+	rom := NewROM(rompath, 0)
 	ram := NewRAM(0, 0x10000)
 	boot := NewMMU([]AddressSpace{rom, ram})
 
@@ -105,4 +105,9 @@ func TestMMU(t *testing.T) {
 			t.Errorf("RAM write failed at address %d (%x before write, %x after write)", addr, want, got)
 		}
 	}
+}
+
+func TestROMWrite(t *testing.T) {
+	rom := NewROM("/dev/null", 0)
+	rom.Write(0, 42)
 }
