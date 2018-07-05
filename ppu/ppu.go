@@ -15,6 +15,7 @@ import (
 
 // PPU address space handling video RAM and display.
 type PPU struct {
+	*memory.MMU
 	vram       *memory.RAM
 	lcd        *LCD
 	registers  map[uint]*uint8
