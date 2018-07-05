@@ -3,17 +3,17 @@ package memory
 // MMU manages an arbitrary number of ordered address spaces, starting with the DMG boot ROM by default.
 // It also satisfies the AddressSpace interface.
 type MMU struct {
-	Spaces []AddressSpace
+	Spaces []Addressable
 }
 
 // NewMMU returns an instance of MMU initialized with optional address spaces.
-func NewMMU(spaces []AddressSpace) *MMU {
+func NewMMU(spaces []Addressable) *MMU {
 	return &MMU{spaces}
 }
 
 // Add an address space at the end of this MMU's list.
-func (m *MMU) Add(space *AddressSpace) {
-	m.Spaces = append(m.Spaces, *space)
+func (m *MMU) Add(space Addressable) {
+	m.Spaces = append(m.Spaces, space)
 }
 
 // Contains returns whether one of the address spaces known to the MMU contains the given address. The first
@@ -28,7 +28,7 @@ func (m *MMU) Contains(addr uint) bool {
 }
 
 // Returns the first space for which the address is handled.
-func (m *MMU) space(addr uint) AddressSpace {
+func (m *MMU) space(addr uint) Addressable {
 	for _, space := range m.Spaces {
 		if space.Contains(addr) {
 			return space

@@ -76,7 +76,7 @@ func TestMMU(t *testing.T) {
 	rompath := "../bin/DMG_ROM.bin"
 	rom := NewROM(rompath, 0)
 	ram := NewRAM(0, 0x10000)
-	boot := NewMMU([]AddressSpace{rom, ram})
+	boot := NewMMU([]Addressable{rom, ram})
 
 	romdump, err := ioutil.ReadFile(rompath)
 	if err != nil {

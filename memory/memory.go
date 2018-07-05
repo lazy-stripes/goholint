@@ -1,7 +1,7 @@
 package memory
 
-// AddressSpace interface provides functions to read/write bytes in a given address space.
-type AddressSpace interface {
+// Addressable interface provides functions to read/write bytes in a given address space.
+type Addressable interface {
 	// Contains returns true if the given address belongs to the address space, false otherwise.
 	Contains(addr uint) bool
 	// Read returns the value stored at the given address.

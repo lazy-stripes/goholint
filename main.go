@@ -14,7 +14,7 @@ func main() {
 	}
 	ppu := ppu.New()
 	ram := memory.NewRAM(0, 0x10000)
-	mmu := memory.NewMMU([]memory.AddressSpace{bootRom, ppu, ram})
+	mmu := memory.NewMMU([]memory.Addressable{bootRom, ppu, ram})
 	cpu := cpu.New(mmu)
 	cpu.Run()
 }

@@ -11,7 +11,7 @@ func TestLdRrD16(t *testing.T) {
 	ram := memory.NewRAM(0, 2)
 	ram.Write(0, 0xCD)
 	ram.Write(1, 0xAB)
-	cpu := New(memory.NewMMU([]memory.AddressSpace{ram}))
+	cpu := New(memory.NewMMU([]memory.Addressable{ram}))
 	ldRrD16(cpu, &cpu.B, &cpu.C)
 	got := cpu.BC()
 	if got != want {
