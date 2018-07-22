@@ -2,10 +2,10 @@ package ppu
 
 import (
 	"bufio"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
-	"io/ioutil"
 	"os"
 
 	"tigris.fr/gameboy/lcd"
@@ -13,23 +13,34 @@ import (
 	"tigris.fr/gameboy/timer"
 )
 
+// LCDC flags. XXX: Move to subpackage lcdc for nicer namespacing?
 const (
+	// Bit 0 - BG/Window Display/Priority     (0=Off, 1=On)
 	LCDCBGDisplay uint8 = 1 << iota
+	// Bit 1 - OBJ (Sprite) Display Enable    (0=Off, 1=On)
 	LCDCSpriteDisplayEnable
+	// Bit 2 - OBJ (Sprite) Size              (0=8x8, 1=8x16)
 	LCDCSpriteSize
+	// Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
 	LCDCBGTileMapDisplayeSelect
+	// Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
 	LCDCBGWindowTileDataSelect
+	// Bit 5 - Window Display Enable          (0=Off, 1=On)
 	LCDCWindowDisplayEnable
+	// Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
 	LCDCWindowTileMapDisplayeSelect
+	// Bit 7 - LCD Display Enable             (0=Off, 1=On)
 	LCDCDisplayEnable
 )
+
+// TileMapOffsets maps a Display Select flag to an address offset in VRAM.
+var TileMapOffsets = [2]uint{0x9800, 0x9c00}
 
 // PPU address space handling video RAM and display.
 type PPU struct {
 	timer.Clock
 	*memory.MMU
 	*FIFO
-	vram       *memory.RAM
 	LCD        lcd.Display
 	LCDC       uint8
 	STAT       uint8
@@ -43,8 +54,8 @@ type PPU struct {
 }
 
 // New PPU instance.
-func New() *PPU {
-	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: &FIFO{}}
+func New(display lcd.Display) *PPU {
+	p := PPU{Clock: make(timer.Clock), MMU: memory.NewMMU([]memory.Addressable{}), FIFO: &FIFO{}, LCD: display}
 	p.Add(memory.Registers{
 		0xff40: &p.LCDC,
 		0xff41: &p.STAT,
@@ -58,36 +69,104 @@ func New() *PPU {
 		0xff4a: &p.WY,
 		0xff4b: &p.WX,
 	})
-	p.Add(memory.NewVRAM(0x8000, 0x2000))
+	p.Add(memory.NewVRAM(0x8000, 0x2000)) // VRAM
+	p.Add(memory.NewVRAM(0xfe00, 0xa0))   // OAM RAM (TODO: mapped OBJ struct)
 	return &p
 }
 
-// FIXME: use FIFO
-func (p *PPU) Fetch() (pixel lcd.Pixel) {
-	addr := 0x8000 + int(p.SCY)*20 + int(p.SCX%20)
-	return p.Decode(uint(addr))
+// Read a byte from VRAM/registers in the proper number of cycles.
+func (p *PPU) Read(addr uint) uint8 {
+	p.Tick()
+	return p.MMU.Read(addr)
+}
+
+// Pop tries shifting a pixel out of the FIFO a,d returns the number of shifted pixels (0 or 1).
+func (p *PPU) Pop() uint {
+	if pixel, err := p.FIFO.Pop(); err == nil {
+		p.LCD.Write(lcd.Pixel(pixel))
+		return 1
+	}
+	return 0
+}
+
+// FetchTileNumber returns the index of the tile at current LCD coordinates in the background map. Takes one PPU Tick.
+func (p *PPU) FetchTileNumber(x, y uint) uint8 {
+	// XXX: Must this be computed for every pixel, or can we get away with doing it once per line?
+	var bgMapOffset uint
+	if (p.LCDC & LCDCBGTileMapDisplayeSelect) > 0 {
+		bgMapOffset = 0x9c00
+	} else {
+		bgMapOffset = 0x9800
+	}
+	bgMapIndex := uint(p.SCX)/8 + x/8 + (y/8)*32
+	return p.Read(bgMapOffset + bgMapIndex)
 }
 
 // Run PPU process cadenced by the same clock driving the CPU.
 func (p *PPU) Run() {
 	for {
-		// Tick()
 		if p.LCDC&LCDCDisplayEnable == 0 {
+			p.Tick()
 			continue
 		}
 
-		// New line.
-		for x := 0; x < 160; x++ {
-			// TODO: OAM search
-			// Just draw background for now. Enough for our purpose.
-			pixel := p.Fetch()
-			p.LCD.Write(pixel)
+		for ; p.LY < 144; p.LY++ {
+			// New line unless VBlank
+			// TODO: OAM search (20 clocks)
+			p.Ticks(20)
+
+			// Pixel transfer until HBlank
+			for x := uint(0); x < 160; {
+				// Pixel Transfer (~43 clocks)
+				// Just draw background for now. Enough for our purpose. TODO: Window & sprites
+
+				// FIFO shifts out 2 pixels per fetcher read.
+				x += p.Pop()
+				x += p.Pop()
+				y := uint(p.SCY + p.LY)
+				tileNb := p.FetchTileNumber(x, y) // Tick()
+
+				x += p.Pop()
+				x += p.Pop()
+				// Compute address of first byte of tile data to render.
+				tileLine := uint(y % 8)
+				var tileDataOffset uint
+				if p.LCDC&LCDCBGWindowTileDataSelect > 0 {
+					tileDataOffset = 0x8000 + uint(tileNb)*16
+				} else {
+					tileDataOffset = uint(0x9000 + int(tileNb)*16)
+				}
+				addr := tileDataOffset + tileLine*2
+				lineLo := p.Read(addr) // Tick()
+
+				x += p.Pop()
+				x += p.Pop()
+				lineHi := p.Read(addr + 1) // Tick()
+
+				// Wait for FIFO to be ready to accept more data TODO: fill it now if there is room
+				x += p.Pop()
+				x += p.Pop()
+				for bit := 7; bit >= 0; bit-- {
+					pixel := (lineHi>>uint(bit)&1)<<1 | (lineLo >> uint(bit) & 1)
+					p.Push(pixel)
+				}
+				p.Tick()
+			}
+
+			// TODO: HBlank (~51 clocks)
+			p.LCD.HBlank()
+			fmt.Println("HBLANK")
+			//p.Ticks(51)
 		}
 
-		p.LY++
-		if p.LY == 144 {
-			p.LCD.VBlank()
+		p.LCD.VBlank() // (114 clocks * 10)
+		fmt.Println("VBLANK")
+		for ; p.LY < 154; p.LY++ {
+			p.Ticks(114)
 		}
+
+		p.LY = 0
+		// Anything else?
 	}
 }
 
@@ -131,7 +210,7 @@ func (p *PPU) DumpTiles(addr, len uint) {
 	w.Flush()
 
 	// Dump VRAM for checks
-	ioutil.WriteFile("vram-dump.bin", p.vram.Bytes, 0666)
+	//ioutil.WriteFile("vram-dump.bin", p.vram.Bytes, 0666)
 }
 
 // Decode reads 8 pixels from VRAM and returns them as an array of colors (aka palette indexes). TODO: Fetcher.
