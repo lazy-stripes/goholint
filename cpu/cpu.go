@@ -94,16 +94,28 @@ func (c *CPU) String() string {
 	return b.String()
 }
 
-// Read returns the next byte.
-func (c *CPU) Read() uint8 {
-	value := c.MMU.Read(uint(c.PC))
+// Read a byte from MMU in the proper number of cycles.
+func (c *CPU) Read(addr uint) uint8 {
+	c.Ticks(2)
+	return c.MMU.Read(addr)
+}
+
+// Write a byte to MMU in the proper number of cycles.
+func (c *CPU) Write(addr uint, value byte) {
+	c.Ticks(2)
+	c.MMU.Write(addr, value)
+}
+
+// NextByte returns the next byte pointed to by PC.
+func (c *CPU) NextByte() uint8 {
+	value := c.Read(uint(c.PC))
 	c.PC++
 	return value
 }
 
-// ReadWord returns the next 16bit value in proper byte order you'd expect.
-func (c *CPU) ReadWord() uint16 {
-	return uint16(c.Read()) | uint16(c.Read())<<8
+// NextWord returns the next 16bit value in proper byte order you'd expect.
+func (c *CPU) NextWord() uint16 {
+	return uint16(c.NextByte()) | uint16(c.NextByte())<<8
 }
 
 // For missing opcodses debugz.
@@ -121,10 +133,10 @@ func instructionError(c *CPU, extended bool) { // Debug missing opcodes
 
 // Execute the next instruction (and handles extensions to base instruction set.)
 func (c *CPU) Execute() {
-	opcode := c.Read()
+	opcode := c.NextByte()
 	if opcode == 0xcb { // Extended instruction set
 		defer instructionError(c, true)
-		LR35902ExtendedInstructionSet[c.Read()](c)
+		LR35902ExtendedInstructionSet[c.NextByte()](c)
 	} else {
 		defer instructionError(c, false)
 		LR35902InstructionSet[opcode](c)
