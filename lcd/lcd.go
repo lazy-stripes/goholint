@@ -9,14 +9,18 @@ type Pixel int
 
 // Display supporting pixel output and palettes.
 type Display interface {
+	Enable()
+	Disable()
+	Close()
 	Write(pixel Pixel)
 	HBlank()
 	VBlank()
 }
 
-// Console display shifting piwels out to standard output.
+// Console display shifting pixels out to standard output.
 type Console struct {
 	Palette [4]rune
+	Enabled bool
 }
 
 // NewConsole returns a Console display with dark-themed unicode pixels.
@@ -24,14 +28,29 @@ func NewConsole() *Console {
 	return &Console{Palette: [4]rune{'█', '▒', '░', ' '}}
 }
 
-func (c Console) Write(pixel Pixel) {
-	fmt.Print(c.Palette[pixel])
+func (c *Console) Enable() {
+	c.Enabled = true
 }
 
-func (c Console) HBlank() {
-	fmt.Print('\n')
+func (c *Console) Disable() {
+	c.Enabled = false
+}
+
+func (c *Console) Write(pixel Pixel) {
+	if c.Enabled {
+		fmt.Printf("%c", c.Palette[pixel])
+	}
+}
+
+func (c *Console) HBlank() {
+	if c.Enabled {
+		fmt.Print("\n")
+	}
 }
 
 func (c *Console) VBlank() {
-	fmt.Print("\n === VBLANK ===\n")
+	if c.Enabled {
+		fmt.Print("\n === VBLANK ===\n")
+		//fmt.Print("\033[2J")
+	}
 }
