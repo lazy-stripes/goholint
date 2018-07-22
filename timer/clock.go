@@ -1,4 +1,4 @@
-package cpu
+package timer
 
 // Clock with blocking ticks. Probably a spoonerism.
 type Clock chan bool

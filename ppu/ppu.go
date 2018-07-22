@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"tigris.fr/gameboy/cpu"
 	"tigris.fr/gameboy/lcd"
 	"tigris.fr/gameboy/memory"
+	"tigris.fr/gameboy/timer"
 )
 
 const (
@@ -26,11 +26,11 @@ const (
 
 // PPU address space handling video RAM and display.
 type PPU struct {
+	timer.Clock
 	*memory.MMU
 	*FIFO
 	vram       *memory.RAM
 	LCD        lcd.Display
-	Clock      cpu.Clock
 	LCDC       uint8
 	STAT       uint8
 	SCY, SCX   uint8

@@ -6,11 +6,12 @@ import (
 	"os"
 
 	"tigris.fr/gameboy/memory"
+	"tigris.fr/gameboy/timer"
 )
 
 // A CPU implementation of the DMG-01's
 type CPU struct {
-	Clock                  chan bool
+	timer.Clock
 	MMU                    *memory.MMU
 	IME                    bool // Interrupt Master Enable flag
 	A, F, B, C, D, E, H, L uint8
@@ -18,6 +19,10 @@ type CPU struct {
 	PC                     uint16
 }
 
+// New CPU running DMG code in the given address space starting from 0.
+func New(mmu *memory.MMU) *CPU {
+	return &CPU{Clock: make(timer.Clock), MMU: mmu}
+}
 // Flag bitfield enum
 const (
 	FlagC uint8 = 1 << (iota + 4)
@@ -146,9 +151,4 @@ func (c *CPU) Run() {
 			os.Exit(1)
 		}
 	}
-}
-
-// New CPU running DMG code in the given address space starting from 0.
-func New(mmu *memory.MMU) *CPU {
-	return &CPU{Clock: make(Clock), MMU: mmu}
 }
