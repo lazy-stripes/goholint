@@ -16,6 +16,7 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x0e: ldCD8,
 	0x11: ldDeD16,
 	0x13: incDe,
+	0x14: incD,
 	0x15: decD,
 	0x16: ldDD8,
 	0x17: rlA,
@@ -28,6 +29,7 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x21: ldHlD16,
 	0x22: ldiHlA,
 	0x23: incHl,
+	0x24: incH,
 	0x25: decH,
 	0x26: ldHD8,
 	0x28: jrZR8,
@@ -37,6 +39,7 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x31: ldSpD16,
 	0x32: lddHlA,
 	0x33: incSp,
+	0x34: incAddrHl,
 	0x35: decAddrHl,
 	0x3c: incA,
 	0x3d: decA,
@@ -97,6 +100,24 @@ var LR35902InstructionSet = [0x100]Instruction{
 	0x85: addAL,
 	0x86: addAAddrHl,
 	0x87: addAA,
+	0x90: subB,
+	0x91: subC,
+	0x92: subD,
+	0x93: subE,
+	0x94: subH,
+	0x95: subL,
+	0x96: subAddrHl,
+	0x97: subA,
+	/*
+		0x98: sbcAB,
+		0x99: sbcAC,
+		0x9a: sbcAD,
+		0x9b: sbcAE,
+		0x9c: sbcAH,
+		0x9d: sbcAL,
+		0x9e: sbcAAddrHl,
+		0x9f: sbcAA,
+	*/
 	0xaf: xorA,
 	0xc1: popBc,
 	0xc5: pushBc,
@@ -128,18 +149,18 @@ var LR35902ExtendedInstructionSet = [0x100]Instruction{
 // Helpers
 // LD rr,d16
 func ldRrD16(c *CPU, high, low *byte) {
-	*low = c.Read()
-	*high = c.Read()
+	*low = c.NextByte()
+	*high = c.NextByte()
 }
 
 // LD r,(HL)
 func ldRAddrHl(c *CPU, register *byte) {
-	*register = c.MMU.Read(uint(c.HL()))
+	*register = c.Read(uint(c.HL()))
 }
 
 // LD (HL),r
 func ldAddrHlR(c *CPU, register byte) {
-	c.MMU.Write(uint(c.HL()), register)
+	c.Write(uint(c.HL()), register)
 }
 
 // XOR r
@@ -155,7 +176,7 @@ func xorR(c *CPU, register *byte) {
 
 // JR condition,r8
 func jrXxR8(c *CPU, condition bool) {
-	offset := int8(c.Read())
+	offset := int8(c.NextByte())
 	if condition {
 		// Need cast to signed for the potential substraction
 		c.PC = uint16(int16(c.PC) + int16(offset))
@@ -200,14 +221,14 @@ func incRr(c *CPU, high, low *uint8) {
 // PUSH rr
 func pushRr(c *CPU, high, low uint8) {
 	c.SP -= 2
-	c.MMU.Write(uint(c.SP), low)
-	c.MMU.Write(uint(c.SP+1), high)
+	c.Write(uint(c.SP), low)
+	c.Write(uint(c.SP+1), high)
 }
 
 // POP rr
 func popRr(c *CPU, high, low *uint8) {
-	*low = c.MMU.Read(uint(c.SP))
-	*high = c.MMU.Read(uint(c.SP + 1))
+	*low = c.Read(uint(c.SP))
+	*high = c.Read(uint(c.SP + 1))
 	c.SP += 2
 }
 
@@ -255,7 +276,7 @@ func addAR(c *CPU, register byte) {
 	}
 }
 
-// SUB r -- sub d8 -- CP r -- CP d8
+// SUB r -- SUB d8 -- CP r -- CP d8
 // Only sets flags, return substraction result
 func subFlags(c *CPU, value byte) byte {
 	// Flags: z 1 h c
@@ -271,6 +292,10 @@ func subFlags(c *CPU, value byte) byte {
 		c.F |= FlagZ
 	}
 	return result
+}
+
+func subD8(c *CPU, value byte) {
+	c.A = subFlags(c, value)
 }
 
 // Opcodes
@@ -300,7 +325,7 @@ func decB(c *CPU) {
 
 // 06: LD B,d8
 func ldBD8(c *CPU) {
-	c.B = c.Read()
+	c.B = c.NextByte()
 }
 
 // 0C: INC C
@@ -315,7 +340,7 @@ func decC(c *CPU) {
 
 // 0E: LD C,d8
 func ldCD8(c *CPU) {
-	c.C = c.Read()
+	c.C = c.NextByte()
 }
 
 // 11: LD DE,d16
@@ -328,6 +353,11 @@ func incDe(c *CPU) {
 	incRr(c, &c.D, &c.E)
 }
 
+// 14: INC D
+func incD(c *CPU) {
+	incR(c, &c.D)
+}
+
 // 15: DEC D
 func decD(c *CPU) {
 	decR(c, &c.D)
@@ -335,7 +365,7 @@ func decD(c *CPU) {
 
 // 16: LD D,d8
 func ldDD8(c *CPU) {
-	c.D = c.Read()
+	c.D = c.NextByte()
 }
 
 // 17: RLA -- RL A
@@ -350,7 +380,7 @@ func jrR8(c *CPU) {
 
 // 1A: LD A,(DE)
 func ldAAddrDe(c *CPU) {
-	c.A = c.MMU.Read(uint(c.DE()))
+	c.A = c.Read(uint(c.DE()))
 }
 
 // 1C: INC E
@@ -365,7 +395,7 @@ func decE(c *CPU) {
 
 // 1E: LD E,d8
 func ldED8(c *CPU) {
-	c.E = c.Read()
+	c.E = c.NextByte()
 }
 
 // 20: JR NZ,r8
@@ -381,13 +411,18 @@ func ldHlD16(c *CPU) {
 // 22: LD (HL+),A
 func ldiHlA(c *CPU) {
 	hl := c.HL()
-	c.MMU.Write(uint(hl), c.A)
+	c.Write(uint(hl), c.A)
 	c.SetHL(hl + 1)
 }
 
 // 23: INC HL
 func incHl(c *CPU) {
 	incRr(c, &c.H, &c.L)
+}
+
+// 24: INC H
+func incH(c *CPU) {
+	incR(c, &c.H)
 }
 
 // 25: DEC H
@@ -397,7 +432,7 @@ func decH(c *CPU) {
 
 // 26: LD H,d8
 func ldHD8(c *CPU) {
-	c.H = c.Read()
+	c.H = c.NextByte()
 }
 
 // 28: JR Z,r8
@@ -417,18 +452,18 @@ func decL(c *CPU) {
 
 // 2E: LD L,d8
 func ldLD8(c *CPU) {
-	c.L = c.Read()
+	c.L = c.NextByte()
 }
 
 // 31: LD SP,d16
 func ldSpD16(c *CPU) {
-	c.SP = c.ReadWord()
+	c.SP = c.NextWord()
 }
 
 // 32: LD (HL-),A
 func lddHlA(c *CPU) {
 	hl := c.HL()
-	c.MMU.Write(uint(hl), c.A)
+	c.Write(uint(hl), c.A)
 	c.SetHL(hl - 1)
 }
 
@@ -437,11 +472,18 @@ func incSp(c *CPU) {
 	c.SP++
 }
 
+// 34: INC (HL)
+func incAddrHl(c *CPU) {
+	value := c.Read(uint(c.HL()))
+	incR(c, &value)
+	c.Write(uint(c.HL()), value)
+}
+
 // 35: DEC (HL)
 func decAddrHl(c *CPU) {
-	value := c.MMU.Read(uint(c.HL()))
+	value := c.Read(uint(c.HL()))
 	decR(c, &value)
-	c.MMU.Write(uint(c.HL()), value)
+	c.Write(uint(c.HL()), value)
 }
 
 // 3C: INC A
@@ -456,7 +498,7 @@ func decA(c *CPU) {
 
 // 3E: LD A,d8
 func ldAD8(c *CPU) {
-	c.A = c.Read()
+	c.A = c.NextByte()
 }
 
 // 40: LD B,B
@@ -576,7 +618,7 @@ func ldHL(c *CPU) {
 
 // 66: LD H,(HL)
 func ldHAddrHl(c *CPU) {
-	c.H = c.MMU.Read(uint(c.HL()))
+	c.H = c.Read(uint(c.HL()))
 }
 
 // 67: LD H,A
@@ -616,7 +658,7 @@ func ldLL(c *CPU) {
 
 // 6E: LD L,(HL)
 func ldLAddrHl(c *CPU) {
-	c.L = c.MMU.Read(uint(c.HL()))
+	c.L = c.Read(uint(c.HL()))
 }
 
 // 6F: LD L,A
@@ -731,12 +773,52 @@ func addAL(c *CPU) {
 
 // 86: ADD A,(HL)
 func addAAddrHl(c *CPU) {
-	addAR(c, c.MMU.Read(uint(c.HL())))
+	addAR(c, c.Read(uint(c.HL())))
 }
 
 // 87: ADD A,A
 func addAA(c *CPU) {
 	addAR(c, c.A)
+}
+
+// 90: SUB B
+func subB(c *CPU) {
+	subD8(c, c.B)
+}
+
+// 91: SUB C
+func subC(c *CPU) {
+	subD8(c, c.C)
+}
+
+// 92: SUB D
+func subD(c *CPU) {
+	subD8(c, c.D)
+}
+
+// 93: SUB E
+func subE(c *CPU) {
+	subD8(c, c.E)
+}
+
+// 94: SUB H
+func subH(c *CPU) {
+	subD8(c, c.H)
+}
+
+// 95: SUB L
+func subL(c *CPU) {
+	subD8(c, c.L)
+}
+
+// 96: SUB (HL)
+func subAddrHl(c *CPU) {
+	subD8(c, c.Read(uint(c.HL())))
+}
+
+// 97: SUB A
+func subA(c *CPU) {
+	subD8(c, c.A)
 }
 
 // AF: XOR A
@@ -775,12 +857,12 @@ func bit7H(c *CPU) {
 // CD: CALL a16
 func callA16(c *CPU) {
 	// Advance PC before pushing
-	addr := c.ReadWord()
+	addr := c.NextWord()
 	pushRr(c, uint8(c.PC>>8), uint8(c.PC&0xff))
 	c.PC = addr
 }
 
-// C1: POP DE
+// D1: POP DE
 func popDe(c *CPU) {
 	popRr(c, &c.D, &c.E)
 }
@@ -792,7 +874,7 @@ func pushDe(c *CPU) {
 
 // E0: LD (FF00+a8),A
 func ldAddrFfA8A(c *CPU) {
-	c.MMU.Write(uint(0xff00+uint16(c.Read())), c.A)
+	c.Write(uint(0xff00+uint16(c.NextByte())), c.A)
 }
 
 // E1: POP HL
@@ -802,7 +884,7 @@ func popHl(c *CPU) {
 
 // E2: LD (FF00+C),A
 func ldAddrFfCA(c *CPU) {
-	c.MMU.Write(uint(0xff00+uint16(c.C)), c.A)
+	c.Write(uint(0xff00+uint16(c.C)), c.A)
 }
 
 // E5: PUSH HL
@@ -812,12 +894,12 @@ func pushHl(c *CPU) {
 
 // EA: LD (a16),A
 func ldAddrA16A(c *CPU) {
-	c.MMU.Write(uint(c.ReadWord()), c.A)
+	c.Write(uint(c.NextWord()), c.A)
 }
 
 // F0: LD A,(FF00+a8)
 func ldAAddrFfA8(c *CPU) {
-	c.A = c.MMU.Read(uint(0xff00 + uint16(c.Read())))
+	c.A = c.Read(uint(0xff00 + uint16(c.NextByte())))
 }
 
 // F1: POP AF
@@ -832,10 +914,10 @@ func pushAf(c *CPU) {
 
 // FA: LD A,(a16)
 func ldAAddrA16(c *CPU) {
-	c.A = c.MMU.Read(uint(c.ReadWord()))
+	c.A = c.Read(uint(c.NextWord()))
 }
 
 // FE: CP d8
 func cpD8(c *CPU) {
-	subFlags(c, c.Read())
+	subFlags(c, c.NextByte())
 }
