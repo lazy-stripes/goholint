@@ -10,6 +10,14 @@ import (
 	"tigris.fr/gameboy/timer"
 )
 
+// Flag bitfield enum
+const (
+	FlagC uint8 = 1 << (iota + 4)
+	FlagH
+	FlagN
+	FlagZ
+)
+
 // A CPU implementation of the DMG-01's
 type CPU struct {
 	timer.Clock
@@ -25,13 +33,6 @@ type CPU struct {
 func New(mmu *memory.MMU) *CPU {
 	return &CPU{Clock: make(timer.Clock), MMU: mmu}
 }
-// Flag bitfield enum
-const (
-	FlagC uint8 = 1 << (iota + 4)
-	FlagH
-	FlagN
-	FlagZ
-)
 
 // Helper methods to read/write 16-bit registers
 func readRR(high, low byte) uint16 {
