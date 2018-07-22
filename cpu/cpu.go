@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"tigris.fr/gameboy/memory"
+	"tigris.fr/gameboy/ppu"
 	"tigris.fr/gameboy/timer"
 )
 
@@ -13,6 +14,7 @@ import (
 type CPU struct {
 	timer.Clock
 	MMU                    *memory.MMU
+	Cycle                  uint
 	IME                    bool // Interrupt Master Enable flag
 	A, F, B, C, D, E, H, L uint8
 	SP                     uint16
@@ -91,6 +93,7 @@ func (c *CPU) String() string {
 	fmt.Fprintf(&b, "                    SP: %#04x\n", c.SP)
 	fmt.Fprintf(&b, "                    PC: %#04x\n", c.PC)
 	fmt.Fprintf(&b, "Flags:\nZ: %d - N: %d - H: %d - C: %d\n", c.F&FlagZ>>7, c.F&FlagN>>6, c.F&FlagH>>5, c.F&FlagC>>4)
+	fmt.Fprintf(&b, "Cycle: %d\n", c.Cycle)
 	return b.String()
 }
 
@@ -119,7 +122,7 @@ func (c *CPU) NextWord() uint16 {
 }
 
 // For missing opcodses debugz.
-func instructionError(c *CPU, extended bool) { // Debug missing opcodes
+func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
 		if extended {
 			fmt.Printf("Execute error at extended instruction %#04x (0xCB %#02x) (%v)\n", c.PC-2, c.MMU.Read(uint(c.PC-1)), r)
@@ -127,6 +130,20 @@ func instructionError(c *CPU, extended bool) { // Debug missing opcodes
 			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n", c.PC-1, c.MMU.Read(uint(c.PC-1)), r)
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
+		// Dump memory
+		/*
+			if f, err := os.Create("ram-dump.bin"); err == nil {
+				defer func() {
+					f.Close()
+				}()
+				buf := make([]byte, 1, 1)
+				for addr := uint(0); addr < 0x10000; addr++ {
+					buf[0] = c.MMU.Read(addr)
+					f.Write(buf)
+				}
+				fmt.Println("RAM dumped.")
+			}*/
+
 		os.Exit(255)
 	}
 }
@@ -145,16 +162,15 @@ func (c *CPU) Execute() {
 
 // Run CPU on the current address space.
 func (c *CPU) Run() {
-	cycle := 0
-	debugFrom := 0xfffff
+	debugFrom := uint(28816)
 	for {
-		if c.PC == 0x3b {
-			fmt.Println("BREAK")
+		if c.PC == 0x8c && c.D == 63 {
+			c.MMU.Spaces[1].(*ppu.PPU).LCD.Enable()
 		}
 		c.Execute()
-		cycle++
-		if cycle > debugFrom {
-			fmt.Printf("========= Cycle: %#4x ========\n", cycle)
+		c.Cycle++
+		if c.Cycle >= debugFrom {
+			fmt.Printf("========= Cycle: %#4x ========\n", c.Cycle)
 			fmt.Print(c)
 			fmt.Printf("==============================\n")
 		}
