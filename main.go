@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 
@@ -20,25 +19,21 @@ func run() int {
 	}
 	lcd := lcd.NewSDL()
 	ppu := ppu.New(lcd)
-	cartridge := memory.NewROM("bin/dynablaster.bin", 0)
+	cartridge := memory.NewROM("bin/tetris.gb", 0)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM and IE register
 	mmu := memory.NewMMU([]memory.Addressable{bootRom, ppu, wram, hram, cartridge})
 	cpu := cpu.New(mmu)
 
-	// Pulsing clocks.
-	go cpu.Run()
-	go ppu.Run()
-
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
 	for {
-		cpu.Clock <- true // Tick(cpu.Clock, 4)
-		ppu.Clock <- true // Tick(ppu.Clock, 4)
-		fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
+		cpu.Tick()
+		//ppu.Clock <- true // Tick(ppu.Clock, 4)
+		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
 		if tick == 171704 {
-			fmt.Println("STOP")
+			//fmt.Println("STOP")
 		}
 	}
 
