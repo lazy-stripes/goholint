@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 
+	"tigris.fr/gameboy/fifo"
 	"tigris.fr/gameboy/lcd"
 	"tigris.fr/gameboy/memory"
 	"tigris.fr/gameboy/timer"
@@ -40,7 +41,7 @@ var TileMapOffsets = [2]uint{0x9800, 0x9c00}
 type PPU struct {
 	timer.Clock
 	*memory.MMU
-	*FIFO
+	*fifo.FIFO
 	LCD        lcd.Display
 	LCDC       uint8
 	STAT       uint8
@@ -55,7 +56,7 @@ type PPU struct {
 
 // New PPU instance.
 func New(display lcd.Display) *PPU {
-	p := PPU{Clock: make(timer.Clock), MMU: memory.NewMMU([]memory.Addressable{}), FIFO: &FIFO{}, LCD: display}
+	p := PPU{Clock: make(timer.Clock), MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo.New(16, 8), LCD: display}
 	p.Add(memory.Registers{
 		0xff40: &p.LCDC,
 		0xff41: &p.STAT,
@@ -83,7 +84,7 @@ func (p *PPU) Read(addr uint) uint8 {
 // Pop tries shifting a pixel out of the FIFO a,d returns the number of shifted pixels (0 or 1).
 func (p *PPU) Pop() uint {
 	if pixel, err := p.FIFO.Pop(); err == nil {
-		p.LCD.Write(lcd.Pixel(pixel))
+		p.LCD.Write(lcd.Pixel(pixel.(int)))
 		return 1
 	}
 	return 0
