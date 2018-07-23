@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"tigris.fr/gameboy/cpu/states"
+	"tigris.fr/gameboy/fifo"
 	"tigris.fr/gameboy/memory"
 	"tigris.fr/gameboy/ppu"
 	"tigris.fr/gameboy/timer"
@@ -24,43 +26,68 @@ type State int
 // A CPU implementation of the DMG-01's
 type CPU struct {
 	timer.Clock
-	ticks                  uint
-	state                  int // FIXME: enum
 	MMU                    *memory.MMU
 	Cycle                  uint
 	IME                    bool // Interrupt Master Enable flag
 	A, F, B, C, D, E, H, L uint8
 	SP                     uint16
 	PC                     uint16
+
+	ops   *fifo.FIFO
+	ticks uint
+	state int // FIXME: enum
 }
 
 // New CPU running DMG code in the given address space starting from 0.
 func New(mmu *memory.MMU) *CPU {
-	return &CPU{Clock: make(timer.Clock), MMU: mmu}
+	return &CPU{Clock: make(timer.Clock), MMU: mmu, ops: fifo.New(4, 0)}
 }
 
+// Tick advances the CPU state one step.
 func (c *CPU) Tick() {
-	c.ticks--
-	if c.ticks > 0 {
+	c.Cycle++
+	c.ticks++
+	if c.ticks < 4 { // FIXME: c.ClockFactor
 		return
 	}
 
 	// Reset tick counter and execute next state
-	c.ticks = 4 // FIXME: c.ClockFactor
+	c.ticks = 0
 
 	switch c.state {
-	case 0 /*FetchOpcode*/ :
+	case states.FetchOpCode:
 		opcode := c.NextByte()
 		if opcode == 0xcb { // Extended instruction set
-			//c.instructionSet = LR35902ExtendedInstructionSet
+			c.state = states.FetchExtendedOpcode
 		} else {
-			//c.instruction = c.instructionSet[opcode]
-			c.state = 1 /*Exec*/
+			defer instructionError(c, false)
+			if LR35902InstructionSet[opcode](c) { // Instruction is done within the first 4 cycles.
+				c.state = states.FetchOpCode
+			} else {
+				c.state = states.Execute
+			}
 		}
 		break
 
-	case 1 /*Exec*/ :
-		//if c.instruction.Tick()
+	case states.FetchExtendedOpcode:
+		opcode := c.NextByte()
+		defer instructionError(c, true)
+
+		if LR35902ExtendedInstructionSet[opcode](c) { // Instruction is done within the first 8 cycles.
+			c.state = states.FetchOpCode
+		} else {
+			c.state = states.Execute
+		}
+
+	case states.Execute:
+		if instruction, err := c.ops.Pop(); err == nil {
+			instruction.(Operation)(c) // Conditional instructions might pop unused choices from c.instructions too.
+		} else {
+			panic(err)
+		}
+		if c.ops.Size() == 0 {
+			c.state = states.FetchOpCode
+		}
 	}
 }
 
@@ -128,21 +155,9 @@ func (c *CPU) String() string {
 	return b.String()
 }
 
-// Read a byte from MMU in the proper number of cycles.
-func (c *CPU) Read(addr uint) uint8 {
-	c.Ticks(2)
-	return c.MMU.Read(addr)
-}
-
-// Write a byte to MMU in the proper number of cycles.
-func (c *CPU) Write(addr uint, value byte) {
-	c.Ticks(2)
-	c.MMU.Write(addr, value)
-}
-
 // NextByte returns the next byte pointed to by PC.
 func (c *CPU) NextByte() uint8 {
-	value := c.Read(uint(c.PC))
+	value := c.MMU.Read(uint(c.PC))
 	c.PC++
 	return value
 }
