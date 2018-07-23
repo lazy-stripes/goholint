@@ -1,146 +1,195 @@
 package cpu
 
-// An Instruction to be executed by a CPU.
-type Instruction func(c *CPU)
+// An Operation executed on the CPU as part of an instruction.
+type Operation func(c *CPU)
+
+// An Instruction to be executed by a CPU, pushing a number of 4-cycle micro-operations to the CPU.
+type Instruction func(c *CPU) (done bool)
 
 // LR35902InstructionSet is an array of opcodes for the DMG CPU.
-var LR35902InstructionSet = [0x100]Instruction{
+var LR35902InstructionSet = []Instruction{
 	0x00: nop,
 	0x01: ldBcD16,
-	0x03: incBc,
-	0x04: incB,
-	0x05: decB,
-	0x06: ldBD8,
+	/*
+		0x03: incBc,
+		0x04: incB,
+		0x05: decB,
+		0x06: ldBD8,
+	*/
 	0x0c: incC,
 	0x0d: decC,
 	0x0e: ldCD8,
-	0x11: ldDeD16,
-	0x13: incDe,
-	0x14: incD,
-	0x15: decD,
-	0x16: ldDD8,
-	0x17: rlA,
-	0x18: jrR8,
-	0x1a: ldAAddrDe,
-	0x1c: incE,
-	0x1d: decE,
-	0x1e: ldED8,
+	/*
+		0x11: ldDeD16,
+		0x13: incDe,
+		0x14: incD,
+		0x15: decD,
+		0x16: ldDD8,
+		0x17: rlA,
+		0x18: jrR8,
+		0x1a: ldAAddrDe,
+		0x1c: incE,
+		0x1d: decE,
+		0x1e: ldED8,
+	*/
 	0x20: jrNzR8,
 	0x21: ldHlD16,
-	0x22: ldiHlA,
-	0x23: incHl,
-	0x24: incH,
-	0x25: decH,
-	0x26: ldHD8,
-	0x28: jrZR8,
-	0x2c: incL,
-	0x2d: decL,
-	0x2e: ldLD8,
+	/*
+		0x22: ldiHlA,
+		0x23: incHl,
+		0x24: incH,
+		0x25: decH,
+		0x26: ldHD8,
+		0x28: jrZR8,
+		0x2c: incL,
+		0x2d: decL,
+		0x2e: ldLD8,
+	*/
 	0x31: ldSpD16,
 	0x32: lddHlA,
-	0x33: incSp,
-	0x34: incAddrHl,
-	0x35: decAddrHl,
-	0x3c: incA,
-	0x3d: decA,
-	0x3e: ldAD8,
-	0x40: ldBB,
-	0x41: ldBC,
-	0x42: ldBD,
-	0x43: ldBE,
-	0x44: ldBH,
-	0x45: ldBL,
-	0x46: ldBAddrHl,
-	0x47: ldBA,
-	0x48: ldCB,
-	0x49: ldCC,
-	0x4a: ldCD,
-	0x4b: ldCE,
-	0x4c: ldCH,
-	0x4d: ldCL,
-	0x4e: ldCAddrHl,
-	0x4f: ldCA,
-	0x57: ldDA,
-	0x60: ldHB,
-	0x61: ldHC,
-	0x62: ldHD,
-	0x63: ldHE,
-	0x64: ldHH,
-	0x65: ldHL,
-	0x66: ldHAddrHl,
-	0x67: ldHA,
-	0x68: ldLB,
-	0x69: ldLC,
-	0x6a: ldLD,
-	0x6b: ldLE,
-	0x6c: ldLH,
-	0x6d: ldLL,
-	0x6e: ldLAddrHl,
-	0x6f: ldLA,
-	0x70: ldAddrHlB,
-	0x71: ldAddrHlC,
-	0x72: ldAddrHlD,
-	0x73: ldAddrHlE,
-	0x74: ldAddrHlH,
-	0x75: ldAddrHlL,
-	0x77: ldAddrHlA,
-	0x78: ldAB,
-	0x79: ldAC,
-	0x7a: ldAD,
-	0x7b: ldAE,
-	0x7c: ldAH,
-	0x7d: ldAL,
-	0x7e: ldAAddrHl,
-	0x7f: ldAA,
-	0x80: addAB,
-	0x81: addAC,
-	0x82: addAD,
-	0x83: addAE,
-	0x84: addAH,
-	0x85: addAL,
-	0x86: addAAddrHl,
-	0x87: addAA,
-	0x90: subB,
-	0x91: subC,
-	0x92: subD,
-	0x93: subE,
-	0x94: subH,
-	0x95: subL,
-	0x96: subAddrHl,
-	0x97: subA,
 	/*
-		0x98: sbcAB,
-		0x99: sbcAC,
-		0x9a: sbcAD,
-		0x9b: sbcAE,
-		0x9c: sbcAH,
-		0x9d: sbcAL,
-		0x9e: sbcAAddrHl,
-		0x9f: sbcAA,
+		0x33: incSp,
+		0x34: incAddrHl,
+		0x35: decAddrHl,
+		0x3c: incA,
+		0x3d: decA,
+	*/
+	0x3e: ldAD8,
+	/*
+		0x40: ldBB,
+		0x41: ldBC,
+		0x42: ldBD,
+		0x43: ldBE,
+		0x44: ldBH,
+		0x45: ldBL,
+		0x46: ldBAddrHl,
+		0x47: ldBA,
+		0x48: ldCB,
+		0x49: ldCC,
+		0x4a: ldCD,
+		0x4b: ldCE,
+		0x4c: ldCH,
+		0x4d: ldCL,
+		0x4e: ldCAddrHl,
+		0x4f: ldCA,
+		0x57: ldDA,
+		0x60: ldHB,
+		0x61: ldHC,
+		0x62: ldHD,
+		0x63: ldHE,
+		0x64: ldHH,
+		0x65: ldHL,
+		0x66: ldHAddrHl,
+		0x67: ldHA,
+		0x68: ldLB,
+		0x69: ldLC,
+		0x6a: ldLD,
+		0x6b: ldLE,
+		0x6c: ldLH,
+		0x6d: ldLL,
+		0x6e: ldLAddrHl,
+		0x6f: ldLA,
+		0x70: ldAddrHlB,
+		0x71: ldAddrHlC,
+		0x72: ldAddrHlD,
+		0x73: ldAddrHlE,
+		0x74: ldAddrHlH,
+		0x75: ldAddrHlL,
+	*/
+	0x77: ldAddrHlA,
+	/*
+		0x78: ldAB,
+		0x79: ldAC,
+		0x7a: ldAD,
+		0x7b: ldAE,
+		0x7c: ldAH,
+		0x7d: ldAL,
+		0x7e: ldAAddrHl,
+		0x7f: ldAA,
+		0x80: addAB,
+		0x81: addAC,
+		0x82: addAD,
+		0x83: addAE,
+		0x84: addAH,
+		0x85: addAL,
+		0x86: addAAddrHl,
+		0x87: addAA,
+		0x90: subB,
+		0x91: subC,
+		0x92: subD,
+		0x93: subE,
+		0x94: subH,
+		0x95: subL,
+		0x96: subAddrHl,
+		0x97: subA,
+			0x98: sbcAB,
+			0x99: sbcAC,
+			0x9a: sbcAD,
+			0x9b: sbcAE,
+			0x9c: sbcAH,
+			0x9d: sbcAL,
+			0x9e: sbcAAddrHl,
+			0x9f: sbcAA,
 	*/
 	0xaf: xorA,
-	0xc1: popBc,
-	0xc5: pushBc,
-	0xc9: ret,
-	0xcd: callA16,
-	0xd1: popDe,
-	0xd5: pushDe,
+	/*
+		0xc1: popBc,
+		0xc5: pushBc,
+		0xc9: ret,
+		0xcd: callA16,
+		0xd1: popDe,
+		0xd5: pushDe,
+	*/
 	0xe0: ldAddrFfA8A,
-	0xe1: popHl,
+	/*
+		0xe1: popHl,
+	*/
 	0xe2: ldAddrFfCA,
-	0xe5: pushHl,
-	0xea: ldAddrA16A,
-	0xf0: ldAAddrFfA8,
-	0xf1: popAf,
-	0xf5: pushAf,
-	0xfa: ldAAddrA16,
-	0xfe: cpD8,
+	/*
+		0xe5: pushHl,
+		0xea: ldAddrA16A,
+		0xf0: ldAAddrFfA8,
+		0xf1: popAf,
+		0xf5: pushAf,
+		0xfa: ldAAddrA16,
+		0xfe: cpD8,
+	*/
 }
 
 // LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
-var LR35902ExtendedInstructionSet = [0x100]Instruction{
-	0x11: rlC,
+var LR35902ExtendedInstructionSet = []Instruction{
+	//0x11: rlC,
 	0x7c: bit7H,
+}
+
+// Operations. The pseudo-atomic things the CPU does as part as an Instruction, which might take many cycles.
+
+// Read 8-bit argument into destination address.
+func readD8(c *CPU, dest *byte) Operation {
+	return func(c *CPU) {
+		*dest = c.NextByte()
+	}
+}
+
+// Read least significant byte of 16-bits argument into 16-bit destination.
+func readD16Low(c *CPU, dest *uint16) Operation {
+	return func(c *CPU) {
+		*dest = uint16(c.NextByte())
+	}
+}
+
+// Read most significant byte of 16-bits argument into 16-bit destination.
+func readD16High(c *CPU, dest *uint16) Operation {
+	return func(c *CPU) {
+		*dest |= uint16(c.NextByte()) << 8
+	}
+}
+
+// Write 8-bit value to memory.
+func writeD8(c *CPU, addr uint, value uint8) Operation {
+	return func(c *CPU) {
+		c.MMU.Write(addr, value)
+	}
 }
 
 // Instructions. Each takes a CPU pointer and will modify its internal state.
@@ -148,20 +197,16 @@ var LR35902ExtendedInstructionSet = [0x100]Instruction{
 
 // Helpers
 // LD rr,d16
-func ldRrD16(c *CPU, high, low *byte) {
-	*low = c.NextByte()
-	*high = c.NextByte()
+func ldRrD16(c *CPU, high, low *byte) []Operation {
+	return []Operation{readD8(c, low), readD8(c, high)}
 }
 
+/*
 // LD r,(HL)
 func ldRAddrHl(c *CPU, register *byte) {
 	*register = c.Read(uint(c.HL()))
 }
-
-// LD (HL),r
-func ldAddrHlR(c *CPU, register byte) {
-	c.Write(uint(c.HL()), register)
-}
+*/
 
 // XOR r
 func xorR(c *CPU, register *byte) {
@@ -174,13 +219,18 @@ func xorR(c *CPU, register *byte) {
 	}
 }
 
-// JR condition,r8
+// JR condition,r8 -- 2 bytes, 8 cycles if condition is false, 12 if true
 func jrXxR8(c *CPU, condition bool) {
-	offset := int8(c.NextByte())
-	if condition {
-		// Need cast to signed for the potential substraction
-		c.PC = uint16(int16(c.PC) + int16(offset))
-	}
+	c.ops.Push(Operation(func(c *CPU) {
+		offset := int8(c.NextByte())
+		// If condition matches, take another tick to update PC
+		if condition {
+			c.ops.Push(Operation(func(c *CPU) {
+				// Need cast to signed for the potential substraction
+				c.PC = uint16(int16(c.PC) + int16(offset))
+			}))
+		}
+	}))
 }
 
 // INC r
@@ -210,6 +260,7 @@ func decR(c *CPU, register *byte) {
 	}
 }
 
+/*
 // INC rr
 func incRr(c *CPU, high, low *uint8) {
 	if *low == 0xff {
@@ -248,7 +299,7 @@ func rlR(c *CPU, register *byte) {
 	}
 	*register = result
 }
-
+*/
 // BIT n,r
 func bitNR(c *CPU, bit, register byte) {
 	// Flags z 0 1 -
@@ -259,6 +310,7 @@ func bitNR(c *CPU, bit, register byte) {
 	}
 }
 
+/*
 // ADD A,r
 func addAR(c *CPU, register byte) {
 	// Flags: z 0 h c
@@ -297,17 +349,22 @@ func subFlags(c *CPU, value byte) byte {
 func subD8(c *CPU, value byte) {
 	c.A = subFlags(c, value)
 }
-
+*/
 // Opcodes
 
-// 00: NOP
-func nop(c *CPU) {}
-
-// 01: LD BC,d16
-func ldBcD16(c *CPU) {
-	ldRrD16(c, &c.B, &c.C)
+// 00: NOP			4 cycles
+func nop(c *CPU) bool {
+	return true
 }
 
+// 01: LD BC,d16	12 cycles
+func ldBcD16(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.C))
+	c.ops.Push(readD8(c, &c.B))
+	return false
+}
+
+/*
 // 03 INC BC
 func incBc(c *CPU) {
 	incRr(c, &c.B, &c.C)
@@ -327,22 +384,27 @@ func decB(c *CPU) {
 func ldBD8(c *CPU) {
 	c.B = c.NextByte()
 }
+*/
 
 // 0C: INC C
-func incC(c *CPU) {
+func incC(c *CPU) bool {
 	incR(c, &c.C)
+	return true
 }
 
 // 0D: DEC C
-func decC(c *CPU) {
+func decC(c *CPU) bool {
 	decR(c, &c.C)
+	return true
 }
 
 // 0E: LD C,d8
-func ldCD8(c *CPU) {
-	c.C = c.NextByte()
+func ldCD8(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.C))
+	return false
 }
 
+/*
 // 11: LD DE,d16
 func ldDeD16(c *CPU) {
 	ldRrD16(c, &c.D, &c.E)
@@ -392,22 +454,28 @@ func incE(c *CPU) {
 func decE(c *CPU) {
 	decR(c, &c.E)
 }
+*/
 
 // 1E: LD E,d8
-func ldED8(c *CPU) {
-	c.E = c.NextByte()
+func ldED8(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.E))
+	return false
 }
 
 // 20: JR NZ,r8
-func jrNzR8(c *CPU) {
+func jrNzR8(c *CPU) bool {
 	jrXxR8(c, c.F&FlagZ == 0)
+	return false
 }
 
 // 21: LD HL,d16
-func ldHlD16(c *CPU) {
-	ldRrD16(c, &c.H, &c.L)
+func ldHlD16(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.L))
+	c.ops.Push(readD8(c, &c.H))
+	return false
 }
 
+/*
 // 22: LD (HL+),A
 func ldiHlA(c *CPU) {
 	hl := c.HL()
@@ -449,24 +517,32 @@ func incL(c *CPU) {
 func decL(c *CPU) {
 	decR(c, &c.L)
 }
+*/
 
-// 2E: LD L,d8
-func ldLD8(c *CPU) {
-	c.L = c.NextByte()
+// 2E: LD L,d8		8 cycles
+func ldLD8(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.L))
+	return false
 }
 
-// 31: LD SP,d16
-func ldSpD16(c *CPU) {
-	c.SP = c.NextWord()
+// 31: LD SP,d16	12 cycles
+func ldSpD16(c *CPU) bool {
+	c.ops.Push(readD16Low(c, &c.SP))
+	c.ops.Push(readD16High(c, &c.SP))
+	return false
 }
 
-// 32: LD (HL-),A
-func lddHlA(c *CPU) {
-	hl := c.HL()
-	c.Write(uint(hl), c.A)
-	c.SetHL(hl - 1)
+// 32: LD (HL-),A	8 cycles
+func lddHlA(c *CPU) bool {
+	c.ops.Push(Operation(func(c *CPU) {
+		hl := c.HL()
+		c.MMU.Write(uint(hl), c.A)
+		c.SetHL(hl - 1)
+	}))
+	return false
 }
 
+/*
 // 33: INC SP
 func incSp(c *CPU) {
 	c.SP++
@@ -495,12 +571,14 @@ func incA(c *CPU) {
 func decA(c *CPU) {
 	decR(c, &c.A)
 }
-
-// 3E: LD A,d8
-func ldAD8(c *CPU) {
-	c.A = c.NextByte()
+*/
+// 3E: LD A,d8		8 cycles
+func ldAD8(c *CPU) bool {
+	c.ops.Push(readD8(c, &c.A))
+	return false
 }
 
+/*
 // 40: LD B,B
 func ldBB(c *CPU) {
 	// nop
@@ -695,12 +773,14 @@ func ldAddrHlH(c *CPU) {
 func ldAddrHlL(c *CPU) {
 	ldAddrHlR(c, c.L)
 }
-
-// 77: LD (HL),A
-func ldAddrHlA(c *CPU) {
-	ldAddrHlR(c, c.A)
+*/
+// 77: LD (HL),A		8 cycles
+func ldAddrHlA(c *CPU) bool {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.A))
+	return false
 }
 
+/*
 // 78: LD A,B
 func ldAB(c *CPU) {
 	c.A = c.B
@@ -820,12 +900,14 @@ func subAddrHl(c *CPU) {
 func subA(c *CPU) {
 	subD8(c, c.A)
 }
-
-// AF: XOR A
-func xorA(c *CPU) {
+*/
+// AF: XOR A		4 cycles
+func xorA(c *CPU) bool {
 	xorR(c, &c.A)
+	return true
 }
 
+/*
 // C1: POP BC
 func popBc(c *CPU) {
 	popRr(c, &c.B, &c.C)
@@ -848,12 +930,14 @@ func ret(c *CPU) {
 func rlC(c *CPU) {
 	rlR(c, &c.C)
 }
-
-// CB 7C: BIT 7,H
-func bit7H(c *CPU) {
+*/
+// CB 7C: BIT 7,H	8 cycles
+func bit7H(c *CPU) bool {
 	bitNR(c, 7, c.H)
+	return true
 }
 
+/*
 // CD: CALL a16
 func callA16(c *CPU) {
 	// Advance PC before pushing
@@ -871,22 +955,28 @@ func popDe(c *CPU) {
 func pushDe(c *CPU) {
 	pushRr(c, c.D, c.E)
 }
-
-// E0: LD (FF00+a8),A
-func ldAddrFfA8A(c *CPU) {
-	c.Write(uint(0xff00+uint16(c.NextByte())), c.A)
+*/
+// E0: LD (FF00+a8),A	12 cycles
+func ldAddrFfA8A(c *CPU) bool {
+	c.ops.Push(Operation(func(c *CPU) {
+		c.ops.Push(writeD8(c, uint(0xff00+uint16(c.NextByte())), c.A))
+	}))
+	return false
 }
 
+/*
 // E1: POP HL
 func popHl(c *CPU) {
 	popRr(c, &c.H, &c.L)
 }
-
-// E2: LD (FF00+C),A
-func ldAddrFfCA(c *CPU) {
-	c.Write(uint(0xff00+uint16(c.C)), c.A)
+*/
+// E2: LD (FF00+C),A	8 cycles
+func ldAddrFfCA(c *CPU) bool {
+	c.ops.Push(writeD8(c, uint(0xff00+uint16(c.C)), c.A))
+	return false
 }
 
+/*
 // E5: PUSH HL
 func pushHl(c *CPU) {
 	pushRr(c, c.H, c.L)
@@ -921,3 +1011,4 @@ func ldAAddrA16(c *CPU) {
 func cpD8(c *CPU) {
 	subFlags(c, c.NextByte())
 }
+*/
