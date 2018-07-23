@@ -18,9 +18,14 @@ const (
 	FlagZ
 )
 
+// TODO: ... some StateMachine struct?
+type State int
+
 // A CPU implementation of the DMG-01's
 type CPU struct {
 	timer.Clock
+	ticks                  uint
+	state                  int // FIXME: enum
 	MMU                    *memory.MMU
 	Cycle                  uint
 	IME                    bool // Interrupt Master Enable flag
@@ -32,6 +37,31 @@ type CPU struct {
 // New CPU running DMG code in the given address space starting from 0.
 func New(mmu *memory.MMU) *CPU {
 	return &CPU{Clock: make(timer.Clock), MMU: mmu}
+}
+
+func (c *CPU) Tick() {
+	c.ticks--
+	if c.ticks > 0 {
+		return
+	}
+
+	// Reset tick counter and execute next state
+	c.ticks = 4 // FIXME: c.ClockFactor
+
+	switch c.state {
+	case 0 /*FetchOpcode*/ :
+		opcode := c.NextByte()
+		if opcode == 0xcb { // Extended instruction set
+			//c.instructionSet = LR35902ExtendedInstructionSet
+		} else {
+			//c.instruction = c.instructionSet[opcode]
+			c.state = 1 /*Exec*/
+		}
+		break
+
+	case 1 /*Exec*/ :
+		//if c.instruction.Tick()
+	}
 }
 
 // Helper methods to read/write 16-bit registers
