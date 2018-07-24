@@ -19,6 +19,7 @@ type Display interface {
 	Write(pixel Pixel)
 	HBlank()
 	VBlank()
+	Blank()
 }
 
 // Screen dimensions.
@@ -91,4 +92,8 @@ func (c *Console) VBlank() {
 		fmt.Print("\n === VBLANK ===\n")
 		//fmt.Print("\033[2J")
 	}
+}
+
+func (c *Console) Blank() {
+	// Nothing. This method is only for refreshing SDL texture for "disabled" screen.
 }

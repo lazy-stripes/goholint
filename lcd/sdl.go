@@ -121,3 +121,7 @@ func (s *SDL) VBlank() {
 		s.Clear()
 	}
 }
+
+func (s *SDL) Blank() {
+	s.Clear()
+}
