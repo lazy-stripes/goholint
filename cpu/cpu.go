@@ -68,7 +68,6 @@ func (c *CPU) Tick() {
 				c.state = states.Execute
 			}
 		}
-		break
 
 	case states.FetchExtendedOpcode:
 		opcode := c.NextByte()

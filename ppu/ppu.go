@@ -11,8 +11,11 @@ import (
 	"tigris.fr/gameboy/fifo"
 	"tigris.fr/gameboy/lcd"
 	"tigris.fr/gameboy/memory"
-	"tigris.fr/gameboy/timer"
+	"tigris.fr/gameboy/ppu/states"
 )
+
+// ClockFactor representing the number of ticks taken by each step (base is 4).
+var ClockFactor = 2
 
 // LCDC flags. XXX: Move to subpackage lcdc for nicer namespacing?
 const (
@@ -39,9 +42,10 @@ var TileMapOffsets = [2]uint{0x9800, 0x9c00}
 
 // PPU address space handling video RAM and display.
 type PPU struct {
-	timer.Clock
 	*memory.MMU
 	*fifo.FIFO
+	Fetcher
+	Cycle      int
 	LCD        lcd.Display
 	LCDC       uint8
 	STAT       uint8
@@ -52,11 +56,18 @@ type PPU struct {
 	BGP        uint8
 	OBP0, OBP1 uint8
 	// TODO: DMA, address space to OAM, put in CPU
+
+	ticks int
+	state states.State
+
+	oamIndex int
 }
 
 // New PPU instance.
 func New(display lcd.Display) *PPU {
-	p := PPU{Clock: make(timer.Clock), MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo.New(16, 8), LCD: display}
+	fifo := fifo.New(16, 8)
+	fetcher := Fetcher{fifo: fifo}
+	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo, Fetcher: fetcher, LCD: display}
 	p.Add(memory.Registers{
 		0xff40: &p.LCDC,
 		0xff41: &p.STAT,
@@ -75,9 +86,42 @@ func New(display lcd.Display) *PPU {
 	return &p
 }
 
+// Tick advances the CPU state one step.
+func (p *PPU) Tick() {
+	p.Cycle++
+	p.ticks++
+	if p.ticks < ClockFactor {
+		return
+	}
+
+	// Reset tick counter and execute next state
+	p.ticks = 0
+
+	if p.LCDC&LCDCDisplayEnable == 0 {
+		// Refresh window with "disabled screen" texture.
+		p.LCD.Blank()
+	}
+
+	switch p.state {
+	case states.OAMSearch:
+		p.oamIndex++
+		if p.oamIndex >= 40 {
+			p.state = states.PixelTransfer
+			return
+		}
+
+		// TODO
+
+	case states.PixelTransfer:
+
+	case states.HBlank:
+
+	case states.VBlank:
+	}
+}
+
 // Read a byte from VRAM/registers in the proper number of cycles.
 func (p *PPU) Read(addr uint) uint8 {
-	p.Tick()
 	return p.MMU.Read(addr)
 }
 
@@ -106,15 +150,9 @@ func (p *PPU) FetchTileNumber(x, y uint) uint8 {
 // Run PPU process cadenced by the same clock driving the CPU.
 func (p *PPU) Run() {
 	for {
-		if p.LCDC&LCDCDisplayEnable == 0 {
-			p.Tick()
-			continue
-		}
-
 		for ; p.LY < 144; p.LY++ {
 			// New line unless VBlank
 			// TODO: OAM search (20 clocks)
-			p.Ticks(20)
 
 			// Pixel transfer until HBlank
 			for x := uint(0); x < 160; {
@@ -163,7 +201,6 @@ func (p *PPU) Run() {
 		p.LCD.VBlank() // (114 clocks * 10)
 		fmt.Println("VBLANK")
 		for ; p.LY < 154; p.LY++ {
-			p.Ticks(114)
 		}
 
 		p.LY = 0

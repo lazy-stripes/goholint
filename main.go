@@ -29,7 +29,7 @@ func run() int {
 	tick := 0
 	for {
 		cpu.Tick()
-		//ppu.Clock <- true // Tick(ppu.Clock, 4)
+		ppu.Tick()
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
 		if tick == 171704 {
