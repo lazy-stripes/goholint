@@ -10,10 +10,8 @@ type Instruction func(c *CPU) (done bool)
 var LR35902InstructionSet = []Instruction{
 	0x00: nop,
 	0x01: ldBcD16,
-	/*
-		0x03: incBc,
-		0x04: incB,
-	*/
+	0x03: incBc,
+	0x04: incB,
 	0x05: decB,
 	0x06: ldBD8,
 	0x0c: incC,
@@ -27,28 +25,22 @@ var LR35902InstructionSet = []Instruction{
 		0x16: ldDD8,
 	*/
 	0x17: rlA,
-	/*
-		0x18: jrR8,
-	*/
+	0x18: jrR8,
 	0x1a: ldAAddrDe,
-	/*
-		0x1c: incE,
-		0x1d: decE,
-		0x1e: ldED8,
-	*/
+	0x1c: incE,
+	0x1d: decE,
+	0x1e: ldED8,
 	0x20: jrNzR8,
 	0x21: ldHlD16,
 	0x22: ldiHlA,
 	0x23: incHl,
-	/*
-		0x24: incH,
-		0x25: decH,
-		0x26: ldHD8,
-		0x28: jrZR8,
-		0x2c: incL,
-		0x2d: decL,
-		0x2e: ldLD8,
-	*/
+	0x24: incH,
+	0x25: decH,
+	0x26: ldHD8,
+	0x28: jrZR8,
+	0x2c: incL,
+	0x2d: decL,
+	0x2e: ldLD8,
 	0x31: ldSpD16,
 	0x32: lddHlA,
 	/*
@@ -56,8 +48,8 @@ var LR35902InstructionSet = []Instruction{
 		0x34: incAddrHl,
 		0x35: decAddrHl,
 		0x3c: incA,
-		0x3d: decA,
 	*/
+	0x3d: decA,
 	0x3e: ldAD8,
 	/*
 		0x40: ldBB,
@@ -84,17 +76,17 @@ var LR35902InstructionSet = []Instruction{
 	0x63: ldHE,
 	0x64: ldHH,
 	0x65: ldHL,
+	0x66: ldHAddrHl,
+	0x67: ldHA,
+	0x68: ldLB,
+	0x69: ldLC,
+	0x6a: ldLD,
+	0x6b: ldLE,
+	0x6c: ldLH,
+	0x6d: ldLL,
+	0x6e: ldLAddrHl,
+	0x6f: ldLA,
 	/*
-		0x66: ldHAddrHl,
-		0x67: ldHA,
-		0x68: ldLB,
-		0x69: ldLC,
-		0x6a: ldLD,
-		0x6b: ldLE,
-		0x6c: ldLH,
-		0x6d: ldLL,
-		0x6e: ldLAddrHl,
-		0x6f: ldLA,
 		0x70: ldAddrHlB,
 		0x71: ldAddrHlC,
 		0x72: ldAddrHlD,
@@ -153,8 +145,10 @@ var LR35902InstructionSet = []Instruction{
 	0xe2: ldAddrFfCA,
 	/*
 		0xe5: pushHl,
-		0xea: ldAddrA16A,
-		0xf0: ldAAddrFfA8,
+	*/
+	0xea: ldAddrA16A,
+	0xf0: ldAAddrFfA8,
+	/*
 		0xf1: popAf,
 		0xf5: pushAf,
 		0xfa: ldAAddrA16,
@@ -237,13 +231,6 @@ func ldRrD16(c *CPU, high, low *byte) bool {
 	return false
 }
 
-/*
-// LD r,(HL)
-func ldRAddrHl(c *CPU, register *byte) {
-	*register = c.Read(uint(c.HL()))
-}
-*/
-
 // XOR r
 func xorR(c *CPU, register *byte) {
 	c.A ^= *register
@@ -318,6 +305,13 @@ func popRr(c *CPU, high, low *uint8) {
 	c.ops.Push(readD8At(c, uint(c.SP), low))
 	c.ops.Push(readD8At(c, uint(c.SP+1), high))
 	c.ops.Push(setRr(c, &c.SP, c.SP+2))
+}
+
+// PUSH PC			12 cycles
+func pushPc(c *CPU) {
+	c.ops.Push(setRr(c, &c.SP, c.SP-2))
+	c.ops.Push(writeD8(c, uint(c.SP-1), uint8(c.PC>>8)))   // SP hasn't been decremented yet
+	c.ops.Push(writeD8(c, uint(c.SP-2), uint8(c.PC&0xff))) // SP hasn't been decremented yet
 }
 
 // POP PC			12 cycles
@@ -409,19 +403,19 @@ func ldBcD16(c *CPU) (done bool) {
 	return false
 }
 
-/*
-// 03 INC BC
-func incBc(c *CPU) {
-	incRr(c, &c.B, &c.C)
+// 03 INC BC		8 cycles
+func incBc(c *CPU) (done bool) {
+	incRr(c, &c.B, &c.C) // FIXME: use same logic as other operations. Rename to opIncRr
+	return false
 }
 
-// 04: INC B
-func incB(c *CPU) {
+// 04: INC B		4 cycles
+func incB(c *CPU) (done bool) {
 	incR(c, &c.B)
+	return true
 }
-*/
 
-// 05: DEC B		4 cycles.
+// 05: DEC B		4 cycles
 func decB(c *CPU) (done bool) {
 	decR(c, &c.B)
 	return true
@@ -451,7 +445,7 @@ func ldCD8(c *CPU) (done bool) {
 	return false
 }
 
-// 11: LD DE,d16
+// 11: LD DE,d16	12 cycles
 func ldDeD16(c *CPU) (done bool) {
 	c.ops.Push(readD8(c, &c.E))
 	c.ops.Push(readD8(c, &c.D))
@@ -466,17 +460,17 @@ func incDe(c *CPU) (done bool) {
 
 /*
 // 14: INC D
-func incD(c *CPU) {
+func incD(c *CPU) (done bool) {
 	incR(c, &c.D)
 }
 
 // 15: DEC D
-func decD(c *CPU) {
+func decD(c *CPU) (done bool) {
 	decR(c, &c.D)
 }
 
 // 16: LD D,d8
-func ldDD8(c *CPU) {
+func ldDD8(c *CPU) (done bool) {
 	c.D = c.NextByte()
 }
 */
@@ -486,43 +480,43 @@ func rlA(c *CPU) (done bool) {
 	return true
 }
 
-/*
-// 18: JR r8
-func jrR8(c *CPU) {
+// 18: JR r8		12 cycles
+func jrR8(c *CPU) (done bool) {
 	jrXxR8(c, true)
+	return false
 }
-*/
+
 // 1A: LD A,(DE)	8 cycles
 func ldAAddrDe(c *CPU) (done bool) {
 	c.ops.Push(readD8At(c, uint(c.DE()), &c.A))
 	return false
 }
 
-/*
-// 1C: INC E
-func incE(c *CPU) {
+// 1C: INC E		4 cycles
+func incE(c *CPU) (done bool) {
 	incR(c, &c.E)
+	return true
 }
 
-// 1D: DEC E
-func decE(c *CPU) {
+// 1D: DEC E		4 cycles
+func decE(c *CPU) (done bool) {
 	decR(c, &c.E)
+	return true
 }
-*/
 
-// 1E: LD E,d8
+// 1E: LD E,d8		8 cycles
 func ldED8(c *CPU) (done bool) {
 	c.ops.Push(readD8(c, &c.E))
 	return false
 }
 
-// 20: JR NZ,r8
+// 20: JR NZ,r8		12/8 cycles
 func jrNzR8(c *CPU) (done bool) {
 	jrXxR8(c, c.F&FlagZ == 0)
 	return false
 }
 
-// 21: LD HL,d16
+// 21: LD HL,d16	12 cycles
 func ldHlD16(c *CPU) (done bool) {
 	c.ops.Push(readD8(c, &c.L))
 	c.ops.Push(readD8(c, &c.H))
@@ -545,37 +539,41 @@ func incHl(c *CPU) (done bool) {
 	return false
 }
 
-/*
-// 24: INC H
-func incH(c *CPU) {
+// 24: INC H		4 cycles
+func incH(c *CPU) (done bool) {
 	incR(c, &c.H)
+	return true
 }
 
-// 25: DEC H
-func decH(c *CPU) {
+// 25: DEC H		4 cycles
+func decH(c *CPU) (done bool) {
 	decR(c, &c.H)
+	return true
 }
 
-// 26: LD H,d8
-func ldHD8(c *CPU) {
-	c.H = c.NextByte()
+// 26: LD H,d8		8 cycles
+func ldHD8(c *CPU) (done bool) {
+	c.ops.Push(readD8(c, &c.H))
+	return false
 }
 
-// 28: JR Z,r8
-func jrZR8(c *CPU) {
+// 28: JR Z,r8		12/8 cycles
+func jrZR8(c *CPU) (done bool) {
 	jrXxR8(c, c.F&FlagZ == FlagZ)
+	return false
 }
 
-// 2C: INC L
-func incL(c *CPU) {
+// 2C: INC L		4 cycles
+func incL(c *CPU) (done bool) {
 	incR(c, &c.L)
+	return true
 }
 
-// 2D: DEC L
-func decL(c *CPU) {
+// 2D: DEC L		4 cycles
+func decL(c *CPU) (done bool) {
 	decR(c, &c.L)
+	return true
 }
-*/
 
 // 2E: LD L,d8		8 cycles
 func ldLD8(c *CPU) (done bool) {
@@ -602,34 +600,36 @@ func lddHlA(c *CPU) (done bool) {
 
 /*
 // 33: INC SP
-func incSp(c *CPU) {
+func incSp(c *CPU) (done bool) {
 	c.SP++
 }
 
 // 34: INC (HL)
-func incAddrHl(c *CPU) {
+func incAddrHl(c *CPU) (done bool) {
 	value := c.Read(uint(c.HL()))
 	incR(c, &value)
 	c.Write(uint(c.HL()), value)
 }
 
 // 35: DEC (HL)
-func decAddrHl(c *CPU) {
+func decAddrHl(c *CPU) (done bool) {
 	value := c.Read(uint(c.HL()))
 	decR(c, &value)
 	c.Write(uint(c.HL()), value)
 }
 
 // 3C: INC A
-func incA(c *CPU) {
+func incA(c *CPU) (done bool) {
 	incR(c, &c.A)
 }
-
-// 2D: DEC A
-func decA(c *CPU) {
-	decR(c, &c.A)
-}
 */
+
+// 3D: DEC A
+func decA(c *CPU) (done bool) {
+	decR(c, &c.A)
+	return true
+}
+
 // 3E: LD A,d8		8 cycles
 func ldAD8(c *CPU) (done bool) {
 	c.ops.Push(readD8(c, &c.A))
@@ -638,77 +638,77 @@ func ldAD8(c *CPU) (done bool) {
 
 /*
 // 40: LD B,B
-func ldBB(c *CPU) {
+func ldBB(c *CPU) (done bool) {
 	// nop
 }
 
 // 41: LD B,C
-func ldBC(c *CPU) {
+func ldBC(c *CPU) (done bool) {
 	c.B = c.C
 }
 
 // 42: LD B,D
-func ldBD(c *CPU) {
+func ldBD(c *CPU) (done bool) {
 	c.B = c.D
 }
 
 // 43: LD B,E
-func ldBE(c *CPU) {
+func ldBE(c *CPU) (done bool) {
 	c.B = c.E
 }
 
 // 44: LD B,H
-func ldBH(c *CPU) {
+func ldBH(c *CPU) (done bool) {
 	c.B = c.H
 }
 
 // 45: LD B,L
-func ldBL(c *CPU) {
+func ldBL(c *CPU) (done bool) {
 	c.B = c.L
 }
 
 // 46: LD B,(HL)
-func ldBAddrHl(c *CPU) {
+func ldBAddrHl(c *CPU) (done bool) {
 	ldRAddrHl(c, &c.B)
 }
 
 // 47: LD B,A
-func ldBA(c *CPU) {
+func ldBA(c *CPU) (done bool) {
 	c.B = c.A
 }
 
 // 48: LD C,B
-func ldCB(c *CPU) {
+func ldCB(c *CPU) (done bool) {
 	c.C = c.B
 }
 
 // 49: LD C,C
-func ldCC(c *CPU) {
+func ldCC(c *CPU) (done bool) {
 	// nop
 }
 
 // 4A: LD C,D
-func ldCD(c *CPU) {
+func ldCD(c *CPU) (done bool) {
 	c.C = c.D
 }
 
 // 4B: LD C,E
-func ldCE(c *CPU) {
+func ldCE(c *CPU) (done bool) {
 	c.C = c.E
 }
 
 // 4C: LD C,H
-func ldCH(c *CPU) {
+func ldCH(c *CPU) (done bool) {
 	c.C = c.H
 }
 
 // 4D: LD C,L
-func ldCL(c *CPU) {
+func ldCL(c *CPU) (done bool) {
 	c.C = c.L
 }
 
 // 4E: LD C,(HL)
-func ldCAddrHl(c *CPU) {
+func ldCAddrHl(c *CPU) (done bool) {
 	ldRAddrHl(c, &c.C)
 }
 */
@@ -759,87 +759,102 @@ func ldHL(c *CPU) (done bool) {
 	return true
 }
 
-/*
-// 66: LD H,(HL)
-func ldHAddrHl(c *CPU) {
-	c.H = c.Read(uint(c.HL()))
+// 66: LD H,(HL)	8 cycles
+func ldHAddrHl(c *CPU) (done bool) {
+	c.ops.Push(readD8At(c, uint(c.HL()), &c.H))
+	return false
 }
 
-// 67: LD H,A
-func ldHA(c *CPU) {
+// 67: LD H,A		4 cycles
+func ldHA(c *CPU) (done bool) {
 	c.H = c.A
+	return true
 }
 
-// 68: LD L,B
-func ldLB(c *CPU) {
+// 68: LD L,B		4 cycles
+func ldLB(c *CPU) (done bool) {
 	c.L = c.B
+	return true
 }
 
-// 69: LD L,C
-func ldLC(c *CPU) {
+// 69: LD L,C		4 cycles
+func ldLC(c *CPU) (done bool) {
 	c.L = c.C
+	return true
 }
 
-// 6A: LD L,D
-func ldLD(c *CPU) {
+// 6A: LD L,D		4 cycles
+func ldLD(c *CPU) (done bool) {
 	c.L = c.D
+	return true
 }
 
-// 6B: LD L,E
-func ldLE(c *CPU) {
+// 6B: LD L,E		4 cycles
+func ldLE(c *CPU) (done bool) {
 	c.L = c.E
+	return true
 }
 
-// 6C: LD L,H
-func ldLH(c *CPU) {
+// 6C: LD L,H		4 cycles
+func ldLH(c *CPU) (done bool) {
 	c.L = c.H
+	return true
 }
 
-// 6D: LD L,L
-func ldLL(c *CPU) {
+// 6D: LD L,L		4 cycles
+func ldLL(c *CPU) (done bool) {
 	c.L = c.L
+	return true
 }
 
-// 6E: LD L,(HL)
-func ldLAddrHl(c *CPU) {
-	c.L = c.Read(uint(c.HL()))
+// 6E: LD L,(HL)	8 cycles
+func ldLAddrHl(c *CPU) (done bool) {
+	c.ops.Push(readD8At(c, uint(c.HL()), &c.L))
+	return false
 }
 
-// 6F: LD L,A
-func ldLA(c *CPU) {
+// 6F: LD L,A		4 cycles
+func ldLA(c *CPU) (done bool) {
 	c.L = c.A
+	return true
 }
 
-// 70: LD (HL),B
-func ldAddrHlB(c *CPU) {
-	ldAddrHlR(c, c.A)
+// 70: LD (HL),B	8 cycles
+func ldAddrHlB(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.B))
+	return false
 }
 
-// 71: LD (HL),C
-func ldAddrHlC(c *CPU) {
-	ldAddrHlR(c, c.C)
+// 71: LD (HL),C	8 cycles
+func ldAddrHlC(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.C))
+	return false
 }
 
-// 72: LD (HL),D
-func ldAddrHlD(c *CPU) {
-	ldAddrHlR(c, c.D)
+// 72: LD (HL),D	8 cycles
+func ldAddrHlD(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.D))
+	return false
 }
 
-// 73: LD (HL),E
-func ldAddrHlE(c *CPU) {
-	ldAddrHlR(c, c.E)
+// 73: LD (HL),E	8 cycles
+func ldAddrHlE(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.E))
+	return false
 }
 
-// 74: LD (HL),H
-func ldAddrHlH(c *CPU) {
-	ldAddrHlR(c, c.H)
+// 74: LD (HL),H	8 cycles
+func ldAddrHlH(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.H))
+	return false
 }
 
-// 75: LD (HL),L
-func ldAddrHlL(c *CPU) {
-	ldAddrHlR(c, c.L)
+// 75: LD (HL),L	8 cycles
+func ldAddrHlL(c *CPU) (done bool) {
+	c.ops.Push(writeD8(c, uint(c.HL()), c.L))
+	return false
 }
-*/
+
 // 77: LD (HL),A	8 cycles
 func ldAddrHlA(c *CPU) (done bool) {
 	c.ops.Push(writeD8(c, uint(c.HL()), c.A))
@@ -884,92 +899,92 @@ func ldAL(c *CPU) (done bool) {
 
 /*
 // 7E: LD A,(HL)
-func ldAAddrHl(c *CPU) {
+func ldAAddrHl(c *CPU) (done bool) {
 	ldRAddrHl(c, &c.A)
 }
 
 // 7F: LD A,A
-func ldAA(c *CPU) {
+func ldAA(c *CPU) (done bool) {
 	// nop
 }
 
 // 80: ADD A,B
-func addAB(c *CPU) {
+func addAB(c *CPU) (done bool) {
 	addAR(c, c.B)
 }
 
 // 81: ADD A,C
-func addAC(c *CPU) {
+func addAC(c *CPU) (done bool) {
 	addAR(c, c.C)
 }
 
 // 82: ADD A,D
-func addAD(c *CPU) {
+func addAD(c *CPU) (done bool) {
 	addAR(c, c.D)
 }
 
 // 83: ADD A,E
-func addAE(c *CPU) {
+func addAE(c *CPU) (done bool) {
 	addAR(c, c.E)
 }
 
 // 84: ADD A,H
-func addAH(c *CPU) {
+func addAH(c *CPU) (done bool) {
 	addAR(c, c.H)
 }
 
 // 85: ADD A,L
-func addAL(c *CPU) {
+func addAL(c *CPU) (done bool) {
 	addAR(c, c.L)
 }
 
 // 86: ADD A,(HL)
-func addAAddrHl(c *CPU) {
+func addAAddrHl(c *CPU) (done bool) {
 	addAR(c, c.Read(uint(c.HL())))
 }
 
 // 87: ADD A,A
-func addAA(c *CPU) {
+func addAA(c *CPU) (done bool) {
 	addAR(c, c.A)
 }
 
 // 90: SUB B
-func subB(c *CPU) {
+func subB(c *CPU) (done bool) {
 	subD8(c, c.B)
 }
 
 // 91: SUB C
-func subC(c *CPU) {
+func subC(c *CPU) (done bool) {
 	subD8(c, c.C)
 }
 
 // 92: SUB D
-func subD(c *CPU) {
+func subD(c *CPU) (done bool) {
 	subD8(c, c.D)
 }
 
 // 93: SUB E
-func subE(c *CPU) {
+func subE(c *CPU) (done bool) {
 	subD8(c, c.E)
 }
 
 // 94: SUB H
-func subH(c *CPU) {
+func subH(c *CPU) (done bool) {
 	subD8(c, c.H)
 }
 
 // 95: SUB L
-func subL(c *CPU) {
+func subL(c *CPU) (done bool) {
 	subD8(c, c.L)
 }
 
 // 96: SUB (HL)
-func subAddrHl(c *CPU) {
+func subAddrHl(c *CPU) (done bool) {
 	subD8(c, c.Read(uint(c.HL())))
 }
 
 // 97: SUB A
-func subA(c *CPU) {
+func subA(c *CPU) (done bool) {
 	subD8(c, c.A)
 }
 */
@@ -1012,25 +1027,30 @@ func bit7H(c *CPU) (done bool) {
 
 // CD: CALL a16		24 cycles
 func callA16(c *CPU) (done bool) {
-	c.ops.Push(Operation(func(c *CPU) {
-		// Advance PC before pushing
-		//var addr uint16
-		// FIXME: wrong number of cycles, reading addr should take 2 ticks, let's add a private addr uint16 to CPU!
-		addr := c.NextWord()
-		pushRr(c, uint8(c.PC>>8), uint8(c.PC&0xff)) // 12 cycles
-		c.PC = addr
+	// Advance PC before pushing to stack.
+	c.ops.Push(readD16Low(c, &c.temp))  // 4 cycles
+	c.ops.Push(readD16High(c, &c.temp)) // 4 cycles
+
+	// Do just like pushRr but only read PC after previous operations and tack instantaneous PC update at the end.
+	c.ops.Push(setRr(c, &c.SP, c.SP-2)) // 4 cycles
+	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
+		c.MMU.Write(uint(c.SP+1), uint8(c.PC>>8))
+	}))
+	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
+		c.MMU.Write(uint(c.SP), uint8(c.PC&0xff))
+		c.PC = c.temp
 	}))
 	return false
 }
 
 /*
 // D1: POP DE
-func popDe(c *CPU) {
+func popDe(c *CPU) (done bool) {
 	popRr(c, &c.D, &c.E)
 }
 
 // D5: PUSH DE
-func pushDe(c *CPU) {
+func pushDe(c *CPU) (done bool) {
 	pushRr(c, c.D, c.E)
 }
 */
@@ -1044,7 +1064,7 @@ func ldAddrFfA8A(c *CPU) (done bool) {
 
 /*
 // E1: POP HL
-func popHl(c *CPU) {
+func popHl(c *CPU) (done bool) {
 	popRr(c, &c.H, &c.L)
 }
 */
@@ -1056,33 +1076,44 @@ func ldAddrFfCA(c *CPU) (done bool) {
 
 /*
 // E5: PUSH HL
-func pushHl(c *CPU) {
+func pushHl(c *CPU) (done bool) {
 	pushRr(c, c.H, c.L)
 }
 */
 // EA: LD (a16),A	16 cycles
-func ldAddrA16A(c *CPU) {
-	c.Write(uint(c.NextWord()), c.A)
+func ldAddrA16A(c *CPU) (done bool) {
+	c.ops.Push(readD16Low(c, &c.temp))
+	c.ops.Push(readD16High(c, &c.temp))
+	c.ops.Push(Operation(func(c *CPU) {
+		c.MMU.Write(uint(c.temp), c.A)
+	}))
+	return false
+}
+
+// F0: LD A,(FF00+a8)	12 cycles
+func ldAAddrFfA8(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		c.temp = uint16(c.NextByte()) | 0xff00
+	}))
+	c.ops.Push(Operation(func(c *CPU) {
+		c.A = c.MMU.Read(uint(c.temp))
+	}))
+	return false
 }
 
 /*
-// F0: LD A,(FF00+a8)
-func ldAAddrFfA8(c *CPU) {
-	c.A = c.Read(uint(0xff00 + uint16(c.NextByte())))
-}
-
 // F1: POP AF
-func popAf(c *CPU) {
+func popAf(c *CPU) (done bool) {
 	popRr(c, &c.A, &c.F)
 }
 
 // F5: PUSH AF
-func pushAf(c *CPU) {
+func pushAf(c *CPU) (done bool) {
 	pushRr(c, c.A, c.F)
 }
 
 // FA: LD A,(a16)
-func ldAAddrA16(c *CPU) {
+func ldAAddrA16(c *CPU) (done bool) {
 	c.A = c.Read(uint(c.NextWord()))
 }
 */
