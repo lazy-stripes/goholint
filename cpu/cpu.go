@@ -150,7 +150,7 @@ func (c *CPU) String() string {
 	fmt.Fprintf(&b, "H: %#02x - L: %#02x - HL: %#04x\n", c.H, c.L, c.HL())
 	fmt.Fprintf(&b, "                    SP: %#04x\n", c.SP)
 	fmt.Fprintf(&b, "                    PC: %#04x\n", c.PC)
-	fmt.Fprintf(&b, "Flags:\nZ: %d - N: %d - H: %d - C: %d\n", c.F&FlagZ>>7, c.F&FlagN>>6, c.F&FlagH>>5, c.F&FlagC>>4)
+	fmt.Fprintf(&b, "Flags:\nZ: %d - N: %d - H: %d - C: %d\n\n", c.F&FlagZ>>7, c.F&FlagN>>6, c.F&FlagH>>5, c.F&FlagC>>4)
 	fmt.Fprintf(&b, "Cycle: %d\n", c.Cycle)
 	return b.String()
 }
