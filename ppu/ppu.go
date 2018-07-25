@@ -113,11 +113,33 @@ func (p *PPU) Tick() {
 		// TODO
 
 	case states.PixelTransfer:
+		// Fetch background.
+		y := p.SCY + p.LY
+		tileLine := y % 8
+		tileOffset := p.SCX / 8
+		tileMapRowAddr := p.BGMap() + (uint(y/8) * 32)
+		p.Fetcher.Fetch(tileMapRowAddr, p.TileData(), tileOffset, tileLine)
 
 	case states.HBlank:
 
 	case states.VBlank:
 	}
+}
+
+// BGMap returns the base address of the background map in VRAM.
+func (p *PPU) BGMap() uint {
+	if (p.LCDC & LCDCBGTileMapDisplayeSelect) > 0 {
+		return 0x9c00
+	}
+	return 0x9800
+}
+
+// TileData returns the base address of the background or window tile data in VRAM.
+func (p *PPU) TileData() uint {
+	if (p.LCDC & LCDCBGWindowTileDataSelect) > 0 {
+		return 0x8000
+	}
+	return 0x9000
 }
 
 // Read a byte from VRAM/registers in the proper number of cycles.
@@ -132,19 +154,6 @@ func (p *PPU) Pop() uint {
 		return 1
 	}
 	return 0
-}
-
-// FetchTileNumber returns the index of the tile at current LCD coordinates in the background map. Takes one PPU Tick.
-func (p *PPU) FetchTileNumber(x, y uint) uint8 {
-	// XXX: Must this be computed for every pixel, or can we get away with doing it once per line?
-	var bgMapOffset uint
-	if (p.LCDC & LCDCBGTileMapDisplayeSelect) > 0 {
-		bgMapOffset = 0x9c00
-	} else {
-		bgMapOffset = 0x9800
-	}
-	bgMapIndex := uint(p.SCX)/8 + x/8 + (y/8)*32
-	return p.Read(bgMapOffset + bgMapIndex)
 }
 
 // Run PPU process cadenced by the same clock driving the CPU.
@@ -163,7 +172,7 @@ func (p *PPU) Run() {
 				x += p.Pop()
 				x += p.Pop()
 				y := uint(p.SCY + p.LY)
-				tileNb := p.FetchTileNumber(x, y) // Tick()
+				tileNb := 0 //p.FetchTileNumber(x, y) // Tick()
 
 				x += p.Pop()
 				x += p.Pop()
