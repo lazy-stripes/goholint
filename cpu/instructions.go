@@ -163,58 +163,59 @@ var LR35902ExtendedInstructionSet = []Instruction{
 }
 
 // Operations. The pseudo-atomic things the CPU does as part as an Instruction, which might take many cycles.
+// All these helper functions return an Operation instance to be pushed to a CPU.
 
 // Read next 8-bit argument into destination address.
-func readD8(c *CPU, dest *byte) Operation {
+func opReadD8(c *CPU, dest *byte) Operation {
 	return func(c *CPU) {
 		*dest = c.NextByte()
 	}
 }
 
 // Read 8-bit value from memory into destination address.
-func readD8At(c *CPU, addr uint, dest *byte) Operation {
+func opReadD8At(c *CPU, addr uint, dest *byte) Operation {
 	return func(c *CPU) {
 		*dest = c.MMU.Read(addr)
 	}
 }
 
-// Read least significant byte of 16-bits argument into 16-bit destination.
-func readD16Low(c *CPU, dest *uint16) Operation {
+// Read least significant byte of 16-bits argument into 16-bit destination. Most significant byte is reset.
+func opReadD16Low(c *CPU, dest *uint16) Operation {
 	return func(c *CPU) {
 		*dest = uint16(c.NextByte())
 	}
 }
 
 // Read most significant byte of 16-bits argument into 16-bit destination.
-func readD16High(c *CPU, dest *uint16) Operation {
+func opReadD16High(c *CPU, dest *uint16) Operation {
 	return func(c *CPU) {
 		*dest |= uint16(c.NextByte()) << 8
 	}
 }
 
-// Read least significant byte of 16-bits value from memory into 16-bit destination.
-func readD16LowAt(c *CPU, addr uint, dest *uint16) Operation {
+// Read least significant byte of 16-bits value from memory into 16-bit destination. Most significant byte is reset.
+func opReadD16LowAt(c *CPU, addr uint, dest *uint16) Operation {
 	return func(c *CPU) {
 		*dest = uint16(c.MMU.Read(addr))
 	}
 }
 
 // Read most significant byte of 16-bits value from memory into 16-bit destination.
-func readD16HighAt(c *CPU, addr uint, dest *uint16) Operation {
+func opReadD16HighAt(c *CPU, addr uint, dest *uint16) Operation {
 	return func(c *CPU) {
 		*dest |= uint16(c.MMU.Read(addr)) << 8
 	}
 }
 
 // Write 8-bit value to memory.
-func writeD8(c *CPU, addr uint, value uint8) Operation {
+func opWriteD8(c *CPU, addr uint, value uint8) Operation {
 	return func(c *CPU) {
 		c.MMU.Write(addr, value)
 	}
 }
 
 // Set double register value.
-func setRr(c *CPU, register *uint16, value uint16) Operation {
+func opSetRr(c *CPU, register *uint16, value uint16) Operation {
 	return func(c *CPU) {
 		*register = value
 	}
@@ -223,11 +224,15 @@ func setRr(c *CPU, register *uint16, value uint16) Operation {
 // Instructions. Each takes a CPU pointer and will modify its internal state.
 // Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 
+// Number of cycles reflects the information given in resource linked above.
+// Note that reading the instruction byte itself takes 4 cycles (8 for CB xx instructions.)
+// Each subsequent Operation pushed on the CPU will take an additional 4 cycles.
+
 // Helpers
-// LD rr,d16
-func ldRrD16(c *CPU, high, low *byte) bool {
-	c.ops.Push(readD8(c, low))
-	c.ops.Push(readD8(c, high))
+// LD rr,d16		12 cycles
+func ldRrD16(c *CPU, high, low *byte) (done bool) {
+	c.ops.Push(opReadD8(c, low))
+	c.ops.Push(opReadD8(c, high))
 	return false
 }
 
@@ -295,30 +300,30 @@ func incRr(c *CPU, high, low *uint8) {
 
 // PUSH rr			16 cycles
 func pushRr(c *CPU, high, low uint8) {
-	c.ops.Push(setRr(c, &c.SP, c.SP-2))
-	c.ops.Push(writeD8(c, uint(c.SP-1), high)) // SP hasn't been decremented yet
-	c.ops.Push(writeD8(c, uint(c.SP-2), low))  // SP hasn't been decremented yet
+	c.ops.Push(opSetRr(c, &c.SP, c.SP-2))
+	c.ops.Push(opWriteD8(c, uint(c.SP-1), high)) // SP hasn't been decremented yet
+	c.ops.Push(opWriteD8(c, uint(c.SP-2), low))  // SP hasn't been decremented yet
 }
 
 // POP rr			12 cycles
 func popRr(c *CPU, high, low *uint8) {
-	c.ops.Push(readD8At(c, uint(c.SP), low))
-	c.ops.Push(readD8At(c, uint(c.SP+1), high))
-	c.ops.Push(setRr(c, &c.SP, c.SP+2))
+	c.ops.Push(opReadD8At(c, uint(c.SP), low))
+	c.ops.Push(opReadD8At(c, uint(c.SP+1), high))
+	c.ops.Push(opSetRr(c, &c.SP, c.SP+2))
 }
 
 // PUSH PC			12 cycles
 func pushPc(c *CPU) {
-	c.ops.Push(setRr(c, &c.SP, c.SP-2))
-	c.ops.Push(writeD8(c, uint(c.SP-1), uint8(c.PC>>8)))   // SP hasn't been decremented yet
-	c.ops.Push(writeD8(c, uint(c.SP-2), uint8(c.PC&0xff))) // SP hasn't been decremented yet
+	c.ops.Push(opSetRr(c, &c.SP, c.SP-2))
+	c.ops.Push(opWriteD8(c, uint(c.SP-1), uint8(c.PC>>8)))   // SP hasn't been decremented yet
+	c.ops.Push(opWriteD8(c, uint(c.SP-2), uint8(c.PC&0xff))) // SP hasn't been decremented yet
 }
 
 // POP PC			12 cycles
 func popPc(c *CPU) {
-	c.ops.Push(readD16LowAt(c, uint(c.SP), &c.PC))
-	c.ops.Push(readD16HighAt(c, uint(c.SP+1), &c.PC))
-	c.ops.Push(setRr(c, &c.SP, c.SP+2))
+	c.ops.Push(opReadD16LowAt(c, uint(c.SP), &c.PC))
+	c.ops.Push(opReadD16HighAt(c, uint(c.SP+1), &c.PC))
+	c.ops.Push(opSetRr(c, &c.SP, c.SP+2))
 }
 
 // RL r -- rotate left through carry
@@ -398,8 +403,8 @@ func nop(c *CPU) (done bool) {
 
 // 01: LD BC,d16	12 cycles
 func ldBcD16(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.C))
-	c.ops.Push(readD8(c, &c.B))
+	c.ops.Push(opReadD8(c, &c.C))
+	c.ops.Push(opReadD8(c, &c.B))
 	return false
 }
 
@@ -423,7 +428,7 @@ func decB(c *CPU) (done bool) {
 
 // 06: LD B,d8		8 cycles
 func ldBD8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.B))
+	c.ops.Push(opReadD8(c, &c.B))
 	return false
 }
 
@@ -441,14 +446,14 @@ func decC(c *CPU) (done bool) {
 
 // 0E: LD C,d8		8 cycles
 func ldCD8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.C))
+	c.ops.Push(opReadD8(c, &c.C))
 	return false
 }
 
 // 11: LD DE,d16	12 cycles
 func ldDeD16(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.E))
-	c.ops.Push(readD8(c, &c.D))
+	c.ops.Push(opReadD8(c, &c.E))
+	c.ops.Push(opReadD8(c, &c.D))
 	return false
 }
 
@@ -488,7 +493,7 @@ func jrR8(c *CPU) (done bool) {
 
 // 1A: LD A,(DE)	8 cycles
 func ldAAddrDe(c *CPU) (done bool) {
-	c.ops.Push(readD8At(c, uint(c.DE()), &c.A))
+	c.ops.Push(opReadD8At(c, uint(c.DE()), &c.A))
 	return false
 }
 
@@ -506,7 +511,7 @@ func decE(c *CPU) (done bool) {
 
 // 1E: LD E,d8		8 cycles
 func ldED8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.E))
+	c.ops.Push(opReadD8(c, &c.E))
 	return false
 }
 
@@ -518,8 +523,8 @@ func jrNzR8(c *CPU) (done bool) {
 
 // 21: LD HL,d16	12 cycles
 func ldHlD16(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.L))
-	c.ops.Push(readD8(c, &c.H))
+	c.ops.Push(opReadD8(c, &c.L))
+	c.ops.Push(opReadD8(c, &c.H))
 	return false
 }
 
@@ -553,7 +558,7 @@ func decH(c *CPU) (done bool) {
 
 // 26: LD H,d8		8 cycles
 func ldHD8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.H))
+	c.ops.Push(opReadD8(c, &c.H))
 	return false
 }
 
@@ -577,14 +582,14 @@ func decL(c *CPU) (done bool) {
 
 // 2E: LD L,d8		8 cycles
 func ldLD8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.L))
+	c.ops.Push(opReadD8(c, &c.L))
 	return false
 }
 
 // 31: LD SP,d16	12 cycles
 func ldSpD16(c *CPU) (done bool) {
-	c.ops.Push(readD16Low(c, &c.SP))
-	c.ops.Push(readD16High(c, &c.SP))
+	c.ops.Push(opReadD16Low(c, &c.SP))
+	c.ops.Push(opReadD16High(c, &c.SP))
 	return false
 }
 
@@ -632,7 +637,7 @@ func decA(c *CPU) (done bool) {
 
 // 3E: LD A,d8		8 cycles
 func ldAD8(c *CPU) (done bool) {
-	c.ops.Push(readD8(c, &c.A))
+	c.ops.Push(opReadD8(c, &c.A))
 	return false
 }
 
@@ -761,7 +766,7 @@ func ldHL(c *CPU) (done bool) {
 
 // 66: LD H,(HL)	8 cycles
 func ldHAddrHl(c *CPU) (done bool) {
-	c.ops.Push(readD8At(c, uint(c.HL()), &c.H))
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.H))
 	return false
 }
 
@@ -803,13 +808,12 @@ func ldLH(c *CPU) (done bool) {
 
 // 6D: LD L,L		4 cycles
 func ldLL(c *CPU) (done bool) {
-	c.L = c.L
 	return true
 }
 
 // 6E: LD L,(HL)	8 cycles
 func ldLAddrHl(c *CPU) (done bool) {
-	c.ops.Push(readD8At(c, uint(c.HL()), &c.L))
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.L))
 	return false
 }
 
@@ -821,43 +825,43 @@ func ldLA(c *CPU) (done bool) {
 
 // 70: LD (HL),B	8 cycles
 func ldAddrHlB(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.B))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.B))
 	return false
 }
 
 // 71: LD (HL),C	8 cycles
 func ldAddrHlC(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.C))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.C))
 	return false
 }
 
 // 72: LD (HL),D	8 cycles
 func ldAddrHlD(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.D))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.D))
 	return false
 }
 
 // 73: LD (HL),E	8 cycles
 func ldAddrHlE(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.E))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.E))
 	return false
 }
 
 // 74: LD (HL),H	8 cycles
 func ldAddrHlH(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.H))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.H))
 	return false
 }
 
 // 75: LD (HL),L	8 cycles
 func ldAddrHlL(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.L))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.L))
 	return false
 }
 
 // 77: LD (HL),A	8 cycles
 func ldAddrHlA(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(c.HL()), c.A))
+	c.ops.Push(opWriteD8(c, uint(c.HL()), c.A))
 	return false
 }
 
@@ -1028,12 +1032,12 @@ func bit7H(c *CPU) (done bool) {
 // CD: CALL a16		24 cycles
 func callA16(c *CPU) (done bool) {
 	// Advance PC before pushing to stack.
-	c.ops.Push(readD16Low(c, &c.temp))  // 4 cycles
-	c.ops.Push(readD16High(c, &c.temp)) // 4 cycles
+	c.ops.Push(opReadD16Low(c, &c.temp))  // 4 cycles
+	c.ops.Push(opReadD16High(c, &c.temp)) // 4 cycles
 
 	// Do just like pushRr but only read PC after previous operations and tack instantaneous PC update at the end.
-	c.ops.Push(setRr(c, &c.SP, c.SP-2)) // 4 cycles
-	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
+	c.ops.Push(opSetRr(c, &c.SP, c.SP-2)) // 4 cycles
+	c.ops.Push(Operation(func(c *CPU) {   // 4 cycles
 		c.MMU.Write(uint(c.SP+1), uint8(c.PC>>8))
 	}))
 	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
@@ -1057,7 +1061,7 @@ func pushDe(c *CPU) (done bool) {
 // E0: LD (FF00+a8),A	12 cycles
 func ldAddrFfA8A(c *CPU) (done bool) {
 	c.ops.Push(Operation(func(c *CPU) {
-		c.ops.Push(writeD8(c, uint(0xff00+uint16(c.NextByte())), c.A))
+		c.ops.Push(opWriteD8(c, uint(0xff00+uint16(c.NextByte())), c.A))
 	}))
 	return false
 }
@@ -1070,7 +1074,7 @@ func popHl(c *CPU) (done bool) {
 */
 // E2: LD (FF00+C),A	8 cycles
 func ldAddrFfCA(c *CPU) (done bool) {
-	c.ops.Push(writeD8(c, uint(0xff00+uint16(c.C)), c.A))
+	c.ops.Push(opWriteD8(c, uint(0xff00+uint16(c.C)), c.A))
 	return false
 }
 
@@ -1082,8 +1086,8 @@ func pushHl(c *CPU) (done bool) {
 */
 // EA: LD (a16),A	16 cycles
 func ldAddrA16A(c *CPU) (done bool) {
-	c.ops.Push(readD16Low(c, &c.temp))
-	c.ops.Push(readD16High(c, &c.temp))
+	c.ops.Push(opReadD16Low(c, &c.temp))
+	c.ops.Push(opReadD16High(c, &c.temp))
 	c.ops.Push(Operation(func(c *CPU) {
 		c.MMU.Write(uint(c.temp), c.A)
 	}))

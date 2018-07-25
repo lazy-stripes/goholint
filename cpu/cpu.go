@@ -20,9 +20,6 @@ const (
 	FlagZ
 )
 
-// TODO: ... some StateMachine struct?
-type State int
-
 // A CPU implementation of the DMG-01's
 type CPU struct {
 	timer.Clock
