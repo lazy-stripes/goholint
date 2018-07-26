@@ -11,7 +11,7 @@ import (
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
 	Palette  Palette
-	Enabled  bool
+	enabled  bool
 	window   *sdl.Window
 	renderer *sdl.Renderer
 	texture  *sdl.Texture
@@ -81,17 +81,19 @@ func (s *SDL) Clear() {
 }
 
 func (s *SDL) Enable() {
-	s.Clear()
-	s.Enabled = true
+	s.enabled = true
+}
+
+func (s *SDL) Enabled() bool {
+	return s.enabled
 }
 
 func (s *SDL) Disable() {
-	s.Clear()
-	s.Enabled = false
+	s.enabled = false
 }
 
 func (s *SDL) Write(pixel Pixel) {
-	if s.Enabled {
+	if s.enabled {
 		s.buffer[s.offset] = s.Palette[pixel].R
 		s.buffer[s.offset+1] = s.Palette[pixel].G
 		s.buffer[s.offset+2] = s.Palette[pixel].B
@@ -106,7 +108,7 @@ func (s *SDL) HBlank() {
 }
 
 func (s *SDL) VBlank() {
-	if s.Enabled {
+	if s.enabled {
 		//sdl.Do(func() {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
 		s.renderer.Clear()

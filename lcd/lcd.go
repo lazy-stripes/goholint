@@ -6,7 +6,7 @@ import (
 )
 
 // Pixel is an index into a display-defined palette.
-type Pixel int
+type Pixel uint8
 
 // Palette containing 4 indexed colors.
 type Palette [4]color.NRGBA
@@ -14,6 +14,7 @@ type Palette [4]color.NRGBA
 // Display supporting pixel output and palettes.
 type Display interface {
 	Enable()
+	Enabled() bool
 	Disable()
 	Close()
 	Write(pixel Pixel)
@@ -59,7 +60,7 @@ var DefaultPalette = [4]color.NRGBA{
 // Console display shifting pixels out to standard output.
 type Console struct {
 	Palette [4]rune
-	Enabled bool
+	enabled bool
 }
 
 // NewConsole returns a Console display with dark-themed unicode pixels.
@@ -68,27 +69,31 @@ func NewConsole() *Console {
 }
 
 func (c *Console) Enable() {
-	c.Enabled = true
+	c.enabled = true
+}
+
+func (c *Console) Enabled() bool {
+	return c.enabled
 }
 
 func (c *Console) Disable() {
-	c.Enabled = false
+	c.enabled = false
 }
 
 func (c *Console) Write(pixel Pixel) {
-	if c.Enabled {
+	if c.enabled {
 		fmt.Printf("%c", c.Palette[pixel])
 	}
 }
 
 func (c *Console) HBlank() {
-	if c.Enabled {
+	if c.enabled {
 		fmt.Print("\n")
 	}
 }
 
 func (c *Console) VBlank() {
-	if c.Enabled {
+	if c.enabled {
 		fmt.Print("\n === VBLANK ===\n")
 		//fmt.Print("\033[2J")
 	}

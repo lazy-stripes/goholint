@@ -19,11 +19,9 @@ var LR35902InstructionSet = []Instruction{
 	0x0e: ldCD8,
 	0x11: ldDeD16,
 	0x13: incDe,
-	/*
-		0x14: incD,
-		0x15: decD,
-		0x16: ldDD8,
-	*/
+	0x14: incD,
+	0x15: decD,
+	0x16: ldDD8,
 	0x17: rlA,
 	0x18: jrR8,
 	0x1a: ldAAddrDe,
@@ -112,12 +110,14 @@ var LR35902InstructionSet = []Instruction{
 		0x85: addAL,
 		0x86: addAAddrHl,
 		0x87: addAA,
-		0x90: subB,
-		0x91: subC,
-		0x92: subD,
-		0x93: subE,
-		0x94: subH,
-		0x95: subL,
+	*/
+	0x90: subB,
+	0x91: subC,
+	0x92: subD,
+	0x93: subE,
+	0x94: subH,
+	0x95: subL,
+	/*
 		0x96: subAddrHl,
 		0x97: subA,
 			0x98: sbcAB,
@@ -463,22 +463,24 @@ func incDe(c *CPU) (done bool) {
 	return false
 }
 
-/*
-// 14: INC D
+// 14: INC D		4 cycles
 func incD(c *CPU) (done bool) {
 	incR(c, &c.D)
+	return true
 }
 
-// 15: DEC D
+// 15: DEC D		4 cycles
 func decD(c *CPU) (done bool) {
 	decR(c, &c.D)
+	return true
 }
 
-// 16: LD D,d8
+// 16: LD D,d8		8 cycles
 func ldDD8(c *CPU) (done bool) {
-	c.D = c.NextByte()
+	c.ops.Push(opReadD8(c, &c.D))
+	return false
 }
-*/
+
 // 17: RLA -- RL A	4 cycles
 func rlA(c *CPU) (done bool) {
 	rlR(c, &c.A)
@@ -951,37 +953,44 @@ func addAAddrHl(c *CPU) (done bool) {
 func addAA(c *CPU) (done bool) {
 	addAR(c, c.A)
 }
-
-// 90: SUB B
+*/
+// 90: SUB B		4 cycles
 func subB(c *CPU) (done bool) {
 	subD8(c, c.B)
+	return true
 }
 
-// 91: SUB C
+// 91: SUB C		4 cycles
 func subC(c *CPU) (done bool) {
 	subD8(c, c.C)
+	return true
 }
 
-// 92: SUB D
+// 92: SUB D		4 cycles
 func subD(c *CPU) (done bool) {
 	subD8(c, c.D)
+	return true
 }
 
-// 93: SUB E
+// 93: SUB E		4 cycles
 func subE(c *CPU) (done bool) {
 	subD8(c, c.E)
+	return true
 }
 
-// 94: SUB H
+// 94: SUB H		4 cycles
 func subH(c *CPU) (done bool) {
 	subD8(c, c.H)
+	return true
 }
 
-// 95: SUB L
+// 95: SUB L		4 cycles
 func subL(c *CPU) (done bool) {
 	subD8(c, c.L)
+	return true
 }
 
+/*
 // 96: SUB (HL)
 func subAddrHl(c *CPU) (done bool) {
 	subD8(c, c.Read(uint(c.HL())))

@@ -57,17 +57,19 @@ type PPU struct {
 	OBP0, OBP1 uint8
 	// TODO: DMA, address space to OAM, put in CPU
 
-	ticks int
-	state states.State
+	ticks     int
+	lineTicks int // To adjust duration of HBlank state
+	state     states.State
 
 	oamIndex int
+
+	x uint
 }
 
 // New PPU instance.
 func New(display lcd.Display) *PPU {
 	fifo := fifo.New(16, 8)
-	fetcher := Fetcher{fifo: fifo}
-	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo, Fetcher: fetcher, LCD: display}
+	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo, LCD: display}
 	p.Add(memory.Registers{
 		0xff40: &p.LCDC,
 		0xff41: &p.STAT,
@@ -83,6 +85,7 @@ func New(display lcd.Display) *PPU {
 	})
 	p.Add(memory.NewVRAM(0x8000, 0x2000)) // VRAM
 	p.Add(memory.NewVRAM(0xfe00, 0xa0))   // OAM RAM (TODO: mapped OBJ struct)
+	p.Fetcher = Fetcher{fifo: fifo, vRAM: p.MMU}
 	return &p
 }
 
@@ -90,6 +93,7 @@ func New(display lcd.Display) *PPU {
 func (p *PPU) Tick() {
 	p.Cycle++
 	p.ticks++
+	p.lineTicks++
 	if p.ticks < ClockFactor {
 		return
 	}
@@ -97,32 +101,89 @@ func (p *PPU) Tick() {
 	// Reset tick counter and execute next state
 	p.ticks = 0
 
-	if p.LCDC&LCDCDisplayEnable == 0 {
-		// Refresh window with "disabled screen" texture.
-		p.LCD.Blank()
+	if !p.LCD.Enabled() {
+		if p.LCDC&LCDCDisplayEnable == 0 {
+			// Refresh window with "disabled screen" texture.
+			p.LCD.Blank()
+		} else {
+			p.LCD.Enable()
+		}
+	} else {
+		if p.LCDC&LCDCDisplayEnable == 0 {
+			p.LCD.Disable()
+		}
+	}
+
+	if !p.LCD.Enabled() {
+		return
 	}
 
 	switch p.state {
 	case states.OAMSearch:
+		// TODO
 		p.oamIndex++
 		if p.oamIndex >= 40 {
+			// Initialize fetcher for background.
+			y := p.SCY + p.LY
+			tileLine := y % 8
+			tileOffset := p.SCX / 8
+			tileMapRowAddr := p.BGMap() + (uint(y/8) * 32)
+			tileDataAddr, signedID := p.TileData()
+			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
+
+			p.x = 0
 			p.state = states.PixelTransfer
+		}
+
+	case states.PixelTransfer:
+		p.Fetcher.Tick()
+		// TODO: handle display mode
+		// TODO: drop pixels according to SCX
+		// TODO: sprites display
+		if p.FIFO.Size() <= 8 {
 			return
 		}
 
-		// TODO
-
-	case states.PixelTransfer:
-		// Fetch background.
-		y := p.SCY + p.LY
-		tileLine := y % 8
-		tileOffset := p.SCX / 8
-		tileMapRowAddr := p.BGMap() + (uint(y/8) * 32)
-		p.Fetcher.Fetch(tileMapRowAddr, p.TileData(), tileOffset, tileLine)
+		p.x += p.Pop()
+		if p.x == 160 {
+			p.LCD.HBlank()
+			p.state = states.HBlank
+		}
 
 	case states.HBlank:
+		// Simply wait the proper number of clock cycles.
+		if p.lineTicks >= 456 {
+			// Done, either move to new line, or VBlank.
+			p.lineTicks = 0
+			p.LY++
+			if p.LY == 144 {
+				p.LCD.VBlank()
+				p.state = states.VBlank
+			} else {
+				// Prepare to go back to OAM search state.
+				p.oamIndex = 0
+				p.state = states.OAMSearch
+			}
+		}
 
 	case states.VBlank:
+		// Simply wait the proper number of clock cycles. Special case for last line.
+		if p.lineTicks == 4 && p.LY == 153 {
+			p.LY = 0
+			// Request interrupt. Maybe add a hook to LY setter?
+		}
+
+		if p.lineTicks >= 456 {
+			p.lineTicks = 0
+			if p.LY == 0 { // We wrapped back to 0 about 452 ticks ago. Start rendering from top of screen again.
+				p.oamIndex = 0
+				p.state = states.OAMSearch
+				// TODO: interrupts
+			} else {
+				p.LY++
+			}
+			// TODO: LYC=LY interrupt
+		}
 	}
 }
 
@@ -135,11 +196,11 @@ func (p *PPU) BGMap() uint {
 }
 
 // TileData returns the base address of the background or window tile data in VRAM.
-func (p *PPU) TileData() uint {
+func (p *PPU) TileData() (addr uint, signedID bool) {
 	if (p.LCDC & LCDCBGWindowTileDataSelect) > 0 {
-		return 0x8000
+		return 0x8000, false
 	}
-	return 0x9000
+	return 0x9000, true
 }
 
 // Read a byte from VRAM/registers in the proper number of cycles.
@@ -150,7 +211,7 @@ func (p *PPU) Read(addr uint) uint8 {
 // Pop tries shifting a pixel out of the FIFO a,d returns the number of shifted pixels (0 or 1).
 func (p *PPU) Pop() uint {
 	if pixel, err := p.FIFO.Pop(); err == nil {
-		p.LCD.Write(lcd.Pixel(pixel.(int)))
+		p.LCD.Write(lcd.Pixel(pixel.(uint8)))
 		return 1
 	}
 	return 0
