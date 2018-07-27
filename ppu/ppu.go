@@ -57,9 +57,8 @@ type PPU struct {
 	OBP0, OBP1 uint8
 	// TODO: DMA, address space to OAM, put in CPU
 
-	ticks     int
-	lineTicks int // To adjust duration of HBlank state
-	state     states.State
+	ticks int
+	state states.State
 
 	oamIndex int
 
@@ -93,13 +92,6 @@ func New(display lcd.Display) *PPU {
 func (p *PPU) Tick() {
 	p.Cycle++
 	p.ticks++
-	p.lineTicks++
-	if p.ticks < ClockFactor {
-		return
-	}
-
-	// Reset tick counter and execute next state
-	p.ticks = 0
 
 	if !p.LCD.Enabled() {
 		if p.LCDC&LCDCDisplayEnable == 0 {
@@ -152,9 +144,9 @@ func (p *PPU) Tick() {
 
 	case states.HBlank:
 		// Simply wait the proper number of clock cycles.
-		if p.lineTicks >= 456 {
+		if p.ticks >= 456 {
 			// Done, either move to new line, or VBlank.
-			p.lineTicks = 0
+			p.ticks = 0
 			p.LY++
 			if p.LY == 144 {
 				p.LCD.VBlank()
@@ -168,13 +160,13 @@ func (p *PPU) Tick() {
 
 	case states.VBlank:
 		// Simply wait the proper number of clock cycles. Special case for last line.
-		if p.lineTicks == 4 && p.LY == 153 {
+		if p.ticks == 4 && p.LY == 153 {
 			p.LY = 0
 			// Request interrupt. Maybe add a hook to LY setter?
 		}
 
-		if p.lineTicks >= 456 {
-			p.lineTicks = 0
+		if p.ticks >= 456 {
+			p.ticks = 0
 			if p.LY == 0 { // We wrapped back to 0 about 452 ticks ago. Start rendering from top of screen again.
 				p.oamIndex = 0
 				p.state = states.OAMSearch

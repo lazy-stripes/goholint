@@ -49,7 +49,8 @@ func NewSDL() *SDL {
 		return nil // TODO: result, err
 	}
 
-	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STATIC, 160, 144)
+	// The way SDL textures handle endianness is unclear, but it seems ABGR format works with our RGBA buffer.
+	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STATIC, ScreenWidth, ScreenHeight)
 	if err != nil {
 		renderer.Destroy()
 		window.Destroy()

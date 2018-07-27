@@ -174,18 +174,17 @@ func instructionError(c *CPU, extended bool) {
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
 		// Dump memory
-		/*
-			if f, err := os.Create("ram-dump.bin"); err == nil {
-				defer func() {
-					f.Close()
-				}()
-				buf := make([]byte, 1, 1)
-				for addr := uint(0); addr < 0x10000; addr++ {
-					buf[0] = c.MMU.Read(addr)
-					f.Write(buf)
-				}
-				fmt.Println("RAM dumped.")
-			}*/
+		if f, err := os.Create("ram-dump.bin"); err == nil {
+			defer func() {
+				f.Close()
+			}()
+			buf := make([]byte, 1, 1)
+			for addr := uint(0); addr < 0x10000; addr++ {
+				buf[0] = c.MMU.Read(addr)
+				f.Write(buf)
+			}
+			fmt.Println("RAM dumped to ram-dump.bin")
+		}
 
 		os.Exit(255)
 	}
