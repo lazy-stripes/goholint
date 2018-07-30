@@ -31,6 +31,7 @@ func (f *Fetcher) Start(mapAddr, dataAddr uint, tileOffset, tileLine uint8, sign
 	f.signedID = signedID
 	f.state = states.ReadTileID
 	f.Enabled = true
+	f.fifo.Clear()
 }
 
 // Tick advances the fetcher's state machine one step.

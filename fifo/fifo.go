@@ -21,6 +21,11 @@ func New(size, minLen int) *FIFO {
 var errFIFOOverflow = errors.New("FIFO buffer overflow")
 var errFIFOUnderrun = errors.New("FIFO buffer underrun")
 
+// Clear and reset FIFO.
+func (f *FIFO) Clear() {
+	f.in, f.out, f.len = 0, 0, 0
+}
+
 // Push a pixel in the FIFO.
 func (f *FIFO) Push(item interface{}) error {
 	if f.len == len(f.fifo) {
