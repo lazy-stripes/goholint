@@ -33,7 +33,8 @@ type CPU struct {
 	ops   *fifo.FIFO
 	ticks uint
 	state int    // FIXME: enum
-	temp  uint16 // Internal work register storing micro-operation results
+	temp8 uint8  // Internal work register storing 8-bit micro-operation results
+	temp  uint16 // Internal work register storing 16-bit micro-operation results
 }
 
 // New CPU running DMG code in the given address space starting from 0.
