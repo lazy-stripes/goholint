@@ -46,9 +46,9 @@ func main() {
 	var exitcode int
 	runtime.LockOSThread()
 	sdl.Init(sdl.INIT_VIDEO)
-	sdl.Main(func() {
-		exitcode = run()
-	})
+	//sdl.Main(func() {
+	exitcode = run()
+	//})
 	// os.Exit(..) must run here! If run in sdl.Main(..) above, it will cause
 	// premature quitting of sdl.Main(..) function; resource cleaning deferred
 	// calls/closing of channels may never run
