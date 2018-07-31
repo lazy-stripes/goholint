@@ -65,9 +65,9 @@ func NewSDL() *SDL {
 		return nil // TODO: result, err
 	}
 
-	screenLen := ScreenWidth * ScreenHeight * 4 // Each pixel fits in uint32
-	buffer := make([]byte, screenLen, screenLen)
-	sdl := SDL{Palette: testPalette, renderer: renderer, texture: texture, buffer: buffer}
+	screenLen := ScreenWidth * ScreenHeight * 4 // Go bindings use byte slices but SDL thinks in terms of uint32
+	buffer := make([]byte, screenLen)
+	sdl := SDL{Palette: DefaultPalette, renderer: renderer, texture: texture, buffer: buffer}
 	sdl.Clear()
 	return &sdl
 }

@@ -200,10 +200,12 @@ func (p *PPU) Read(addr uint) uint8 {
 	return p.MMU.Read(addr)
 }
 
-// Pop tries shifting a pixel out of the FIFO a,d returns the number of shifted pixels (0 or 1).
+// Pop tries shifting a pixel out of the FIFO and returns the number of shifted pixels (0 or 1).
 func (p *PPU) Pop() uint {
 	if pixel, err := p.FIFO.Pop(); err == nil {
-		p.LCD.Write(lcd.Pixel(pixel.(uint8)))
+		// This was shamefully taken from coffee-gb.
+		color := (p.BGP >> (pixel.(uint8) << 1)) & 3
+		p.LCD.Write(lcd.Pixel(color))
 		return 1
 	}
 	return 0
