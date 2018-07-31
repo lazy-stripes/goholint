@@ -38,7 +38,7 @@ type CPU struct {
 
 // New CPU running DMG code in the given address space starting from 0.
 func New(mmu *memory.MMU) *CPU {
-	return &CPU{Clock: make(timer.Clock), MMU: mmu, ops: fifo.New(4, 0)}
+	return &CPU{Clock: make(timer.Clock), MMU: mmu, ops: fifo.New(6, 0)}
 }
 
 // Tick advances the CPU state one step.
