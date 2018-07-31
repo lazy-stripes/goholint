@@ -3,6 +3,7 @@ package lcd
 import (
 	"fmt"
 	"image/color"
+	"io/ioutil"
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -43,6 +44,12 @@ func NewSDL() *SDL {
 	}
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	if info, err := renderer.GetInfo(); err == nil {
+		fmt.Println("Renderer info:")
+		fmt.Printf("SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
+		fmt.Printf("SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
+		fmt.Printf("SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
+	}
 	if err != nil {
 		window.Destroy()
 		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
@@ -72,13 +79,11 @@ func (s *SDL) Close() {
 }
 
 func (s *SDL) Clear() {
-	//sdl.Do(func() {
 	s.renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
 	s.renderer.Clear()
 	s.renderer.SetDrawColor(ColorBlackR, ColorBlackG, ColorBlackB, sdl.ALPHA_OPAQUE)
 	s.renderer.DrawLine(0, ScreenHeight/2, ScreenWidth, ScreenHeight/2)
 	s.renderer.Present()
-	//})
 }
 
 func (s *SDL) Enable() {
@@ -100,7 +105,6 @@ func (s *SDL) Write(pixel Pixel) {
 		s.buffer[s.offset+2] = s.Palette[pixel].B
 		s.buffer[s.offset+3] = s.Palette[pixel].A
 		s.offset += 4
-		//fmt.Printf("%c", s.Palette[pixel])
 	}
 }
 
@@ -110,12 +114,13 @@ func (s *SDL) HBlank() {
 
 func (s *SDL) VBlank() {
 	if s.enabled {
-		//sdl.Do(func() {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
 		s.renderer.Clear()
 		s.renderer.Copy(s.texture, nil, nil)
 		s.renderer.Present()
-		//})
+		//for t := time.Now(); time.Now().Sub(t) < time.Nanosecond*400; {
+		//}
+
 		if s.offset != ScreenWidth*ScreenHeight*4 {
 			fmt.Println("MISSING PIXELS!")
 		}
@@ -127,4 +132,8 @@ func (s *SDL) VBlank() {
 
 func (s *SDL) Blank() {
 	s.Clear()
+}
+
+func (s *SDL) Dump() {
+	ioutil.WriteFile("lcd-buffer-dump.bin", s.buffer, 0644)
 }
