@@ -4,7 +4,7 @@ import (
 	"go.tigris.fr/gameboy/memory"
 )
 
-// GameBoy (naive) implementation.
+// GameBoy (naive) implementation. Not used yet.
 type GameBoy struct {
 	MMU memory.MMU
 	// CPU cpu.CPU

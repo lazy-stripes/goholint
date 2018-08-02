@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
+	"go.tigris.fr/gameboy/log"
 )
 
 // SDL display shifting pixels out to a single texture.
@@ -45,10 +46,10 @@ func NewSDL() *SDL {
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if info, err := renderer.GetInfo(); err == nil {
-		fmt.Println("Renderer info:")
-		fmt.Printf("SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
-		fmt.Printf("SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
-		fmt.Printf("SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
+		log.Println("Renderer info:")
+		log.Printf("SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
+		log.Printf("SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
+		log.Printf("SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 	if err != nil {
 		window.Destroy()
@@ -72,12 +73,14 @@ func NewSDL() *SDL {
 	return &sdl
 }
 
+// Close frees all resources created by SDL.
 func (s *SDL) Close() {
 	s.texture.Destroy()
 	s.renderer.Destroy()
 	s.window.Destroy()
 }
 
+// Clear draws a disabled GB screen (white background with a blank line through the middle).
 func (s *SDL) Clear() {
 	s.renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
 	s.renderer.Clear()
@@ -86,18 +89,22 @@ func (s *SDL) Clear() {
 	s.renderer.Present()
 }
 
+// Enable turns on the display. Pixels will be drawn to our texture and showed at VBlank time.
 func (s *SDL) Enable() {
 	s.enabled = true
 }
 
+// Enabled returns whether the display is enabled or not (as part of the Display interface).
 func (s *SDL) Enabled() bool {
 	return s.enabled
 }
 
+// Disable turns off the display. A disabled GB screen will be drawn at VBmlank time.
 func (s *SDL) Disable() {
 	s.enabled = false
 }
 
+// Write adds a new pixel (a mere index into our screen palette) to the texture buffer.
 func (s *SDL) Write(pixel Pixel) {
 	if s.enabled {
 		s.buffer[s.offset] = s.Palette[pixel].R
@@ -108,10 +115,11 @@ func (s *SDL) Write(pixel Pixel) {
 	}
 }
 
+// HBlank is only there as part of the Display interface and has no use in this context (yet?).
 func (s *SDL) HBlank() {
-	// XXX: Do we truly need this function?
 }
 
+// VBlank is called when the PPU reaches VBlank state. At this point, our SDL buffer should be ready to display.
 func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
@@ -130,10 +138,12 @@ func (s *SDL) VBlank() {
 	}
 }
 
+// Blank is called on each PPU step when the display is disabled, drawing the disabled GB screen.
 func (s *SDL) Blank() {
 	s.Clear()
 }
 
+// Dump writes the current pixel buffer to file for debugging purposes.
 func (s *SDL) Dump() {
 	ioutil.WriteFile("lcd-buffer-dump.bin", s.buffer, 0644)
 }

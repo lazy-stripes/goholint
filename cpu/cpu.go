@@ -8,7 +8,6 @@ import (
 	"go.tigris.fr/gameboy/cpu/states"
 	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/ppu"
 	"go.tigris.fr/gameboy/timer"
 )
 
@@ -37,7 +36,7 @@ type CPU struct {
 	temp  uint16 // Internal work register storing 16-bit micro-operation results
 }
 
-// New CPU running DMG code in the given address space starting from 0.
+// New CPU running code in the given address space starting from 0.
 func New(mmu *memory.MMU) *CPU {
 	return &CPU{Clock: make(timer.Clock), MMU: mmu, ops: fifo.New(6, 0)}
 }
@@ -188,38 +187,5 @@ func instructionError(c *CPU, extended bool) {
 		}
 
 		os.Exit(255)
-	}
-}
-
-// Execute the next instruction (and handles extensions to base instruction set.)
-func (c *CPU) Execute() {
-	opcode := c.NextByte()
-	if opcode == 0xcb { // Extended instruction set
-		defer instructionError(c, true)
-		LR35902ExtendedInstructionSet[c.NextByte()](c)
-	} else {
-		defer instructionError(c, false)
-		LR35902InstructionSet[opcode](c)
-	}
-}
-
-// Run CPU on the current address space.
-func (c *CPU) Run() {
-	debugFrom := uint(28816)
-	for {
-		if c.PC == 0x8c && c.D == 63 {
-			c.MMU.Spaces[1].(*ppu.PPU).LCD.Enable()
-		}
-		c.Execute()
-		c.Cycle++
-		if c.Cycle >= debugFrom {
-			fmt.Printf("========= Cycle: %#4x ========\n", c.Cycle)
-			fmt.Print(c)
-			fmt.Printf("==============================\n")
-		}
-		if c.PC > 0x100 {
-			fmt.Print("Jumped out of BootROM!")
-			os.Exit(1)
-		}
 	}
 }

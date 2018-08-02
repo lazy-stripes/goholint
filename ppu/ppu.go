@@ -2,7 +2,6 @@ package ppu
 
 import (
 	"bufio"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -36,9 +35,6 @@ const (
 	// Bit 7 - LCD Display Enable             (0=Off, 1=On)
 	LCDCDisplayEnable
 )
-
-// TileMapOffsets maps a Display Select flag to an address offset in VRAM.
-var TileMapOffsets = [2]uint{0x9800, 0x9c00}
 
 // PPU address space handling video RAM and display.
 type PPU struct {
@@ -209,67 +205,6 @@ func (p *PPU) Pop() uint {
 		return 1
 	}
 	return 0
-}
-
-// Run PPU process cadenced by the same clock driving the CPU.
-func (p *PPU) Run() {
-	for {
-		for ; p.LY < 144; p.LY++ {
-			// New line unless VBlank
-			// TODO: OAM search (20 clocks)
-
-			// Pixel transfer until HBlank
-			for x := uint(0); x < 160; {
-				// Pixel Transfer (~43 clocks)
-				// Just draw background for now. Enough for our purpose. TODO: Window & sprites
-
-				// FIFO shifts out 2 pixels per fetcher read.
-				x += p.Pop()
-				x += p.Pop()
-				y := uint(p.SCY + p.LY)
-				tileNb := 0 //p.FetchTileNumber(x, y) // Tick()
-
-				x += p.Pop()
-				x += p.Pop()
-				// Compute address of first byte of tile data to render.
-				tileLine := uint(y % 8)
-				var tileDataOffset uint
-				if p.LCDC&LCDCBGWindowTileDataSelect > 0 {
-					tileDataOffset = 0x8000 + uint(tileNb)*16
-				} else {
-					tileDataOffset = uint(0x9000 + int(tileNb)*16)
-				}
-				addr := tileDataOffset + tileLine*2
-				lineLo := p.Read(addr) // Tick()
-
-				x += p.Pop()
-				x += p.Pop()
-				lineHi := p.Read(addr + 1) // Tick()
-
-				// Wait for FIFO to be ready to accept more data TODO: fill it now if there is room
-				x += p.Pop()
-				x += p.Pop()
-				for bit := 7; bit >= 0; bit-- {
-					pixel := (lineHi>>uint(bit)&1)<<1 | (lineLo >> uint(bit) & 1)
-					p.Push(pixel)
-				}
-				p.Tick()
-			}
-
-			// TODO: HBlank (~51 clocks)
-			p.LCD.HBlank()
-			fmt.Println("HBLANK")
-			//p.Ticks(51)
-		}
-
-		p.LCD.VBlank() // (114 clocks * 10)
-		fmt.Println("VBLANK")
-		for ; p.LY < 154; p.LY++ {
-		}
-
-		p.LY = 0
-		// Anything else?
-	}
 }
 
 // DumpTiles writes tiles from VRAM into a PNG file to test the decoder.

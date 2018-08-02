@@ -29,7 +29,7 @@ const (
 	ScreenHeight = 144
 )
 
-// Default palette colors with separate RGB components for easier use with SDL API.
+// Default palette colors with separate RGB components for easier use with SDL API. Kinda greenish.
 const (
 	ColorWhite      = 0xe0f0e7
 	ColorWhiteR     = (ColorWhite >> 16) & 0xff
@@ -68,30 +68,36 @@ func NewConsole() *Console {
 	return &Console{Palette: [4]rune{'█', '▒', '░', ' '}}
 }
 
+// Enable turns on the display. "Pixels" will be printed out the moment they're written to the display.
 func (c *Console) Enable() {
 	c.enabled = true
 }
 
+// Enabled returns whether the display is enabled or not (as part of the Display interface).
 func (c *Console) Enabled() bool {
 	return c.enabled
 }
 
+// Disable turns off the display. No output will occur.
 func (c *Console) Disable() {
 	c.enabled = false
 }
 
+// Write prints out a pixel from our rune palette if display is enabled.
 func (c *Console) Write(pixel Pixel) {
 	if c.enabled {
 		fmt.Printf("%c", c.Palette[pixel])
 	}
 }
 
+// HBlank prints a newline at HBlank time to set up the console for the next line.
 func (c *Console) HBlank() {
 	if c.enabled {
 		fmt.Print("\n")
 	}
 }
 
+// VBlank prints a separation between each console screen frame.
 func (c *Console) VBlank() {
 	if c.enabled {
 		fmt.Print("\n === VBLANK ===\n")
@@ -99,6 +105,7 @@ func (c *Console) VBlank() {
 	}
 }
 
+// Blank does nothing for a Console display.
 func (c *Console) Blank() {
 	// Nothing. This method is only for refreshing SDL texture for "disabled" screen.
 }

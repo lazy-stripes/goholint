@@ -48,11 +48,6 @@ func (f *Fetcher) Tick() {
 	// Reset tick counter and execute next state
 	f.ticks = 0
 
-	// XXX debug only
-	if f.mapAddr == 0x9900 {
-		//log.Enabled = true
-	}
-
 	switch f.state {
 	case states.ReadTileID:
 		f.tileID = f.vRAM.Read(f.mapAddr + uint(f.tileOffset))
