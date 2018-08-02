@@ -4,3 +4,4 @@ debug.test
 *-dump.*
 *.zip
 .vscode/
+bin/
