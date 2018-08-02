@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"runtime"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -17,12 +16,14 @@ func run() int {
 	if bootRom == nil {
 		return 1
 	}
+	boot := memory.NewBoot(rompath)
+
 	lcd := lcd.NewSDL()
 	ppu := ppu.New(lcd)
 	cartridge := memory.NewROM("bin/tetris.gb", 0)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM and IE register
-	mmu := memory.NewMMU([]memory.Addressable{bootRom, ppu, wram, hram, cartridge})
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, hram, cartridge})
 	cpu := cpu.New(mmu)
 
 	// Main loop TODO: Gameboy.Run()
@@ -41,16 +42,7 @@ func run() int {
 }
 
 func main() {
-	// os.Exit(..) must run AFTER sdl.Main(..) below; so keep track of exit
-	// status manually outside the closure passed into sdl.Main(..) below
-	var exitcode int
 	runtime.LockOSThread()
 	sdl.Init(sdl.INIT_VIDEO)
-	//sdl.Main(func() {
-	exitcode = run()
-	//})
-	// os.Exit(..) must run here! If run in sdl.Main(..) above, it will cause
-	// premature quitting of sdl.Main(..) function; resource cleaning deferred
-	// calls/closing of channels may never run
-	os.Exit(exitcode)
+	run()
 }

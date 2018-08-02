@@ -8,7 +8,6 @@ import (
 	"go.tigris.fr/gameboy/cpu/states"
 	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/timer"
 )
 
 // Flag bitfield enum
@@ -21,24 +20,23 @@ const (
 
 // A CPU implementation of the DMG-01's
 type CPU struct {
-	timer.Clock
-	MMU                    *memory.MMU
+	MMU                    memory.Addressable
 	Cycle                  uint
 	IME                    bool // Interrupt Master Enable flag
 	A, F, B, C, D, E, H, L uint8
 	SP                     uint16
 	PC                     uint16
 
-	ops   *fifo.FIFO
-	ticks uint
-	state int    // FIXME: enum
-	temp8 uint8  // Internal work register storing 8-bit micro-operation results
+	ops    *fifo.FIFO
+	ticks  uint
+	state  int    // FIXME: enum
+	temp8  uint8  // Internal work register storing 8-bit micro-operation results
 	temp16 uint16 // Internal work register storing 16-bit micro-operation results
 }
 
 // New CPU running code in the given address space starting from 0.
-func New(mmu *memory.MMU) *CPU {
-	return &CPU{Clock: make(timer.Clock), MMU: mmu, ops: fifo.New(6, 0)}
+func New(code memory.Addressable) *CPU {
+	return &CPU{MMU: code, ops: fifo.New(6, 0)}
 }
 
 // Tick advances the CPU state one step.
