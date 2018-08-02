@@ -5,10 +5,10 @@ import (
 	"runtime"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"tigris.fr/gameboy/cpu"
-	"tigris.fr/gameboy/lcd"
-	"tigris.fr/gameboy/memory"
-	"tigris.fr/gameboy/ppu"
+	"go.tigris.fr/gameboy/cpu"
+	"go.tigris.fr/gameboy/lcd"
+	"go.tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/ppu"
 )
 
 func run() int {

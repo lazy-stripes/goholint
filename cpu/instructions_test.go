@@ -3,7 +3,7 @@ package cpu
 import (
 	"testing"
 
-	"tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/memory"
 )
 
 func TestLdRrD16(t *testing.T) {

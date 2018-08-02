@@ -8,10 +8,10 @@ import (
 	"image/png"
 	"os"
 
-	"tigris.fr/gameboy/fifo"
-	"tigris.fr/gameboy/lcd"
-	"tigris.fr/gameboy/memory"
-	"tigris.fr/gameboy/ppu/states"
+	"go.tigris.fr/gameboy/fifo"
+	"go.tigris.fr/gameboy/lcd"
+	"go.tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/ppu/states"
 )
 
 // ClockFactor representing the number of ticks taken by each step (base is 4).

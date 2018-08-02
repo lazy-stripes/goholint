@@ -1,10 +1,10 @@
 package ppu
 
 import (
-	"tigris.fr/gameboy/fifo"
-	"tigris.fr/gameboy/log"
-	"tigris.fr/gameboy/memory"
-	"tigris.fr/gameboy/ppu/states"
+	"go.tigris.fr/gameboy/fifo"
+	"go.tigris.fr/gameboy/log"
+	"go.tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/ppu/states"
 )
 
 // Fetcher reads tile data from VRAM and pushes pixels to PPU FIFO.

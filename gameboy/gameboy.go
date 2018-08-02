@@ -1,7 +1,7 @@
 package gameboy
 
 import (
-	"tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/memory"
 )
 
 // GameBoy (naive) implementation.

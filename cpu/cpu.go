@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"tigris.fr/gameboy/cpu/states"
-	"tigris.fr/gameboy/fifo"
-	"tigris.fr/gameboy/memory"
-	"tigris.fr/gameboy/ppu"
-	"tigris.fr/gameboy/timer"
+	"go.tigris.fr/gameboy/cpu/states"
+	"go.tigris.fr/gameboy/fifo"
+	"go.tigris.fr/gameboy/memory"
+	"go.tigris.fr/gameboy/ppu"
+	"go.tigris.fr/gameboy/timer"
 )
 
 // Flag bitfield enum
