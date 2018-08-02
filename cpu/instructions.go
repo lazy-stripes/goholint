@@ -72,6 +72,13 @@ var LR35902InstructionSet = []Instruction{
 	0x4e: ldCAddrHl,
 	0x4f: ldCA,
 	0x57: ldDA,
+	0x58: ldEB,
+	0x59: ldEC,
+	0x5a: ldED,
+	0x5b: ldEE,
+	0x5c: ldEH,
+	0x5d: ldEL,
+	0x5f: ldEA,
 	0x60: ldHB,
 	0x61: ldHC,
 	0x62: ldHD,
@@ -161,18 +168,12 @@ var LR35902InstructionSet = []Instruction{
 	0xc5: pushBc,
 	0xc9: ret,
 	0xcd: callA16,
-	/*
-		0xd1: popDe,
-		0xd5: pushDe,
-	*/
+	0xd1: popDe,
+	0xd5: pushDe,
 	0xe0: ldAddrFfA8A,
-	/*
-		0xe1: popHl,
-	*/
+	0xe1: popHl,
 	0xe2: ldAddrFfCA,
-	/*
-		0xe5: pushHl,
-	*/
+	0xe5: pushHl,
 	0xe6: andD8,
 	0xea: ldAddrA16A,
 	0xef: rst28h,
@@ -405,10 +406,10 @@ func popRr(c *CPU, high, low *uint8) {
 
 // POP PC			12 cycles
 func popPc(c *CPU) {
-	c.temp = c.SP + 2
+	c.temp16 = c.SP + 2
 	c.ops.Push(opReadD16LowAt(c, uint(c.SP), &c.PC))
 	c.ops.Push(opReadD16HighAt(c, uint(c.SP+1), &c.PC))
-	c.ops.Push(opSetRr(c, &c.SP, &c.temp))
+	c.ops.Push(opSetRr(c, &c.SP, &c.temp16))
 }
 
 // RL r -- rotate left through carry
@@ -881,6 +882,47 @@ func ldDA(c *CPU) (done bool) {
 	return true
 }
 
+// 58: LD E,B		4 cycles
+func ldEB(c *CPU) (done bool) {
+	c.E = c.B
+	return true
+}
+
+// 59: LD E,C		4 cycles
+func ldEC(c *CPU) (done bool) {
+	c.E = c.C
+	return true
+}
+
+// 5A: LD E,D		4 cycles
+func ldED(c *CPU) (done bool) {
+	c.E = c.D
+	return true
+}
+
+// 5B: LD E,E		4 cycles
+func ldEE(c *CPU) (done bool) {
+	return true
+}
+
+// 5C: LD E,H		4 cycles
+func ldEH(c *CPU) (done bool) {
+	c.D = c.A
+	return true
+}
+
+// 5D: LD E,L		4 cycles
+func ldEL(c *CPU) (done bool) {
+	c.E = c.L
+	return true
+}
+
+// 5F: LD E,A		4 cycles
+func ldEA(c *CPU) (done bool) {
+	c.E = c.A
+	return true
+}
+
 // 60: LD H,B		4 cycles
 func ldHB(c *CPU) (done bool) {
 	c.H = c.B
@@ -1332,9 +1374,9 @@ func popBc(c *CPU) (done bool) {
 
 // C3: JP a16		16 cycles
 func jpA16(c *CPU) (done bool) {
-	c.ops.Push(opReadD16Low(c, &c.temp))
-	c.ops.Push(opReadD16High(c, &c.temp))
-	c.ops.Push(opSetRr(c, &c.PC, &c.temp))
+	c.ops.Push(opReadD16Low(c, &c.temp16))
+	c.ops.Push(opReadD16High(c, &c.temp16))
+	c.ops.Push(opSetRr(c, &c.PC, &c.temp16))
 	return false
 }
 
@@ -1372,8 +1414,8 @@ func bit7H(c *CPU) (done bool) {
 // CD: CALL a16		24 cycles
 func callA16(c *CPU) (done bool) {
 	// Advance PC before pushing to stack.
-	c.ops.Push(opReadD16Low(c, &c.temp))  // 4 cycles
-	c.ops.Push(opReadD16High(c, &c.temp)) // 4 cycles
+	c.ops.Push(opReadD16Low(c, &c.temp16))  // 4 cycles
+	c.ops.Push(opReadD16High(c, &c.temp16)) // 4 cycles
 
 	// Do just like pushRr but only read PC after previous operations, and tack instantaneous PC update at the end.
 	newSP := c.SP - 2                     // This feels meh. Either I implement an opSetRrImmediate or move away from operation FIFO altogether.
@@ -1383,22 +1425,23 @@ func callA16(c *CPU) (done bool) {
 	}))
 	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
 		c.MMU.Write(uint(c.SP), uint8(c.PC&0xff))
-		c.PC = c.temp
+		c.PC = c.temp16
 	}))
 	return false
 }
 
-/*
-// D1: POP DE
+// D1: POP DE			12 cycles
 func popDe(c *CPU) (done bool) {
 	popRr(c, &c.D, &c.E)
+	return false
 }
 
-// D5: PUSH DE
+// D5: PUSH DE			16 cycles
 func pushDe(c *CPU) (done bool) {
 	pushRr(c, c.D, c.E)
+	return false
 }
-*/
+
 // E0: LD (FF00+a8),A	12 cycles
 func ldAddrFfA8A(c *CPU) (done bool) {
 	c.ops.Push(Operation(func(c *CPU) {
@@ -1407,24 +1450,23 @@ func ldAddrFfA8A(c *CPU) (done bool) {
 	return false
 }
 
-/*
-// E1: POP HL
+// E1: POP HL		12 cycles
 func popHl(c *CPU) (done bool) {
 	popRr(c, &c.H, &c.L)
+	return false
 }
-*/
+
 // E2: LD (FF00+C),A	8 cycles
 func ldAddrFfCA(c *CPU) (done bool) {
 	c.ops.Push(opWriteD8(c, uint(0xff00+uint16(c.C)), c.A))
 	return false
 }
 
-/*
-// E5: PUSH HL
+// E5: PUSH HL			16 cycles
 func pushHl(c *CPU) (done bool) {
 	pushRr(c, c.H, c.L)
+	return false
 }
-*/
 
 // E6: AND d8		8 cycles
 func andD8(c *CPU) (done bool) {
@@ -1437,19 +1479,19 @@ func andD8(c *CPU) (done bool) {
 
 // EA: LD (a16),A	16 cycles
 func ldAddrA16A(c *CPU) (done bool) {
-	c.ops.Push(opReadD16Low(c, &c.temp))
-	c.ops.Push(opReadD16High(c, &c.temp))
+	c.ops.Push(opReadD16Low(c, &c.temp16))
+	c.ops.Push(opReadD16High(c, &c.temp16))
 	c.ops.Push(Operation(func(c *CPU) {
-		c.MMU.Write(uint(c.temp), c.A)
+		c.MMU.Write(uint(c.temp16), c.A)
 	}))
 	return false
 }
 
 // EF: RST 28h		16 cycles
 func rst28h(c *CPU) (done bool) {
-	c.temp = c.SP - 2
-	c.ops.Push(opSetRr(c, &c.SP, &c.temp)) // 4 cycles
-	c.ops.Push(Operation(func(c *CPU) {    // 4 cycles
+	c.temp16 = c.SP - 2
+	c.ops.Push(opSetRr(c, &c.SP, &c.temp16)) // 4 cycles
+	c.ops.Push(Operation(func(c *CPU) {      // 4 cycles
 		c.MMU.Write(uint(c.SP+1), uint8(c.PC>>8))
 	}))
 	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
@@ -1462,10 +1504,10 @@ func rst28h(c *CPU) (done bool) {
 // F0: LD A,(FF00+a8)	12 cycles
 func ldAAddrFfA8(c *CPU) (done bool) {
 	c.ops.Push(Operation(func(c *CPU) {
-		c.temp = uint16(c.NextByte()) | 0xff00
+		c.temp16 = uint16(c.NextByte()) | 0xff00
 	}))
 	c.ops.Push(Operation(func(c *CPU) {
-		c.A = c.MMU.Read(uint(c.temp))
+		c.A = c.MMU.Read(uint(c.temp16))
 	}))
 	return false
 }
@@ -1478,7 +1520,8 @@ func popAf(c *CPU) (done bool) {
 
 // F3: DI			4 cycles
 func di(c *CPU) (done bool) {
-	fmt.Println("DI: Interruptions not implemented yet")
+	fmt.Println(" !!! DI: Interruptions not implemented yet")
+	c.IME = false
 	return true
 }
 
@@ -1490,15 +1533,16 @@ func pushAf(c *CPU) (done bool) {
 
 // FA: LD A,(a16)	16 cycles
 func ldAAddrA16(c *CPU) (done bool) {
-	c.ops.Push(opReadD16Low(c, &c.temp))
-	c.ops.Push(opReadD16High(c, &c.temp))
-	c.ops.Push(opReadD8AtAddr(c, &c.temp, &c.A))
+	c.ops.Push(opReadD16Low(c, &c.temp16))
+	c.ops.Push(opReadD16High(c, &c.temp16))
+	c.ops.Push(opReadD8AtAddr(c, &c.temp16, &c.A))
 	return false
 }
 
 // F3: EI			4 cycles
 func ei(c *CPU) (done bool) {
-	fmt.Println("EI: Interruptions not implemented yet")
+	fmt.Println(" !!! EI: Interruptions not implemented yet")
+	c.IME = true
 	return true
 }
 

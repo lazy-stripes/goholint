@@ -12,5 +12,5 @@ func TestCPU(t *testing.T) {
 	//ram := memory.NewRAM(0x10000)
 	mmu := memory.NewMMU([]memory.Addressable{rom})
 	cpu := New(mmu)
-	cpu.Run()
+	cpu.Tick()
 }

@@ -33,7 +33,7 @@ type CPU struct {
 	ticks uint
 	state int    // FIXME: enum
 	temp8 uint8  // Internal work register storing 8-bit micro-operation results
-	temp  uint16 // Internal work register storing 16-bit micro-operation results
+	temp16 uint16 // Internal work register storing 16-bit micro-operation results
 }
 
 // New CPU running code in the given address space starting from 0.
