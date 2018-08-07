@@ -33,7 +33,7 @@ As of this writing, tigris.fr only offers read-only access to public repositorie
 cd $GOPATH/src
 mkdir -p go.tigris.fr
 cd go.tigris.fr
-git clone https://git.tigris.fr/gameboy.git
+git clone https://git.tigris.fr/public/gameboy.git
 ```
 
 
