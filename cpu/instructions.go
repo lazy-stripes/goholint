@@ -11,7 +11,7 @@ type Operation func(c *CPU)
 type Instruction func(c *CPU) (done bool)
 
 // LR35902InstructionSet is an array of opcodes for the DMG CPU.
-var LR35902InstructionSet = []Instruction{
+var LR35902InstructionSet = [...]Instruction{
 	0x00: nop,
 	0x01: ldBcD16,
 	0x03: incBc,
@@ -23,12 +23,14 @@ var LR35902InstructionSet = []Instruction{
 	0x0d: decC,
 	0x0e: ldCD8,
 	0x11: ldDeD16,
+	0x12: ldAddrDeA,
 	0x13: incDe,
 	0x14: incD,
 	0x15: decD,
 	0x16: ldDD8,
 	0x17: rlA,
 	0x18: jrR8,
+	0x19: addHlDe,
 	0x1a: ldAAddrDe,
 	0x1c: incE,
 	0x1d: decE,
@@ -71,6 +73,7 @@ var LR35902InstructionSet = []Instruction{
 	0x4d: ldCL,
 	0x4e: ldCAddrHl,
 	0x4f: ldCA,
+	0x56: ldDAddrHl,
 	0x57: ldDA,
 	0x58: ldEB,
 	0x59: ldEC,
@@ -78,6 +81,7 @@ var LR35902InstructionSet = []Instruction{
 	0x5b: ldEE,
 	0x5c: ldEH,
 	0x5d: ldEL,
+	0x5e: ldEAddrHl,
 	0x5f: ldEA,
 	0x60: ldHB,
 	0x61: ldHC,
@@ -166,7 +170,9 @@ var LR35902InstructionSet = []Instruction{
 	0xc1: popBc,
 	0xc3: jpA16,
 	0xc5: pushBc,
+	0xc8: retZ,
 	0xc9: ret,
+	0xca: jpZA16,
 	0xcd: callA16,
 	0xd1: popDe,
 	0xd5: pushDe,
@@ -175,6 +181,7 @@ var LR35902InstructionSet = []Instruction{
 	0xe2: ldAddrFfCA,
 	0xe5: pushHl,
 	0xe6: andD8,
+	0xe9: jpHl,
 	0xea: ldAddrA16A,
 	0xef: rst28h,
 	0xf0: ldAAddrFfA8,
@@ -191,6 +198,7 @@ var LR35902ExtendedInstructionSet = []Instruction{
 	0x11: rlC,
 	0x37: swapA,
 	0x7c: bit7H,
+	0x87: res0A,
 }
 
 // Operations. The pseudo-atomic things the CPU does as part as an Instruction, which might take many cycles.
@@ -439,6 +447,11 @@ func bitNR(c *CPU, bit, register byte) {
 	}
 }
 
+// RES n,r			8 cycles
+func resNR(c *CPU, bit byte, register *byte) {
+	*register &= ^(1 << bit)
+}
+
 // SWAP r			8 cycles
 func swapR(c *CPU, register *byte) {
 	// Flags z 0 0 0
@@ -558,6 +571,12 @@ func ldDeD16(c *CPU) (done bool) {
 	return false
 }
 
+// 12: LD (DE),A	8 cycles
+func ldAddrDeA(c *CPU) (done bool) {
+	c.ops.Push(opWriteD8(c, uint(c.DE()), c.A))
+	return false
+}
+
 // 13: INC DE		8 cycles
 func incDe(c *CPU) (done bool) {
 	incRr(c, &c.D, &c.E)
@@ -591,6 +610,15 @@ func rlA(c *CPU) (done bool) {
 // 18: JR r8		12 cycles
 func jrR8(c *CPU) (done bool) {
 	jrXxR8(c, true)
+	return false
+}
+
+// 19: ADD HL,DE	8 cycles
+func addHlDe(c *CPU) (done bool) {
+	c.temp16 = c.HL() + c.DE()
+	c.ops.Push(Operation(func(c *CPU) {
+		c.SetHL(c.temp16)
+	}))
 	return false
 }
 
@@ -876,6 +904,12 @@ func ldCA(c *CPU) (done bool) {
 	return true
 }
 
+// 56: LD D,(HL)	8 cycles
+func ldDAddrHl(c *CPU) (done bool) {
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.D))
+	return false
+}
+
 // 57: LD D,A		4 cycles
 func ldDA(c *CPU) (done bool) {
 	c.D = c.A
@@ -915,6 +949,12 @@ func ldEH(c *CPU) (done bool) {
 func ldEL(c *CPU) (done bool) {
 	c.E = c.L
 	return true
+}
+
+// 5E: LD E,(HL)	8 cycles
+func ldEAddrHl(c *CPU) (done bool) {
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.E))
+	return false
 }
 
 // 5F: LD E,A		4 cycles
@@ -1386,10 +1426,32 @@ func pushBc(c *CPU) (done bool) {
 	return false
 }
 
+// C8: RET	Z		20/8 cycles
+func retZ(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		if c.F&FlagZ != 0 {
+			// Simulate POP PC for consistency
+			popPc(c)
+		}
+	}))
+
+	return false
+}
+
 // C9: RET			16 cycles
 func ret(c *CPU) (done bool) {
 	// Simulate POP PC for consistency
 	popPc(c)
+	return false
+}
+
+// CA: JP Z,a16		16/12 cycles
+func jpZA16(c *CPU) (done bool) {
+	c.ops.Push(opReadD16Low(c, &c.temp16))
+	c.ops.Push(opReadD16High(c, &c.temp16))
+	if c.F&FlagZ != 0 {
+		c.ops.Push(opSetRr(c, &c.PC, &c.temp16))
+	}
 	return false
 }
 
@@ -1408,6 +1470,12 @@ func swapA(c *CPU) (done bool) {
 // CB 7C: BIT 7,H	8 cycles
 func bit7H(c *CPU) (done bool) {
 	bitNR(c, 7, c.H)
+	return true
+}
+
+// CB 87: RES 0,A	8 cycles
+func res0A(c *CPU) (done bool) {
+	resNR(c, 0, &c.A)
 	return true
 }
 
@@ -1477,6 +1545,12 @@ func andD8(c *CPU) (done bool) {
 	return false
 }
 
+// E9: JP HL			4 cycles
+func jpHl(c *CPU) (done bool) {
+	c.PC = c.HL()
+	return true
+}
+
 // EA: LD (a16),A	16 cycles
 func ldAddrA16A(c *CPU) (done bool) {
 	c.ops.Push(opReadD16Low(c, &c.temp16))
@@ -1520,7 +1594,6 @@ func popAf(c *CPU) (done bool) {
 
 // F3: DI			4 cycles
 func di(c *CPU) (done bool) {
-	fmt.Println(" !!! DI: Interruptions not implemented yet")
 	c.IME = false
 	return true
 }
