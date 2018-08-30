@@ -1614,7 +1614,8 @@ func ldAAddrA16(c *CPU) (done bool) {
 
 // F3: EI			4 cycles
 func ei(c *CPU) (done bool) {
-	fmt.Println(" !!! EI: Interruptions not implemented yet")
+	fmt.Println(" !!! EI: Interruptions not fully implemented yet")
+	// FIXME: [TCAGBD:4.6] says interrupts are only enabled the next cycle.
 	c.IME = true
 	return true
 }

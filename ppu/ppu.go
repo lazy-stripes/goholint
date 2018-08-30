@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"go.tigris.fr/gameboy/fifo"
+	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu/states"
@@ -41,6 +42,7 @@ type PPU struct {
 	*memory.MMU
 	*fifo.FIFO
 	Fetcher
+	Interrupts *interrupts.Interrupts
 	Cycle      int
 	LCD        lcd.Display
 	LCDC       uint8
@@ -146,6 +148,7 @@ func (p *PPU) Tick() {
 			p.LY++
 			if p.LY == 144 {
 				p.LCD.VBlank()
+				p.Interrupts.Request(interrupts.VBlank)
 				p.state = states.VBlank
 			} else {
 				// Prepare to go back to OAM search state.

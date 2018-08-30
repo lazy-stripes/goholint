@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"go.tigris.fr/gameboy/interrupts"
+
 	"go.tigris.fr/gameboy/cpu/states"
 	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/memory"
@@ -23,20 +25,22 @@ type CPU struct {
 	MMU                    memory.Addressable
 	Cycle                  uint
 	IME                    bool // Interrupt Master Enable flag
+	IF, IE                 uint8
 	A, F, B, C, D, E, H, L uint8
 	SP                     uint16
 	PC                     uint16
 
-	ops    *fifo.FIFO
-	ticks  uint
-	state  int    // FIXME: enum
-	temp8  uint8  // Internal work register storing 8-bit micro-operation results
-	temp16 uint16 // Internal work register storing 16-bit micro-operation results
+	ops       *fifo.FIFO
+	ticks     uint
+	state     int    // FIXME: enum
+	interrupt uint8  // Currently requested interrupt
+	temp8     uint8  // Internal work register storing 8-bit micro-operation results
+	temp16    uint16 // Internal work register storing 16-bit micro-operation results
 }
 
 // New CPU running code in the given address space starting from 0.
 func New(code memory.Addressable) *CPU {
-	return &CPU{MMU: code, ops: fifo.New(6, 0)}
+	return &CPU{MMU: code, ops: fifo.New(6, 0), state: states.FetchOpCode}
 }
 
 // Tick advances the CPU state one step.
@@ -49,6 +53,12 @@ func (c *CPU) Tick() {
 
 	// Reset tick counter and execute next state
 	c.ticks = 0
+
+	// Handle interrupts
+	if (c.state&states.Interruptible != 0) && c.IME && (c.IF&c.IE != 0) {
+		// TODO: re-enable LCD if interrupted after STOP.
+		c.state = states.InterruptWait0
+	}
 
 	switch c.state {
 	case states.FetchOpCode:
@@ -83,6 +93,42 @@ func (c *CPU) Tick() {
 		if c.ops.Size() == 0 {
 			c.state = states.FetchOpCode
 		}
+
+	case states.InterruptWait0:
+		// [TCAGBD:4.9] mentions a 2-cycle idle upon handling interrupt request.
+		c.state = states.InterruptWait1
+
+	case states.InterruptWait1:
+		requested := c.IF & c.IE
+
+		// Doing this in a switch/case instead of a loop because I played too much EXAPUNKS...
+		// Unrolling is good for perfs, right?
+		switch {
+		case requested&interrupts.VBlank != 0:
+			c.interrupt = interrupts.VBlank
+			// TODO: all other interrupts
+		}
+
+		c.state = states.InterruptPushPCHigh
+
+	case states.InterruptPushPCHigh:
+		c.SP--
+		c.MMU.Write(uint(c.SP), uint8(c.PC>>8))
+		c.state = states.InterruptPushPCLow
+
+	case states.InterruptPushPCLow:
+		c.SP--
+		c.MMU.Write(uint(c.SP), uint8(c.PC&0xff))
+		c.state = states.InterruptCall
+
+	case states.InterruptCall:
+		c.PC = interrupts.InterruptAddress[c.interrupt]
+		c.IME = false
+		c.IF &= ^c.interrupt
+		c.state = states.FetchOpCode
+
+	default:
+		panic(fmt.Sprintf("Unknown CPU state %d", c.state))
 	}
 }
 

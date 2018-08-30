@@ -1,8 +1,18 @@
 package states
 
-// Mere collection of constants because I was procrastinating.
+// Mere collection of constants because I was procrastinating. Also a bitfield for easy combination.
 const (
-	FetchOpCode = iota // 0, default value for cpu.state
+	FetchOpCode = 1 << iota
 	FetchExtendedOpcode
 	Execute
+	Halted
+	Stopped
+	InterruptWait0
+	InterruptWait1
+	InterruptPushPCHigh
+	InterruptPushPCLow
+	InterruptCall
+
+	// Useful combinations
+	Interruptible = FetchOpCode | Halted | Stopped
 )
