@@ -1,6 +1,6 @@
 package cpu
 
-// go:generate templates/*.go.in
+//go:generate go run instructions/make.go instructionset.go
 
 // An Operation executed on the CPU as part of an instruction.
 type Operation func(c *CPU)
@@ -196,10 +196,10 @@ var LR35902InstructionSet = [...]Instruction{
 
 // LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
 var LR35902ExtendedInstructionSet = []Instruction{
-// 0x11: rlC,
-// 0x37: swapA,
-// 0x7c: bit7H,
-// 0x87: res0A,
+	// 0x11: rlC,
+	// 0x37: swapA,
+	// 0x7c: bit7H,
+	// 0x87: res0A,
 }
 
 // Operations. The pseudo-atomic things the CPU does as part as an Instruction, which might take many cycles.
@@ -286,52 +286,41 @@ func opSetRrDirect(c *CPU, register *uint16, value uint16) Operation {
 
 // Templates
 
-// Instruction executed within the 4 (or 8) cycles needed to read the opcode.
-// To be embedded in actual instructions that don't need to implement Tick().
-type noTick struct{}
+// SingleStepOp is an instruction executed within the 4 (or 8) cycles needed to read the opcode.
+// To be embedded in actual instructions that don't need to implement Tick(), but
+// need to implement Execute(c *CPU) and make sure it returns false. Kinda meh but ought to work.
+type SingleStepOp struct{}
 
-func (o noTick) Tick() (done bool) {
+// Tick is a mere placehover for derived single-instruction types and panics if called.
+func (op SingleStepOp) Tick() (done bool) {
 	panic("Tick() called on instruction supposed to complete within Execute()")
 }
 
-// Base instruction only storing CPU reference in Execute() and expecting
-// derived structs to implement Tick().
-type base struct {
+// MultiStepsOp is an instruction needing more than the fetching cycle(s) to complete.
+// It stores the CPU reference passed to Execute() and then expects derived types
+// to implement Tick().
+type MultiStepsOp struct {
 	cpu  *CPU
 	step uint // XXX: do we need an enum?
 }
 
-func (op base) Execute(c *CPU) (done bool) {
+// Execute keeps the passed CPU pointer and resets step number used for the state machine.
+func (op MultiStepsOp) Execute(c *CPU) (done bool) {
 	op.cpu = c
 	op.step = 0
 	return false
 }
 
-func (op base) Tick() (done bool) {
+// Tick executes this instruction's next step and returns true as long as there are
+// further steps to take. This is a placeholder to be overridden.
+func (op MultiStepsOp) Tick() (done bool) {
 	panic("Tick() hasn't been implemented for this Instruction!")
 }
 
 // LD rr,d16		12 cycles
 type ldRrD16 struct {
-	base
+	MultiStepsOp
 }
-
-var op = `// {{.Opcode}}: LD {{.High}}{{.Low}},d16		(12 cycles)
-type ld{{.High}}{{.Low}}D16 struct {
-	base
-}
-
-func (op ld{{.High}}{{.Low}}D16) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.{{.Low}} = op.cpu.NextByte()
-		op.step++
-	case 1:
-		op.cpu.{{.High}} = op.cpu.NextByte()
-		done = true
-	}
-	return
-}`
 
 /*
 // AND r
@@ -546,20 +535,10 @@ func subD8(c *CPU, value byte) {
 }
 */
 // Instructions, sorted by opcode.
-// TODO: this NEEDS to be auto-generated. Possibly sorted into themed files.
-
-// 00: NOP			4 cycles
-type nop struct {
-	noTick
-}
-
-func (op nop) Execute(c *CPU) (done bool) {
-	return true
-}
 
 // 01: LD BC,d16	12 cycles
 type ldBcD16 struct {
-	base
+	MultiStepsOp
 }
 
 func (op ldBcD16) Tick() (done bool) {

@@ -1,0 +1,15 @@
+// {{.Opcode | printf "%X"}}: {{.Instruction}} ({{.Address}})
+type {{.Instruction | lower}}Addr{{.Register}} struct {
+	MultiStepsOp
+}
+
+func (op {{.Instruction | lower}}Addr{{.Address}}) Tick() (done bool) {
+	op.cpu.A {{.Operator}} op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	// Flags z 0 0 0
+	if op.cpu.A == 0 {
+		op.cpu.F = FlagZ
+	} else {
+		op.cpu.F = 0
+	}
+	return true
+}

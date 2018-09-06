@@ -1,0 +1,15 @@
+// {{.Opcode | printf "%X"}}: {{.Instruction}} {{.Register}}
+type {{.Instruction | lower}}{{.Register}} struct {
+	SingleStepOp
+}
+
+func (op {{.Instruction | lower}}{{.Register}}) Execute(c *CPU) (done bool) {
+	c.A {{.Operator}} c.{{.Register}}
+	// Flags z 0 0 0
+	if c.A == 0 {
+		c.F = FlagZ
+	} else {
+		c.F = 0
+	}
+	return true
+}
