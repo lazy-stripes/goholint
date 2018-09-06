@@ -4,9 +4,10 @@ import (
 	"fmt"
 )
 
+// IORegister represents a register value with an associated hook to call on Write.
 type IORegister struct {
-	register  *uint8
-	writeHook func(value uint8)
+	Register  *uint8
+	WriteHook func(value uint8)
 }
 
 // IORegisters represented as an address space mapping to a memory location and a write hook.
@@ -21,7 +22,7 @@ func (r IORegisters) Contains(addr uint) (present bool) {
 // Read returns the byte at the given address in VRAM corresponding to a register.
 func (r IORegisters) Read(addr uint) uint8 {
 	if io, present := r[addr]; present {
-		return *io.register
+		return *io.Register
 	}
 	fmt.Printf("Reading unknown I/O register address %#4x\n", addr)
 	return 0xff
@@ -29,11 +30,12 @@ func (r IORegisters) Read(addr uint) uint8 {
 
 // Write sets the byte at the given address in VRAM to the given value. TODO: checks
 func (r IORegisters) Write(addr uint, value uint8) {
-	// FIXME: check for R/O registers.
+	// Set register by default, unless hook exists. Used to implement R/O registers.
 	if io, present := r[addr]; present {
-		*io.register = value
-		if io.writeHook != nil {
-			io.writeHook(value)
+		if io.WriteHook != nil {
+			io.WriteHook(value)
+		} else {
+			*io.Register = value
 		}
 	} else {
 		fmt.Printf("Writing to unknown I/O register address %#4x\n", addr)
