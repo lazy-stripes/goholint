@@ -21,7 +21,7 @@ func NewBoot(filename string) *Boot {
 
 // Contains returns true if the given address belongs to the ROM or BOOT register, false otherwise.
 func (b *Boot) Contains(addr uint) bool {
-	return !b.disabled && (addr == bootAddr || b.ROM.Contains(addr))
+	return addr == bootAddr || (!b.disabled && b.ROM.Contains(addr))
 }
 
 // Read returns the value stored at the given address in ROM or in BOOT register.
