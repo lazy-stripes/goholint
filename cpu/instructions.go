@@ -35,6 +35,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0x1c: incE,
 	0x1d: decE,
 	0x1e: ldED8,
+	0x1f: rrA,
 	0x20: jrNzR8,
 	0x21: ldHlD16,
 	0x22: ldiAddrHlA,
@@ -48,6 +49,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0x2d: decL,
 	0x2e: ldLD8,
 	0x2f: cpl,
+	0x30: jrNcR8,
 	0x31: ldSpD16,
 	0x32: lddHlA,
 	0x33: incSp,
@@ -99,14 +101,12 @@ var LR35902InstructionSet = [...]Instruction{
 	0x6d: ldLL,
 	0x6e: ldLAddrHl,
 	0x6f: ldLA,
-	/*
-		0x70: ldAddrHlB,
-		0x71: ldAddrHlC,
-		0x72: ldAddrHlD,
-		0x73: ldAddrHlE,
-		0x74: ldAddrHlH,
-		0x75: ldAddrHlL,
-	*/
+	0x70: ldAddrHlB,
+	0x71: ldAddrHlC,
+	0x72: ldAddrHlD,
+	0x73: ldAddrHlE,
+	0x74: ldAddrHlH,
+	0x75: ldAddrHlL,
 	0x77: ldAddrHlA,
 	0x78: ldAB,
 	0x79: ldAC,
@@ -167,15 +167,21 @@ var LR35902InstructionSet = [...]Instruction{
 	0xb6: orAddrHl,
 	0xb7: orA,
 	0xbe: cpHl,
+	0xc0: retNz,
 	0xc1: popBc,
 	0xc3: jpA16,
+	0xc4: callNzA16,
 	0xc5: pushBc,
+	0xc6: addAD8,
 	0xc8: retZ,
 	0xc9: ret,
 	0xca: jpZA16,
 	0xcd: callA16,
+	0xce: adcAD8,
 	0xd1: popDe,
 	0xd5: pushDe,
+	0xd6: subD8,
+	0xd9: reti,
 	0xe0: ldAddrFfA8A,
 	0xe1: popHl,
 	0xe2: ldAddrFfCA,
@@ -183,6 +189,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xe6: andD8,
 	0xe9: jpHl,
 	0xea: ldAddrA16A,
+	0xee: xorD8,
 	0xef: rst28h,
 	0xf0: ldAAddrFfA8,
 	0xf1: popAf,
@@ -196,7 +203,23 @@ var LR35902InstructionSet = [...]Instruction{
 // LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
 var LR35902ExtendedInstructionSet = []Instruction{
 	0x11: rlC,
+	0x18: rrB,
+	0x19: rrC,
+	0x1a: rrD,
+	0x1b: rrE,
+	0x1c: rrH,
+	0x1d: rrL,
+	0x1e: rrAddrHl,
+	0x1f: rrA,
 	0x37: swapA,
+	0x38: srlB,
+	0x39: srlC,
+	0x3a: srlD,
+	0x3b: srlE,
+	0x3c: srlH,
+	0x3d: srlL,
+	0x3e: srlAddrHl,
+	0x3f: srlA,
 	0x7c: bit7H,
 	0x87: res0A,
 }
@@ -324,6 +347,26 @@ func xorR(c *CPU, register *byte) {
 	}
 }
 
+// CALL condition,a16	12 cycles if condition is false, 24 if true
+func callXxA16(c *CPU, condition bool) {
+	// Advance PC before pushing to stack.
+	c.ops.Push(opReadD16Low(c, &c.temp16))  // 4 cycles
+	c.ops.Push(opReadD16High(c, &c.temp16)) // 4 cycles
+
+	if condition {
+		// Do just like pushRr but only read PC after previous operations, and tack instantaneous PC update at the end.
+		newSP := c.SP - 2                     // This feels meh. Either I implement an opSetRrImmediate or move away from operation FIFO altogether.
+		c.ops.Push(opSetRr(c, &c.SP, &newSP)) // 4 cycles
+		c.ops.Push(Operation(func(c *CPU) {   // 4 cycles
+			c.MMU.Write(uint(c.SP+1), uint8(c.PC>>8))
+		}))
+		c.ops.Push(Operation(func(c *CPU) { // 4 cycles
+			c.MMU.Write(uint(c.SP), uint8(c.PC&0xff))
+			c.PC = c.temp16
+		}))
+	}
+}
+
 // JR condition,r8	8 cycles if condition is false, 12 if true
 func jrXxR8(c *CPU, condition bool) {
 	c.ops.Push(Operation(func(c *CPU) {
@@ -423,7 +466,7 @@ func popPc(c *CPU) {
 // RL r -- rotate left through carry
 func rlR(c *CPU, register *byte) {
 	result := *register << 1 & 0xff
-	if c.F&FlagC > 0 {
+	if c.F&FlagC != 0 {
 		result |= 1
 	}
 	// Flags z 0 0 c
@@ -431,7 +474,24 @@ func rlR(c *CPU, register *byte) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	if *register&(1<<7) > 0 {
+	if *register&0x80 != 0 {
+		c.F |= FlagC
+	}
+	*register = result
+}
+
+// RR r -- rotate right through carry
+func rrR(c *CPU, register *byte) {
+	result := *register >> 1
+	if c.F&FlagC != 0 {
+		result |= 0x80
+	}
+	// Flags z 0 0 c
+	c.F = 0x00
+	if result == 0 {
+		c.F |= FlagZ
+	}
+	if *register&1 != 0 {
 		c.F |= FlagC
 	}
 	*register = result
@@ -460,6 +520,18 @@ func swapR(c *CPU, register *byte) {
 		c.F = FlagZ
 	} else {
 		c.F = 0
+	}
+}
+
+func srlR(c *CPU, register *byte) {
+	// Flags z 0 0 c
+	c.F = 0
+	if *register&1 != 0 {
+		c.F |= FlagC
+	}
+	*register >>= 1
+	if *register == 0 {
+		c.F |= FlagZ
 	}
 }
 
@@ -498,7 +570,7 @@ func subFlags(c *CPU, value byte) byte {
 	return result
 }
 
-func subD8(c *CPU, value byte) {
+func sub(c *CPU, value byte) {
 	c.A = subFlags(c, value)
 }
 
@@ -646,6 +718,12 @@ func ldED8(c *CPU) (done bool) {
 	return false
 }
 
+// 1F: RRA			4 cycles
+func rrA(c *CPU) (done bool) {
+	rrR(c, &c.A)
+	return true
+}
+
 // 20: JR NZ,r8		12/8 cycles
 func jrNzR8(c *CPU) (done bool) {
 	jrXxR8(c, c.F&FlagZ == 0)
@@ -732,6 +810,12 @@ func cpl(c *CPU) (done bool) {
 	c.F |= FlagN | FlagH
 	c.A ^= 0xff
 	return true
+}
+
+// 30: JR NC,r8		12/8 cycles
+func jrNcR8(c *CPU) (done bool) {
+	jrXxR8(c, c.F&FlagC == 0)
+	return false
 }
 
 // 31: LD SP,d16	12 cycles
@@ -1199,37 +1283,37 @@ func addAA(c *CPU) (done bool) {
 
 // 90: SUB B		4 cycles
 func subB(c *CPU) (done bool) {
-	subD8(c, c.B)
+	sub(c, c.B)
 	return true
 }
 
 // 91: SUB C		4 cycles
 func subC(c *CPU) (done bool) {
-	subD8(c, c.C)
+	sub(c, c.C)
 	return true
 }
 
 // 92: SUB D		4 cycles
 func subD(c *CPU) (done bool) {
-	subD8(c, c.D)
+	sub(c, c.D)
 	return true
 }
 
 // 93: SUB E		4 cycles
 func subE(c *CPU) (done bool) {
-	subD8(c, c.E)
+	sub(c, c.E)
 	return true
 }
 
 // 94: SUB H		4 cycles
 func subH(c *CPU) (done bool) {
-	subD8(c, c.H)
+	sub(c, c.H)
 	return true
 }
 
 // 95: SUB L		4 cycles
 func subL(c *CPU) (done bool) {
-	subD8(c, c.L)
+	sub(c, c.L)
 	return true
 }
 
@@ -1406,6 +1490,18 @@ func cpHl(c *CPU) (done bool) {
 	return false
 }
 
+// C0: RET	NZ		20/8 cycles
+func retNz(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		if c.F&FlagZ == 0 {
+			// Simulate POP PC for consistency
+			popPc(c)
+		}
+	}))
+
+	return false
+}
+
 // C1: POP BC		12 cycles
 func popBc(c *CPU) (done bool) {
 	popRr(c, &c.B, &c.C)
@@ -1420,9 +1516,23 @@ func jpA16(c *CPU) (done bool) {
 	return false
 }
 
+// C4: CALL NZ,a16	24/12 cycles
+func callNzA16(c *CPU) (done bool) {
+	callXxA16(c, c.F&FlagZ == 0)
+	return false
+}
+
 // C5: PUSH BC		16 cycles
 func pushBc(c *CPU) (done bool) {
 	pushRr(c, c.B, c.C)
+	return false
+}
+
+// C6: ADD A,d8		8 cycles
+func addAD8(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		addAR(c, c.NextByte())
+	}))
 	return false
 }
 
@@ -1461,9 +1571,109 @@ func rlC(c *CPU) (done bool) {
 	return true
 }
 
+// CB 18: RR B		8 cycles
+func rrB(c *CPU) (done bool) {
+	rrR(c, &c.B)
+	return true
+}
+
+// CB 19: RR C		8 cycles
+func rrC(c *CPU) (done bool) {
+	rrR(c, &c.C)
+	return true
+}
+
+// CB 1A: RR D		8 cycles
+func rrD(c *CPU) (done bool) {
+	rrR(c, &c.D)
+	return true
+}
+
+// CB 1B: RR E		8 cycles
+func rrE(c *CPU) (done bool) {
+	rrR(c, &c.E)
+	return true
+}
+
+// CB 1C: RR H		8 cycles
+func rrH(c *CPU) (done bool) {
+	rrR(c, &c.H)
+	return true
+}
+
+// CB 1D: RR L		8 cycles
+func rrL(c *CPU) (done bool) {
+	rrR(c, &c.L)
+	return true
+}
+
+// CB 1E: RR (HL)	16 cycles
+func rrAddrHl(c *CPU) (done bool) {
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.temp8))
+	c.ops.Push(Operation(func(c *CPU) {
+		rrR(c, &c.temp8)
+		c.MMU.Write(uint(c.HL()), c.temp8)
+	}))
+	return false
+}
+
+// CB 1F: RR A		8 cycles -- same as RRA with extra op read
+
 // CB 37: SWAP A	8 cycles
 func swapA(c *CPU) (done bool) {
 	swapR(c, &c.A)
+	return true
+}
+
+// CB 38: SRL B		8 cycles
+func srlB(c *CPU) (done bool) {
+	srlR(c, &c.B)
+	return true
+}
+
+// CB 39: SRL C		8 cycles
+func srlC(c *CPU) (done bool) {
+	srlR(c, &c.C)
+	return true
+}
+
+// CB 3A: SRL D		8 cycles
+func srlD(c *CPU) (done bool) {
+	srlR(c, &c.D)
+	return true
+}
+
+// CB 3B: SRL E		8 cycles
+func srlE(c *CPU) (done bool) {
+	srlR(c, &c.E)
+	return true
+}
+
+// CB 3C: SRL H		8 cycles
+func srlH(c *CPU) (done bool) {
+	srlR(c, &c.H)
+	return true
+}
+
+// CB 3D: SRL L		8 cycles
+func srlL(c *CPU) (done bool) {
+	srlR(c, &c.L)
+	return true
+}
+
+// CB 3E: SRL (HL)	16 cycles
+func srlAddrHl(c *CPU) (done bool) {
+	c.ops.Push(opReadD8At(c, uint(c.HL()), &c.temp8))
+	c.ops.Push(Operation(func(c *CPU) {
+		srlR(c, &c.temp8)
+		c.MMU.Write(uint(c.HL()), c.temp8)
+	}))
+	return false
+}
+
+// CB 3F: SRL A		8 cycles
+func srlA(c *CPU) (done bool) {
+	srlR(c, &c.A)
 	return true
 }
 
@@ -1498,6 +1708,27 @@ func callA16(c *CPU) (done bool) {
 	return false
 }
 
+// CE: ADC A,d8			8 cycles
+func adcAD8(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		carry := c.F & FlagC >> 4
+		d8 := c.NextByte()
+		result := c.A + d8 + carry
+		c.F = 0
+		if result&0xff == 0 {
+			c.F |= FlagZ
+		}
+		if (c.A&0x0f)+(d8&0x0f)+carry > 0x0f {
+			c.F |= FlagH
+		}
+		if result > 0xff {
+			c.F |= FlagC
+		}
+		c.A = result & 0xff
+	}))
+	return false
+}
+
 // D1: POP DE			12 cycles
 func popDe(c *CPU) (done bool) {
 	popRr(c, &c.D, &c.E)
@@ -1507,6 +1738,22 @@ func popDe(c *CPU) (done bool) {
 // D5: PUSH DE			16 cycles
 func pushDe(c *CPU) (done bool) {
 	pushRr(c, c.D, c.E)
+	return false
+}
+
+// D6: SUB d8			8 cycles
+func subD8(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) { // 4 cycles
+		sub(c, c.NextByte())
+	}))
+	return false
+}
+
+// D9: RETI				16 cycles
+func reti(c *CPU) (done bool) {
+	// Simulate POP PC for consistency
+	c.IME = true
+	popPc(c)
 	return false
 }
 
@@ -1557,6 +1804,15 @@ func ldAddrA16A(c *CPU) (done bool) {
 	c.ops.Push(opReadD16High(c, &c.temp16))
 	c.ops.Push(Operation(func(c *CPU) {
 		c.MMU.Write(uint(c.temp16), c.A)
+	}))
+	return false
+}
+
+// EE: XOR d8		8 cycles
+func xorD8(c *CPU) (done bool) {
+	c.ops.Push(Operation(func(c *CPU) {
+		c.temp8 = c.NextByte()
+		xorR(c, &c.temp8)
 	}))
 	return false
 }
