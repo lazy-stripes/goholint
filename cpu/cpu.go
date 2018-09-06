@@ -8,7 +8,6 @@ import (
 	"go.tigris.fr/gameboy/interrupts"
 
 	"go.tigris.fr/gameboy/cpu/states"
-	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/memory"
 )
 
@@ -30,17 +29,17 @@ type CPU struct {
 	SP                     uint16
 	PC                     uint16
 
-	ops       *fifo.FIFO
-	ticks     uint
-	state     int    // FIXME: enum
-	interrupt uint8  // Currently requested interrupt
-	temp8     uint8  // Internal work register storing 8-bit micro-operation results
-	temp16    uint16 // Internal work register storing 16-bit micro-operation results
+	instruction Instruction
+	ticks       uint
+	state       int    // FIXME: enum
+	interrupt   uint8  // Currently requested interrupt
+	temp8       uint8  // Internal work register storing 8-bit micro-operation results
+	temp16      uint16 // Internal work register storing 16-bit micro-operation results
 }
 
 // New CPU running code in the given address space starting from 0.
 func New(code memory.Addressable) *CPU {
-	return &CPU{MMU: code, ops: fifo.New(6, 0), state: states.FetchOpCode}
+	return &CPU{MMU: code, state: states.FetchOpCode}
 }
 
 // Tick advances the CPU state one step.
@@ -67,7 +66,8 @@ func (c *CPU) Tick() {
 			c.state = states.FetchExtendedOpcode
 		} else {
 			defer instructionError(c, false)
-			if LR35902InstructionSet[opcode](c) { // Instruction is done within the first 4 cycles.
+			c.instruction = LR35902InstructionSet[opcode]
+			if c.instruction.Execute(c) { // Instruction is done within the first 4 cycles.
 				c.state = states.FetchOpCode
 			} else {
 				c.state = states.Execute
@@ -78,19 +78,15 @@ func (c *CPU) Tick() {
 		opcode := c.NextByte()
 		defer instructionError(c, true)
 
-		if LR35902ExtendedInstructionSet[opcode](c) { // Instruction is done within the first 8 cycles.
+		c.instruction = LR35902ExtendedInstructionSet[opcode]
+		if c.instruction.Execute(c) { // Instruction is done within the first 8 cycles.
 			c.state = states.FetchOpCode
 		} else {
 			c.state = states.Execute
 		}
 
 	case states.Execute:
-		if instruction, err := c.ops.Pop(); err == nil {
-			instruction.(Operation)(c) // Conditional instructions might pop unused choices from c.instructions too.
-		} else {
-			panic(err)
-		}
-		if c.ops.Size() == 0 {
+		if c.instruction.Tick() {
 			c.state = states.FetchOpCode
 		}
 
