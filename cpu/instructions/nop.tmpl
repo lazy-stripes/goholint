@@ -1,8 +1,0 @@
-// 00: NOP			4 cycles
-type nop struct {
-	SingleStepOp
-}
-
-func (op nop) Execute(c *CPU) (done bool) {
-	return true
-}

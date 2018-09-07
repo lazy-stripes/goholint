@@ -1,9 +1,9 @@
-// {{.Opcode | printf "%X"}}: LD {{.High}}{{.Low}},d16		(12 cycles)
-type ld{{.High}}{{.Low}}D16 struct {
+// {{.Opcode | printf "%02X"}}: LD {{.High}}{{.Low}},d16		(12 cycles)
+type {{name .}} struct {
 	MultiStepsOp
 }
 
-func (op ld{{.High}}{{.Low}}D16) Tick() (done bool) {
+func (op {{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.{{.Low}} = op.cpu.NextByte()
@@ -14,3 +14,4 @@ func (op ld{{.High}}{{.Low}}D16) Tick() (done bool) {
 	}
 	return
 }
+
