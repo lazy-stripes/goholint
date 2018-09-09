@@ -1,0 +1,22 @@
+// {{.Opcode | printf "%02X"}}: ADD A,{{.Register}}		4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Flags: z 0 h c
+	c.F = 0
+	if c.A&0xf+c.{{.Register}}&0xf > 0xf {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.{{.Register}})
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+

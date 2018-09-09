@@ -1,9 +1,9 @@
-// {{.Opcode | printf "%02X"}}: LD ({{.Address}}),{{.Register}}		(8 cycles)
+// {{.Opcode | printf "%02X"}}: LD ({{.Address}}),{{.Register}}		8 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
 
-func (op {{name .}}) Tick() (done bool) {
+func (op *{{name .}}) Tick() (done bool) {
 	op.cpu.MMU.Write(uint(op.cpu.{{.Address}}()), op.cpu.{{.Register}})
 	return true
 }

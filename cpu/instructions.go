@@ -1,6 +1,5 @@
 package cpu
 
-// LR35902 instruction set is auto-generated.
 //go:generate go run instructions/make.go -o instructionset.go
 
 // An Operation executed on the CPU as part of an instruction.
@@ -10,196 +9,6 @@ type Operation func(c *CPU)
 type Instruction interface {
 	Execute(c *CPU) (done bool)
 	Tick() (done bool)
-}
-
-var oldLR35902InstructionSet = [...]Instruction{
-//0x00: nop{},
-//0x01: ldBcD16{},
-// 0x03: incBc,
-// 0x04: incB,
-// 0x05: decB,
-// 0x06: ldBD8,
-// 0x0b: decBc,
-// 0x0c: incC,
-// 0x0d: decC,
-// 0x0e: ldCD8,
-// 0x11: ldDeD16,
-// 0x12: ldAddrDeA,
-// 0x13: incDe,
-// 0x14: incD,
-// 0x15: decD,
-// 0x16: ldDD8,
-// 0x17: rlA,
-// 0x18: jrR8,
-// 0x19: addHlDe,
-// 0x1a: ldAAddrDe,
-// 0x1c: incE,
-// 0x1d: decE,
-// 0x1e: ldED8,
-// 0x20: jrNzR8,
-// 0x21: ldHlD16,
-// 0x22: ldiAddrHlA,
-// 0x23: incHl,
-// 0x24: incH,
-// 0x25: decH,
-// 0x26: ldHD8,
-// 0x28: jrZR8,
-// 0x2a: ldiAAddrHl,
-// 0x2c: incL,
-// 0x2d: decL,
-// 0x2e: ldLD8,
-// 0x2f: cpl,
-// 0x31: ldSpD16,
-// 0x32: lddHlA,
-// 0x33: incSp,
-// 0x34: incAddrHl,
-// 0x35: decAddrHl,
-// 0x36: ldAddrHlD8,
-// 0x3c: incA,
-// 0x3d: decA,
-// 0x3e: ldAD8,
-// 0x40: ldBB,
-// 0x41: ldBC,
-// 0x42: ldBD,
-// 0x43: ldBE,
-// 0x44: ldBH,
-// 0x45: ldBL,
-// 0x46: ldBAddrHl,
-// 0x47: ldBA,
-// 0x48: ldCB,
-// 0x49: ldCC,
-// 0x4a: ldCD,
-// 0x4b: ldCE,
-// 0x4c: ldCH,
-// 0x4d: ldCL,
-// 0x4e: ldCAddrHl,
-// 0x4f: ldCA,
-// 0x56: ldDAddrHl,
-// 0x57: ldDA,
-// 0x58: ldEB,
-// 0x59: ldEC,
-// 0x5a: ldED,
-// 0x5b: ldEE,
-// 0x5c: ldEH,
-// 0x5d: ldEL,
-// 0x5e: ldEAddrHl,
-// 0x5f: ldEA,
-// 0x60: ldHB,
-// 0x61: ldHC,
-// 0x62: ldHD,
-// 0x63: ldHE,
-// 0x64: ldHH,
-// 0x65: ldHL,
-// 0x66: ldHAddrHl,
-// 0x67: ldHA,
-// 0x68: ldLB,
-// 0x69: ldLC,
-// 0x6a: ldLD,
-// 0x6b: ldLE,
-// 0x6c: ldLH,
-// 0x6d: ldLL,
-// 0x6e: ldLAddrHl,
-// 0x6f: ldLA,
-// /*
-// 	0x70: ldAddrHlB,
-// 	0x71: ldAddrHlC,
-// 	0x72: ldAddrHlD,
-// 	0x73: ldAddrHlE,
-// 	0x74: ldAddrHlH,
-// 	0x75: ldAddrHlL,
-// */
-// 0x77: ldAddrHlA,
-// 0x78: ldAB,
-// 0x79: ldAC,
-// 0x7a: ldAD,
-// 0x7b: ldAE,
-// 0x7c: ldAH,
-// 0x7d: ldAL,
-// 0x7e: ldAAddrHl,
-// 0x7f: ldAA,
-// 0x80: addAB,
-// 0x81: addAC,
-// 0x82: addAD,
-// 0x83: addAE,
-// 0x84: addAH,
-// 0x85: addAL,
-// 0x86: addAAddrHl,
-// 0x87: addAA,
-// 0x90: subB,
-// 0x91: subC,
-// 0x92: subD,
-// 0x93: subE,
-// 0x94: subH,
-// 0x95: subL,
-// /*
-// 	0x96: subAddrHl,
-// 	0x97: subA,
-// 		0x98: sbcAB,
-// 		0x99: sbcAC,
-// 		0x9a: sbcAD,
-// 		0x9b: sbcAE,
-// 		0x9c: sbcAH,
-// 		0x9d: sbcAL,
-// 		0x9e: sbcAAddrHl,
-// 		0x9f: sbcAA,
-// */
-// 0xa0: andB,
-// 0xa1: andC,
-// 0xa2: andD,
-// 0xa3: andE,
-// 0xa4: andH,
-// 0xa5: andL,
-// 0xa6: andAddrHl,
-// 0xa7: andA,
-// 0xa8: xorB,
-// 0xa9: xorC,
-// 0xaa: xorD,
-// 0xab: xorE,
-// 0xac: xorH,
-// 0xad: xorL,
-// 0xae: xorAddrHl,
-// 0xaf: xorA,
-// 0xb0: orB,
-// 0xb1: orC,
-// 0xb2: orD,
-// 0xb3: orE,
-// 0xb4: orH,
-// 0xb5: orL,
-// 0xb6: orAddrHl,
-// 0xb7: orA,
-// 0xbe: cpHl,
-// 0xc1: popBc,
-// 0xc3: jpA16,
-// 0xc5: pushBc,
-// 0xc8: retZ,
-// 0xc9: ret,
-// 0xca: jpZA16,
-// 0xcd: callA16,
-// 0xd1: popDe,
-// 0xd5: pushDe,
-// 0xe0: ldAddrFfA8A,
-// 0xe1: popHl,
-// 0xe2: ldAddrFfCA,
-// 0xe5: pushHl,
-// 0xe6: andD8,
-// 0xe9: jpHl,
-// 0xea: ldAddrA16A,
-// 0xef: rst28h,
-// 0xf0: ldAAddrFfA8,
-// 0xf1: popAf,
-// 0xf3: di,
-// 0xf5: pushAf,
-// 0xfa: ldAAddrA16,
-// 0xfb: ei,
-// 0xfe: cpD8,
-}
-
-// LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
-var oldLR35902ExtendedInstructionSet = []Instruction{
-// 0x11: rlC,
-// 0x37: swapA,
-// 0x7c: bit7H,
-// 0x87: res0A,
 }
 
 // Operations. The pseudo-atomic things the CPU does as part as an Instruction, which might take many cycles.
@@ -277,7 +86,7 @@ func opSetRrDirect(c *CPU, register *uint16, value uint16) Operation {
 }
 
 // Instructions. Each takes a CPU pointer and will modify its internal state.
-// Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html [OPCODES]
+// Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 
 // Number of cycles reflects the information given in resource linked above.
 // Note that reading the instruction byte itself takes 4 cycles (8 for CB xx instructions.)
@@ -292,7 +101,7 @@ func opSetRrDirect(c *CPU, register *uint16, value uint16) Operation {
 type SingleStepOp struct{}
 
 // Tick is a mere placehover for derived single-instruction types and panics if called.
-func (op SingleStepOp) Tick() (done bool) {
+func (op *SingleStepOp) Tick() (done bool) {
 	panic("Tick() called on instruction supposed to complete within Execute()")
 }
 
@@ -301,11 +110,11 @@ func (op SingleStepOp) Tick() (done bool) {
 // to implement Tick().
 type MultiStepsOp struct {
 	cpu  *CPU
-	step uint
+	step uint // XXX: do we need an enum?
 }
 
 // Execute keeps the passed CPU pointer and resets step number used for the state machine.
-func (op MultiStepsOp) Execute(c *CPU) (done bool) {
+func (op *MultiStepsOp) Execute(c *CPU) (done bool) {
 	op.cpu = c
 	op.step = 0
 	return false
@@ -313,7 +122,7 @@ func (op MultiStepsOp) Execute(c *CPU) (done bool) {
 
 // Tick executes this instruction's next step and returns true as long as there are
 // further steps to take. This is a placeholder to be overridden.
-func (op MultiStepsOp) Tick() (done bool) {
+func (op *MultiStepsOp) Tick() (done bool) {
 	panic("Tick() hasn't been implemented for this Instruction!")
 }
 
@@ -369,6 +178,44 @@ func jrXxR8(c *CPU, condition bool) {
 		}
 	}))
 }
+
+// INC r			4 cycles
+func incR(c *CPU, register *byte) {
+	// Flags z 0 h -
+	c.F &= ^FlagN
+	if *register > 0x0F {
+		c.F |= FlagH
+	}
+	*register++
+	if *register == 0 {
+		c.F |= FlagZ
+	}
+}
+
+// DEC r			4 cycles
+func decR(c *CPU, register *byte) {
+	// Flags z 1 h -
+	c.F &= FlagC
+	c.F |= FlagN
+	if *register > 0x0F {
+		c.F |= FlagH
+	}
+	*register--
+	if *register == 0 {
+		c.F |= FlagZ
+	}
+}
+
+// INC rr			8 cycles
+func incRr(c *CPU, high, low *uint8) {
+	c.ops.Push(Operation(func(c *CPU) {
+		if *low == 0xff {
+			*high++
+		}
+		*low++
+	}))
+}
+
 // DEC rr			8 cycles
 func decRr(c *CPU, high, low *uint8) {
 	c.ops.Push(Operation(func(c *CPU) {
@@ -456,7 +303,7 @@ func swapR(c *CPU, register *byte) {
 		c.F = 0
 	}
 }
-
+*/
 // ADD A,r
 func addAR(c *CPU, register byte) {
 	// Flags: z 0 h c
@@ -474,6 +321,22 @@ func addAR(c *CPU, register byte) {
 	}
 }
 
+func addHlRr(c *CPU, high, low byte) {
+	// Flags: - 0 h c
+	c.F &= FlagZ
+	hl := uint(c.HL())
+	rr := uint(low) | uint(high)<<8
+	if hl&0xfff+rr&0xfff > 0xfff {
+		c.F |= FlagH
+	}
+	result := hl + rr
+	if result > 0xffff {
+		c.F |= FlagC
+	}
+	c.SetHL(uint16(result & 0xffff))
+}
+
+/*
 // SUB r -- SUB d8 -- CP r -- CP d8
 // Only sets flags, return substraction result
 func subFlags(c *CPU, value byte) byte {

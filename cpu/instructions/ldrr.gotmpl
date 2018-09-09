@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: LD {{.Register}},{{.OtherRegister}}			4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	c.{{.Register}} = c.{{.OtherRegister}}
+	return true
+}
+

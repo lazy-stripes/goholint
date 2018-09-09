@@ -1,11 +1,11 @@
-// 07: RLCA				4 cycles
+// 17: RLA				4 cycles
 type {{name .}} struct {
 	SingleStepOp
 }
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	// FIXME: [OPCODES] says flags are 0 0 0 c. Couldn't confirm.
-	{{template "rlc.gotmpl" .}}
+	{{template "rl.gotmpl" .}}
 	return true
 }
 

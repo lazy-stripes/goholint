@@ -1,0 +1,22 @@
+// {{.Opcode | printf "%02X"}}: LD A,(FF00+{{with .Register}}{{.}}{{else}}a8{{end}})		{{if .Register}}8{{else}}12{{end}} cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+{{- if .Register}}
+	op.cpu.A = op.cpu.MMU.Read(uint(0xff00+uint16(op.cpu.{{.Register}})))
+	return true
+{{- else}}
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.NextByte()
+		op.step++
+	case 1:
+		op.cpu.A = op.cpu.MMU.Read(uint(0xff00+uint16(op.cpu.temp8)))
+		done = true
+	}
+	return
+{{- end}}
+}
+

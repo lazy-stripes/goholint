@@ -1,15 +1,23 @@
-// {{.Opcode | printf "%02X"}}: LD {{.High}}{{.Low}},d16		(12 cycles)
+// {{.Opcode | printf "%02X"}}: LD {{.High}}{{.Low}},d16		12 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
 
-func (op {{name .}}) Tick() (done bool) {
+func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
+{{- if eq .High "S"}}
+		op.cpu.SP = uint16(op.cpu.NextByte())
+{{- else}}
 		op.cpu.{{.Low}} = op.cpu.NextByte()
+{{- end}}
 		op.step++
 	case 1:
+{{- if eq .High "S"}}
+		op.cpu.SP |= uint16(op.cpu.NextByte()) << 8
+{{- else}}
 		op.cpu.{{.High}} = op.cpu.NextByte()
+{{- end}}
 		done = true
 	}
 	return

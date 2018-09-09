@@ -1,0 +1,25 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}}		16 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.PC = uint16(op.cpu.MMU.Read(uint(op.cpu.SP)))
+		op.cpu.SP++
+		op.step++
+	case 1:
+		op.cpu.PC |= uint16(op.cpu.MMU.Read(uint(op.cpu.SP))) << 8
+		op.cpu.SP++
+		op.step++
+	case 2:
+{{- if eq .Instruction "RETI" }}
+		op.cpu.IME = true
+{{- end}}
+		// [GEKKIO] mentions an internal delay.
+		done = true
+	}
+	return
+}
+

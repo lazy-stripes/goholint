@@ -13,10 +13,6 @@ import (
 
 func run() int {
 	rompath := "bin/DMG_ROM.bin"
-	bootRom := memory.NewROM(rompath, 0)
-	if bootRom == nil {
-		return 1
-	}
 	boot := memory.NewBoot(rompath)
 
 	// Pre-instantiate CPU and interrupts so other components can access them too.
@@ -27,7 +23,8 @@ func run() int {
 	ppu := ppu.New(lcd)
 	ppu.Interrupts = ints
 
-	cartridge := memory.NewROM("bin/tetris.gb", 0)
+	//cartridge := memory.NewROM("bin/tetris.gb", 0)
+	cartridge := memory.NewROM("bin/cpu_instrs/cpu_instrs.gb", 0)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE
 	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, hram, cartridge})
@@ -40,8 +37,11 @@ func run() int {
 		ppu.Tick()
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
-		if tick == 171704 {
-			//fmt.Println("STOP")
+		if tick == 229976-96 {
+			//			fmt.Println("STOP")
+		}
+		if cpu.PC == 0x98 {
+			//			fmt.Println("STOP")
 		}
 	}
 

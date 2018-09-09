@@ -1,0 +1,27 @@
+// {{.Opcode | printf "%02X"}}: JR {{if .Flag}}{{if eq .Operator "!"}}N{{end}}{{.Flag}},{{end}}r8		12{{if .Operator}}/8{{end}} cycles
+type {{name .}} struct {
+	MultiStepsOp
+	offset int8
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.offset = int8(op.cpu.NextByte())
+{{- if .Flag}}
+		if op.cpu.F&Flag{{.Flag}} {{.Operator}}= Flag{{.Flag}} {
+			op.step++
+		} else {
+			done = true
+		}
+{{- else}}
+		op.step++
+{{- end}}
+	case 1:
+		// Need cast to signed for the potential substraction
+		op.cpu.PC = uint16(int16(op.cpu.PC) + int16(op.offset))
+		done = true
+	}
+	return
+}
+

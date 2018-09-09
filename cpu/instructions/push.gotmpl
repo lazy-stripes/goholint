@@ -1,0 +1,22 @@
+// {{.Opcode | printf "%02X"}}: PUSH {{.High}}{{.Low}}		16 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		// Waiting cycle according to [GEKKIO]. To align with memory timing?
+		op.step++
+	case 1:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.{{.High}}))
+		op.step++
+	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.{{.Low}}))
+		done = true
+	}
+	return
+}
+

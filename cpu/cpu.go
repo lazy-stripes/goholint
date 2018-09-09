@@ -66,6 +66,7 @@ func (c *CPU) Tick() {
 			c.state = states.FetchExtendedOpcode
 		} else {
 			defer instructionError(c, false)
+
 			c.instruction = LR35902InstructionSet[opcode]
 			if c.instruction.Execute(c) { // Instruction is done within the first 4 cycles.
 				c.state = states.FetchOpCode

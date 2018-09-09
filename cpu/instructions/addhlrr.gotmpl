@@ -1,0 +1,25 @@
+// {{.Opcode | printf "%02X"}}: ADD HL,{{.High}}{{.Low}}		8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	// Flags: - 0 h c
+	op.cpu.F &= FlagZ
+	hl := uint(op.cpu.HL())
+{{- if eq .High "S"}}
+	rr := uint(op.cpu.SP)
+{{- else}}
+    rr := uint(op.cpu.{{.Low}}) | uint(op.cpu.{{.High}})<<8
+{{- end}}
+	if hl&0xfff+rr&0xfff > 0xfff {
+		op.cpu.F |= FlagH
+	}
+	result := hl + rr
+	if result > 0xffff {
+		op.cpu.F |= FlagC
+	}
+	op.cpu.SetHL(uint16(result & 0xffff))
+    return true
+}
+

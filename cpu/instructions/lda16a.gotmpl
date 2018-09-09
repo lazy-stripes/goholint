@@ -1,0 +1,19 @@
+// {{.Opcode | printf "%02X"}}: LD (a16),A		16 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+	case 2:
+		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.A))
+		done = true
+	}
+	op.step++
+	return
+}
+

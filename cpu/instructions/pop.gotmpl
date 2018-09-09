@@ -1,0 +1,19 @@
+// {{.Opcode | printf "%02X"}}: POP {{.High}}{{.Low}}		12 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.{{.Low}} = op.cpu.MMU.Read(uint(op.cpu.SP))
+		op.cpu.SP++
+		op.step++
+	case 1:
+		op.cpu.{{.High}} = op.cpu.MMU.Read(uint(op.cpu.SP))
+		op.cpu.SP++
+		done = true
+	}
+	return
+}
+

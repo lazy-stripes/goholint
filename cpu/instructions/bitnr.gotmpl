@@ -1,0 +1,15 @@
+// CB {{.Opcode | printf "%02X"}}: BIT {{.Bit}},{{.Register}}			8 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Flags z 0 1 -
+	if c.{{.Register}}&(1<<{{.Bit}}) == 0 {
+		c.F = (c.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		c.F = (c.F & ^(FlagN | FlagZ)) | FlagH
+	}
+	return true
+}
+

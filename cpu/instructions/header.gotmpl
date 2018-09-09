@@ -3,12 +3,15 @@ package cpu
 
 // LR35902InstructionSet is an array of instrutions for the DMG CPU.
 var LR35902InstructionSet = [...]Instruction{
-{{- range . }}
-	{{.Opcode | printf "%#02x"}}: {{name .}}{},
+{{- range .Instructions }}
+	{{.Opcode | printf "%#02x"}}: &{{name .}}{},
 {{- end}}
 }
 
 // LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
-var LR35902ExtendedInstructionSet = []Instruction{
-
+var LR35902ExtendedInstructionSet = [...]Instruction{
+{{- range .Extended }}
+	{{.Opcode | printf "%#02x"}}: &{{name .}}{},
+{{- end}}
 }
+

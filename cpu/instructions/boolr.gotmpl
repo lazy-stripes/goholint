@@ -1,9 +1,9 @@
-// {{.Opcode | printf "%X"}}: {{.Instruction}} {{.Register}}
+// {{.Opcode | printf "%X"}}: {{.Instruction}} {{.Register}}			4 cycles
 type {{name .}} struct {
 	SingleStepOp
 }
 
-func (op {{name .}}) Execute(c *CPU) (done bool) {
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	c.A {{.Operator}} c.{{.Register}}
 	// Flags z 0 0 0
 	if c.A == 0 {

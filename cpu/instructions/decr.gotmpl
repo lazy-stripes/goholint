@@ -3,7 +3,7 @@ type {{name .}} struct {
 	SingleStepOp
 }
 
-func (op {{name .}}) Execute(c *CPU) (done bool) {
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	// Flags z 1 h -
 	c.F &= FlagC
 	c.F |= FlagN

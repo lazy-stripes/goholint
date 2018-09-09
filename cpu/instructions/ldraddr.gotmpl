@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: LD {{.Register}},({{.Address}})			8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	op.cpu.{{.Register}} = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	return true
+}
+
