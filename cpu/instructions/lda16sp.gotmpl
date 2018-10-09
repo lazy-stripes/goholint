@@ -9,7 +9,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		// XXX: template snippet for opReadD16Low/high
 		op.cpu.temp16 = uint16(op.cpu.NextByte())
 	case 1:
-		op.cpu.temp16 |= uint16(op.cpu.NextByte())
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
 		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.SP&0xff))
 	case 3:
