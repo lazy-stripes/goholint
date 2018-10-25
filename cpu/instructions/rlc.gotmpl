@@ -1,0 +1,13 @@
+{{- /* Common bit used by RLCA and extended RLC r instructions. */ -}}
+	// Flags z 0 0 c
+	c.F = 0x00
+	result := c.{{.Register}} << 1 & 0xff
+	if c.{{.Register}}&0x80 != 0 {
+		result |= 1
+		c.F |= FlagC
+	}
+
+	if result == 0 {
+		c.F |= FlagZ
+	}
+	c.{{.Register}} = result

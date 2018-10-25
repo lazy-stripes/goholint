@@ -1,0 +1,30 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} {{with .Address}}({{.}}){{else}}d8{{end}}		8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	// Flags: z 1 h c
+{{- with .Address}}
+	value := op.cpu.MMU.Read(uint(op.cpu.{{.}}()))
+{{- else}}
+	value := op.cpu.NextByte()
+{{- end}}
+	op.cpu.F = FlagN
+	if value&0xf > op.cpu.A&0xf {
+		op.cpu.F |= FlagH
+	}
+	if value > op.cpu.A {
+		op.cpu.F |= FlagC
+	}
+	result := op.cpu.A - value
+	if result == 0 {
+		op.cpu.F |= FlagZ
+	}
+{{- if eq .Instruction "SUB" }}
+	op.cpu.A = result
+{{- end}}
+    return true
+}
+
+

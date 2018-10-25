@@ -1,0 +1,9 @@
+// 00: NOP				4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	return true
+}
+

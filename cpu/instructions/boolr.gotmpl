@@ -1,0 +1,16 @@
+// {{.Opcode | printf "%X"}}: {{.Instruction}} {{.Register}}			4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	c.A {{.Operator}} c.{{.Register}}
+	// Flags z 0 0 0
+	if c.A == 0 {
+		c.F = FlagZ
+	} else {
+		c.F = 0
+	}
+	return true
+}
+

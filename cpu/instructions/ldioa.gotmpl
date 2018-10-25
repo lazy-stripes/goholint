@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: LD (FF00+{{with .Register}}{{.}}{{else}}a8{{end}}),A		{{if .Register}}8{{else}}12{{end}} cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.{{with .Register}}{{.}}{{else}}NextByte(){{end}})), op.cpu.A)
+	return true
+}
+

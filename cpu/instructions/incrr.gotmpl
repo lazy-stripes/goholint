@@ -1,0 +1,13 @@
+// {{.Opcode | printf "%02X"}}: INC {{.High}}{{.Low}}			8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	if op.cpu.{{.Low}} == 0xff {
+		op.cpu.{{.High}}++
+	}
+	op.cpu.{{.Low}}++
+	return true
+}
+

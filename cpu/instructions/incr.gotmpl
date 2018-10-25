@@ -1,0 +1,18 @@
+// {{.Opcode | printf "%02X"}}: INC {{.Register}}			4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Flags z 0 h -
+	c.F &= ^FlagN
+	if c.{{.Register}} > 0x0F {
+		c.F |= FlagH
+	}
+	c.{{.Register}}++
+	if c.{{.Register}} == 0 {
+		c.F |= FlagZ
+	}
+	return true
+}
+

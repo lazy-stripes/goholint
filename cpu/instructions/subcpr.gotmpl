@@ -1,0 +1,25 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} {{.Register}}		4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Flags: z 1 h c
+	c.F = FlagN
+	if c.{{.Register}}&0xf > c.A&0xf {
+		c.F |= FlagH
+	}
+	if c.{{.Register}} > c.A {
+		c.F |= FlagC
+	}
+	result := c.A - c.{{.Register}}
+	if result == 0 {
+		c.F |= FlagZ
+	}
+{{- if eq .Instruction "SUB" }}
+	c.A = result
+{{- end}}
+    return true
+}
+
+

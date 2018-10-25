@@ -1,0 +1,16 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} ({{.Address}})			8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	op.cpu.A {{.Operator}} op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	// Flags z 0 0 0
+	if op.cpu.A == 0 {
+		op.cpu.F = FlagZ
+	} else {
+		op.cpu.F = 0
+	}
+	return true
+}
+

@@ -1,0 +1,12 @@
+// {{.Opcode | printf "%02X"}}: LD A,(HL{{.Operator}})			8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	hl := op.cpu.HL()
+	op.cpu.A = op.cpu.MMU.Read(uint(hl))
+	op.cpu.SetHL(hl{{.Operator}}1)
+	return true
+}
+
