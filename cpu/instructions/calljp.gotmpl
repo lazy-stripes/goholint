@@ -1,4 +1,4 @@
-// {{.Opcode | printf "%02X"}}: CALL {{if .Flag}}{{if eq .Operator "!"}}N{{end}}{{.Flag}},{{end}}a16		24{{if .Operator}}/12{{end}} cycles
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} {{if .Flag}}{{if eq .Operator "!"}}N{{end}}{{.Flag}},{{end}}a16		{{if eq .Instruction "CALL"}}24{{else}}16{{end}}{{if .Operator}}/12{{end}} cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
@@ -20,6 +20,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.step++
 {{- end}}
 	case 2:
+{{- if eq .Instruction "CALL"}}
 		op.cpu.SP--
 		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
@@ -28,6 +29,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0xff))
 		op.step++
 	case 4:
+{{- end}}
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}

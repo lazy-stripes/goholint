@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 )
 
 // Quick and dirty aggregate of keys, not necessarily all used by all instructions, for readability.
@@ -214,7 +215,7 @@ func main() {
 		{Opcode: 0xc1, Template: "pop", High: "B", Low: "C"},
 		{Opcode: 0xc5, Template: "push", High: "B", Low: "C"},
 		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
-		{Opcode: 0xcd, Template: "call"},
+		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
 
 		{Opcode: 0xd1, Template: "pop", High: "D", Low: "E"},
 		{Opcode: 0xd5, Template: "push", High: "D", Low: "E"},
@@ -309,7 +310,7 @@ func main() {
 		{Extended: true, Opcode: 0x7f, Template: "bitnr", Bit: 7, Register: "A"},
 	}
 
-	funcs := template.FuncMap{"lower": strings.ToLower, "name": typeName}
+	funcs := template.FuncMap{"date": time.Now, "lower": strings.ToLower, "name": typeName}
 	t := template.New("header.gotmpl").Funcs(funcs)
 	t = template.Must(t.ParseGlob("instructions/*.gotmpl"))
 

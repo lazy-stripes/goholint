@@ -1,4 +1,4 @@
-// Generated code. See instructions.go
+// Auto-generated on 2018-10-25 13:25:16.624381248 +0200 CEST. See instructions.go
 package cpu
 
 // LR35902InstructionSet is an array of instrutions for the DMG CPU.
@@ -389,7 +389,7 @@ func (op *op08) Tick() (done bool) {
 		// XXX: template snippet for opReadD16Low/high
 		op.cpu.temp16 = uint16(op.cpu.NextByte())
 	case 1:
-		op.cpu.temp16 |= uint16(op.cpu.NextByte())
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
 		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.SP&0xff))
 	case 3:
