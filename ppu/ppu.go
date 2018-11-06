@@ -93,8 +93,11 @@ func (p *PPU) Tick() {
 
 	if !p.LCD.Enabled() {
 		if p.LCDC&LCDCDisplayEnable == 0 {
-			// Refresh window with "disabled screen" texture.
-			p.LCD.Blank()
+			// Refresh window with "disabled screen" texture at about the same
+			// rate we'd display the current texture upon VBlank.
+			if p.ticks%(456*153) == 0 {
+				p.LCD.Blank()
+			}
 		} else {
 			p.LCD.Enable()
 		}
