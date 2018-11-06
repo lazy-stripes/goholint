@@ -17,6 +17,7 @@ type SDL struct {
 	window   *sdl.Window
 	renderer *sdl.Renderer
 	texture  *sdl.Texture
+	blank    *sdl.Texture
 	buffer   []byte
 	offset   int
 }
@@ -66,9 +67,25 @@ func NewSDL() *SDL {
 		return nil // TODO: result, err
 	}
 
+	// Also pre-instantiate disabled screen texture as it'll be used a lot.
+	blank, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, ScreenWidth, ScreenHeight)
+	if err != nil {
+		texture.Destroy()
+		renderer.Destroy()
+		window.Destroy()
+		fmt.Fprintf(os.Stderr, "Failed to create blank texture: %s\n", err)
+		return nil // TODO: result, err
+	}
+	renderer.SetRenderTarget(blank)
+	renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
+	renderer.Clear()
+	renderer.SetDrawColor(ColorBlackR, ColorBlackG, ColorBlackB, sdl.ALPHA_OPAQUE)
+	renderer.DrawLine(0, ScreenHeight/2, ScreenWidth, ScreenHeight/2)
+	renderer.SetRenderTarget(nil)
+
 	screenLen := ScreenWidth * ScreenHeight * 4 // Go bindings use byte slices but SDL thinks in terms of uint32
 	buffer := make([]byte, screenLen)
-	sdl := SDL{Palette: DefaultPalette, renderer: renderer, texture: texture, buffer: buffer}
+	sdl := SDL{Palette: DefaultPalette, renderer: renderer, texture: texture, blank: blank, buffer: buffer}
 	sdl.Clear()
 	return &sdl
 }
@@ -76,16 +93,14 @@ func NewSDL() *SDL {
 // Close frees all resources created by SDL.
 func (s *SDL) Close() {
 	s.texture.Destroy()
+	s.blank.Destroy()
 	s.renderer.Destroy()
 	s.window.Destroy()
 }
 
 // Clear draws a disabled GB screen (white background with a blank line through the middle).
 func (s *SDL) Clear() {
-	s.renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
-	s.renderer.Clear()
-	s.renderer.SetDrawColor(ColorBlackR, ColorBlackG, ColorBlackB, sdl.ALPHA_OPAQUE)
-	s.renderer.DrawLine(0, ScreenHeight/2, ScreenWidth, ScreenHeight/2)
+	s.renderer.Copy(s.blank, nil, nil)
 	s.renderer.Present()
 }
 
