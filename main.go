@@ -1,7 +1,11 @@
 package main
 
 import (
+	"flag"
+	"log"
+	"os"
 	"runtime"
+	"runtime/pprof"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"go.tigris.fr/gameboy/cpu"
@@ -50,6 +54,21 @@ func run() int {
 
 func main() {
 	runtime.LockOSThread()
+
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err = pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+
+		log.Println("CPU profiling written to: ", *cpuprofile)
+	}
 	sdl.Init(sdl.INIT_VIDEO)
 	run()
 }

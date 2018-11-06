@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime/pprof"
 
 	"go.tigris.fr/gameboy/interrupts"
 
@@ -227,6 +228,8 @@ func instructionError(c *CPU, extended bool) {
 			fmt.Println("RAM dumped to ram-dump.bin")
 		}
 
+		// Manually stop profile here, since the Exit below will shortcut the deferred call in main.
+		pprof.StopCPUProfile()
 		os.Exit(255)
 	}
 }
