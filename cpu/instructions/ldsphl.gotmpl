@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: LD SP,HL			8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	op.cpu.SP = op.cpu.HL()
+	return true
+}
+

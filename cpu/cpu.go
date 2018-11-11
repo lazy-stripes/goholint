@@ -22,13 +22,16 @@ const (
 
 // A CPU implementation of the DMG-01's
 type CPU struct {
-	MMU                    memory.Addressable
-	Cycle                  uint
-	IME                    bool // Interrupt Master Enable flag
-	IF, IE                 uint8
-	A, F, B, C, D, E, H, L uint8
-	SP                     uint16
-	PC                     uint16
+	MMU    memory.Addressable
+	Cycle  uint
+	IME    bool // Interrupt Master Enable flag
+	IF, IE uint8
+	A, F   uint8
+	B, C   uint8
+	D, E   uint8
+	H, L   uint8
+	SP     uint16
+	PC     uint16
 
 	instruction Instruction
 	ticks       uint
@@ -60,7 +63,16 @@ func (c *CPU) Tick() {
 		c.state = states.InterruptWait0
 	}
 
+	// Exit HALT even if IME is not set
+	if (c.state == states.Halted) && (c.IF&c.IE != 0) {
+		c.state = states.FetchOpCode
+	}
+
 	switch c.state {
+	case states.Halted:
+		return
+	case states.Stopped:
+		return
 	case states.FetchOpCode:
 		opcode := c.NextByte()
 		if opcode == 0xcb { // Extended instruction set

@@ -1,0 +1,11 @@
+// 1F: RRA				4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// FIXME: [OPCODES] says flags are 0 0 0 c. Couldn't confirm.
+	{{template "rr.gotmpl" .}}
+	return true
+}
+

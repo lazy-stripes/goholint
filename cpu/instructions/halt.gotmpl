@@ -1,0 +1,11 @@
+// 76: HALT				4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// TODO: implement HALT bug [TCAGBD 4.10]
+	c.state = states.Halted
+	return true
+}
+

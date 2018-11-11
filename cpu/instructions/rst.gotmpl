@@ -1,0 +1,20 @@
+// {{.Opcode | printf "%02X"}}: RST {{.Address}}H		16 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		// [GEKKIO] mentions an internal delay.
+		op.step++
+	case 1:
+		// PC high byte would be cleared here.
+		op.step++
+	case 2:
+		op.cpu.PC = 0x{{.Address}}
+		done = true
+	}
+	return
+}
+

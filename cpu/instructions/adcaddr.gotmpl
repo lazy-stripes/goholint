@@ -1,9 +1,10 @@
-// {{.Opcode | printf "%02X"}}: ADD A,{{with .Address}}({{.}}){{else}}d8{{end}}		8 cycles
+// {{.Opcode | printf "%02X"}}: ADC A,{{with .Address}}({{.}}){{else}}d8{{end}}		8 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
 
 func (op *{{name .}}) Tick() (done bool) {
+	carry := (op.cpu.F & FlagC) >> 4
 	// Flags: z 0 h c
 	op.cpu.F = 0
 {{- with .Address}}
@@ -11,10 +12,10 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- else}}
 	value := op.cpu.NextByte()
 {{- end}}
-	if op.cpu.A&0xf+value&0xf > 0xf {
+	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
 		op.cpu.F |= FlagH
 	}
-	result := uint(op.cpu.A) + uint(value)
+	result := uint(op.cpu.A) + uint(value) + uint(carry)
 	if result > 0xff {
 		op.cpu.F |= FlagC
 	}

@@ -4,10 +4,14 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Tick() (done bool) {
+{{- if eq .High "S"}}
+	op.cpu.SP++
+{{- else}}
 	if op.cpu.{{.Low}} == 0xff {
 		op.cpu.{{.High}}++
 	}
 	op.cpu.{{.Low}}++
+{{- end}}
 	return true
 }
 

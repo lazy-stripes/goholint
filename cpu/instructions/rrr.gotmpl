@@ -1,0 +1,10 @@
+// CB {{.Opcode | printf "%02X"}}: RR {{.Register}}				8 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	{{template "rr.gotmpl" .}}
+	return true
+}
+

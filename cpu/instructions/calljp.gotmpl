@@ -26,7 +26,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0xff))
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 {{- end}}

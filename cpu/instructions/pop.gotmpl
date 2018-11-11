@@ -6,7 +6,7 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.{{.Low}} = op.cpu.MMU.Read(uint(op.cpu.SP))
+		op.cpu.{{.Low}} = op.cpu.MMU.Read(uint(op.cpu.SP)){{if eq .Low "F"}} & 0xf0{{end}}
 		op.cpu.SP++
 		op.step++
 	case 1:

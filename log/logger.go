@@ -10,20 +10,20 @@ var Enabled = false
 // Print displays a message just like fmt.Print but only if Enabled is true.
 func Print(v ...interface{}) {
 	if Enabled {
-		fmt.Print(v)
+		fmt.Print(v...)
 	}
 }
 
 // Printf displays a message just like fmt.Printf but only if Enabled is true.
 func Printf(format string, v ...interface{}) {
 	if Enabled {
-		fmt.Printf(format, v)
+		fmt.Printf(format, v...)
 	}
 }
 
 // Println displays a message just like fmt.Println but only if Enabled is true.
 func Println(v ...interface{}) {
 	if Enabled {
-		fmt.Println(v)
+		fmt.Println(v...)
 	}
 }

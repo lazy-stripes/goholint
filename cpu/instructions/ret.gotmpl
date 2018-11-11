@@ -1,4 +1,4 @@
-// {{.Opcode | printf "%02X"}}: {{.Instruction}}		16 cycles
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} {{if .Flag}}{{if eq .Operator "!"}}N{{end}}{{.Flag}}{{end}}		{{if .Flag}}20/8{{else}}16{{end}} cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
@@ -6,14 +6,30 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
+{{- if .Flag}}
+		if op.cpu.F&Flag{{.Flag}} {{.Operator}}= Flag{{.Flag}} {
+			op.step++
+		} else {
+			done = true
+		}
+	case 1:
+{{- end}}
 		op.cpu.PC = uint16(op.cpu.MMU.Read(uint(op.cpu.SP)))
 		op.cpu.SP++
 		op.step++
+{{- if .Flag}}
+	case 2:
+{{- else}}
 	case 1:
+{{- end}}
 		op.cpu.PC |= uint16(op.cpu.MMU.Read(uint(op.cpu.SP))) << 8
 		op.cpu.SP++
 		op.step++
+{{- if .Flag}}
+	case 3:
+{{- else}}
 	case 2:
+{{- end}}
 {{- if eq .Instruction "RETI" }}
 		op.cpu.IME = true
 {{- end}}

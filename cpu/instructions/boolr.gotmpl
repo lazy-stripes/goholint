@@ -5,11 +5,15 @@ type {{name .}} struct {
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	c.A {{.Operator}} c.{{.Register}}
+{{- if eq .Instruction "AND"}}
+	// Flags z 0 1 0
+	c.F = FlagH
+{{- else}}
 	// Flags z 0 0 0
+	c.F = 0
+{{- end}}
 	if c.A == 0 {
-		c.F = FlagZ
-	} else {
-		c.F = 0
+		c.F |= FlagZ
 	}
 	return true
 }

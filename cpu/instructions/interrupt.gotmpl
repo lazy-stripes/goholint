@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}}		4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	c.IME = {{if eq .Instruction "EI"}}true{{else}}false{{end}}
+    return true
+}
+

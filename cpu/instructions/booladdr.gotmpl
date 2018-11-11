@@ -1,15 +1,23 @@
-// {{.Opcode | printf "%02X"}}: {{.Instruction}} ({{.Address}})			8 cycles
+// {{.Opcode | printf "%02X"}}: {{.Instruction}} {{with .Address}}({{.}}){{else}}d8{{end}}			8 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
 
 func (op *{{name .}}) Tick() (done bool) {
+{{- if .Address}}
 	op.cpu.A {{.Operator}} op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+{{- else}}
+	op.cpu.A {{.Operator}} op.cpu.NextByte()
+{{- end}}
+{{- if eq .Instruction "AND"}}
+	// Flags z 0 1 0
+	op.cpu.F = FlagH
+{{- else}}
 	// Flags z 0 0 0
+	op.cpu.F = 0
+{{- end}}
 	if op.cpu.A == 0 {
-		op.cpu.F = FlagZ
-	} else {
-		op.cpu.F = 0
+		op.cpu.F |= FlagZ
 	}
 	return true
 }

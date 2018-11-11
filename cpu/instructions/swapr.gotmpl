@@ -1,0 +1,15 @@
+// CB {{.Opcode | printf "%02X"}}: SWAP {{.Register}}			8 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Flags z 0 0 0
+	c.F = 0x00
+	c.{{.Register}} = ((c.{{.Register}} & 0x0f) << 4) | ((c.{{.Register}} & 0xf0) >> 4)
+	if c.{{.Register}} == 0 {
+		c.F |= FlagZ
+	}
+	return true
+}
+

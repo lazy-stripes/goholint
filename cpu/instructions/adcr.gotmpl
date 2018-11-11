@@ -1,0 +1,23 @@
+// {{.Opcode | printf "%02X"}}: ADC A,{{.Register}}		4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.{{.Register}} & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.{{.Register}}) + carry
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+

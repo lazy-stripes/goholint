@@ -53,7 +53,7 @@ func (i *Interrupts) Contains(addr uint) bool {
 func (i *Interrupts) Read(addr uint) uint8 {
 	switch addr {
 	case AddrIF:
-		return *i.regIF | 0xe0
+		return *i.regIF & 0x1f
 	case AddrIE:
 		return *i.regIE
 	}
@@ -67,7 +67,7 @@ func (i *Interrupts) Write(addr uint, value uint8) {
 		*i.regIF = value & 0x1f
 	case AddrIE:
 		*i.regIE = value
-		fmt.Printf("IE=%#x", value)
+		fmt.Printf(" !!! IE=%#x\n", value)
 	}
 }
 

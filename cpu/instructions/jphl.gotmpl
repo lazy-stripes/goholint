@@ -1,0 +1,10 @@
+// {{.Opcode | printf "%02X"}}: JP HL			4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	c.PC = c.HL()
+	return true
+}
+

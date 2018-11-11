@@ -1,0 +1,12 @@
+// 10: STOP 0				4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Source indicates a 2-byte, 4-cycle instruction but this is unclear.
+	c.PC++	// Ignore following zero
+	c.state = states.Stopped
+	return true
+}
+

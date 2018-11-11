@@ -58,6 +58,8 @@ func main() {
 		{Opcode: 0x0c, Template: "incr", Register: "C"},
 		{Opcode: 0x0d, Template: "decr", Register: "C"},
 		{Opcode: 0x0e, Template: "ldrd8", Register: "C"},
+
+		{Opcode: 0x10, Template: "stop"},
 		{Opcode: 0x11, Template: "ldrrd16", High: "D", Low: "E"},
 		{Opcode: 0x12, Template: "ldaddrr", Address: "DE", Register: "A"},
 		{Opcode: 0x13, Template: "incrr", High: "D", Low: "E"},
@@ -72,6 +74,7 @@ func main() {
 		{Opcode: 0x1c, Template: "incr", Register: "E"},
 		{Opcode: 0x1d, Template: "decr", Register: "E"},
 		{Opcode: 0x1e, Template: "ldrd8", Register: "E"},
+		{Opcode: 0x1f, Template: "rra", Register: "A"},
 		{Opcode: 0x20, Template: "jr", Operator: "!", Flag: "Z"},
 		{Opcode: 0x21, Template: "ldrrd16", High: "H", Low: "L"},
 		{Opcode: 0x22, Template: "ldidhla", Operator: "+"},
@@ -79,6 +82,7 @@ func main() {
 		{Opcode: 0x24, Template: "incr", Register: "H"},
 		{Opcode: 0x25, Template: "decr", Register: "H"},
 		{Opcode: 0x26, Template: "ldrd8", Register: "H"},
+
 		{Opcode: 0x28, Template: "jr", Operator: "=", Flag: "Z"},
 		{Opcode: 0x29, Template: "addhlrr", High: "H", Low: "L"},
 		{Opcode: 0x2a, Template: "ldidahl", Operator: "+"},
@@ -86,9 +90,15 @@ func main() {
 		{Opcode: 0x2c, Template: "incr", Register: "L"},
 		{Opcode: 0x2d, Template: "decr", Register: "L"},
 		{Opcode: 0x2e, Template: "ldrd8", Register: "L"},
+		{Opcode: 0x2f, Template: "cpl"},
 		{Opcode: 0x30, Template: "jr", Operator: "!", Flag: "C"},
 		{Opcode: 0x31, Template: "ldrrd16", High: "S", Low: "P"},
 		{Opcode: 0x32, Template: "ldidhla", Operator: "-"},
+		{Opcode: 0x33, Template: "incrr", High: "S", Low: "P"},
+		{Opcode: 0x34, Template: "incaddr", Address: "HL"},
+		{Opcode: 0x35, Template: "decaddr", Address: "HL"},
+		{Opcode: 0x36, Template: "ldaddrd8", Address: "HL"},
+
 		{Opcode: 0x38, Template: "jr", Operator: "=", Flag: "C"},
 		{Opcode: 0x39, Template: "addhlrr", High: "S", Low: "P"},
 		{Opcode: 0x3a, Template: "ldidahl", Operator: "-"},
@@ -151,6 +161,7 @@ func main() {
 		{Opcode: 0x73, Template: "ldaddrr", Address: "HL", Register: "E"},
 		{Opcode: 0x74, Template: "ldaddrr", Address: "HL", Register: "H"},
 		{Opcode: 0x75, Template: "ldaddrr", Address: "HL", Register: "L"},
+		{Opcode: 0x76, Template: "halt"},
 		{Opcode: 0x77, Template: "ldaddrr", Address: "HL", Register: "A"},
 		{Opcode: 0x78, Template: "ldrr", Register: "A", OtherRegister: "B"},
 		{Opcode: 0x79, Template: "ldrr", Register: "A", OtherRegister: "C"},
@@ -194,7 +205,6 @@ func main() {
 		{Opcode: 0xad, Template: "boolr", Instruction: "XOR", Operator: "^=", Register: "L"},
 		{Opcode: 0xae, Template: "booladdr", Instruction: "XOR", Operator: "^=", Address: "HL"},
 		{Opcode: 0xaf, Template: "boolr", Instruction: "XOR", Operator: "^=", Register: "A"},
-
 		{Opcode: 0xb0, Template: "boolr", Instruction: "OR", Operator: "|=", Register: "B"},
 		{Opcode: 0xb1, Template: "boolr", Instruction: "OR", Operator: "|=", Register: "C"},
 		{Opcode: 0xb2, Template: "boolr", Instruction: "OR", Operator: "|=", Register: "D"},
@@ -211,26 +221,63 @@ func main() {
 		{Opcode: 0xbd, Template: "subcpr", Instruction: "CP", Register: "L"},
 		{Opcode: 0xbe, Template: "subcpaddr", Instruction: "CP", Address: "HL"},
 		{Opcode: 0xbf, Template: "subcpr", Instruction: "CP", Register: "A"},
-
+		{Opcode: 0xc0, Template: "ret", Instruction: "RET", Operator: "!", Flag: "Z"},
 		{Opcode: 0xc1, Template: "pop", High: "B", Low: "C"},
-		{Opcode: 0xc5, Template: "push", High: "B", Low: "C"},
-		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
-		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
 
+		{Opcode: 0xc2, Template: "calljp", Instruction: "JP", Operator: "!", Flag: "Z"},
+		{Opcode: 0xc3, Template: "calljp", Instruction: "JP"},
+		{Opcode: 0xc4, Template: "calljp", Instruction: "CALL", Operator: "!", Flag: "Z"},
+		{Opcode: 0xc5, Template: "push", High: "B", Low: "C"},
+		{Opcode: 0xc6, Template: "addaddr"},
+		{Opcode: 0xc7, Template: "rst", Address: "00"},
+
+		{Opcode: 0xc8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "Z"},
+		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
+
+		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
+		{Opcode: 0xce, Template: "adcaddr"},
+		{Opcode: 0xcf, Template: "rst", Address: "08"},
+		{Opcode: 0xd0, Template: "ret", Instruction: "RET", Operator: "!", Flag: "C"},
 		{Opcode: 0xd1, Template: "pop", High: "D", Low: "E"},
+
+		{Opcode: 0xd4, Template: "calljp", Instruction: "JP", Operator: "!", Flag: "C"},
 		{Opcode: 0xd5, Template: "push", High: "D", Low: "E"},
+		{Opcode: 0xd6, Template: "subcpaddr", Instruction: "SUB"},
+		{Opcode: 0xd7, Template: "rst", Address: "10"},
+		{Opcode: 0xd8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "C"},
+
 		{Opcode: 0xd9, Template: "ret", Instruction: "RETI"},
 
+		{Opcode: 0xdf, Template: "rst", Address: "18"},
 		{Opcode: 0xe0, Template: "ldioa"},
 		{Opcode: 0xe1, Template: "pop", High: "H", Low: "L"},
 		{Opcode: 0xe2, Template: "ldioa", Register: "C"},
+
 		{Opcode: 0xe5, Template: "push", High: "H", Low: "L"},
+		{Opcode: 0xe6, Template: "booladdr", Instruction: "AND", Operator: "&="},
+		{Opcode: 0xe7, Template: "rst", Address: "20"},
+
+		{Opcode: 0xe9, Template: "jphl"},
+
 		{Opcode: 0xea, Template: "lda16a"},
+		{Opcode: 0xee, Template: "booladdr", Instruction: "XOR", Operator: "^="},
+		{Opcode: 0xef, Template: "rst", Address: "28"},
 
 		{Opcode: 0xf0, Template: "ldaio"},
 		{Opcode: 0xf1, Template: "pop", High: "A", Low: "F"},
+
+		{Opcode: 0xf3, Template: "interrupt", Instruction: "DI"},
+
 		{Opcode: 0xf5, Template: "push", High: "A", Low: "F"},
+		{Opcode: 0xf6, Template: "booladdr", Instruction: "OR", Operator: "&="},
+		{Opcode: 0xf7, Template: "rst", Address: "30"},
+		{Opcode: 0xf9, Template: "ldsphl"},
+
+		{Opcode: 0xfa, Template: "ldaa16"},
+		{Opcode: 0xfb, Template: "interrupt", Instruction: "EI"},
+
 		{Opcode: 0xfe, Template: "subcpaddr", Instruction: "CP"},
+		{Opcode: 0xff, Template: "rst", Address: "38"},
 	}
 
 	extended := []data{
@@ -243,7 +290,31 @@ func main() {
 		{Extended: true, Opcode: 0x15, Template: "rlr", Register: "L"},
 		//{Extended: true, Opcode: 0x16, Template: "rladdr", Address: "HL"},
 		{Extended: true, Opcode: 0x17, Template: "rlr", Register: "A"},
+		{Extended: true, Opcode: 0x18, Template: "rrr", Register: "B"},
+		{Extended: true, Opcode: 0x19, Template: "rrr", Register: "C"},
+		{Extended: true, Opcode: 0x1a, Template: "rrr", Register: "D"},
+		{Extended: true, Opcode: 0x1b, Template: "rrr", Register: "E"},
+		{Extended: true, Opcode: 0x1c, Template: "rrr", Register: "H"},
+		{Extended: true, Opcode: 0x1d, Template: "rrr", Register: "L"},
+		//{Extended: true, Opcode: 0x1e, Template: "rraddr", Register: "HL"},
+		{Extended: true, Opcode: 0x1f, Template: "rrr", Register: "A"},
 
+		{Extended: true, Opcode: 0x30, Template: "swapr", Register: "B"},
+		{Extended: true, Opcode: 0x31, Template: "swapr", Register: "C"},
+		{Extended: true, Opcode: 0x32, Template: "swapr", Register: "D"},
+		{Extended: true, Opcode: 0x33, Template: "swapr", Register: "E"},
+		{Extended: true, Opcode: 0x34, Template: "swapr", Register: "H"},
+		{Extended: true, Opcode: 0x35, Template: "swapr", Register: "L"},
+		//{Extended: true, Opcode: 0x36, Template: "swapaddr", Register: "HL"},
+		{Extended: true, Opcode: 0x37, Template: "swapr", Register: "A"},
+		{Extended: true, Opcode: 0x38, Template: "sr", Instruction: "SRL", Register: "B"},
+		{Extended: true, Opcode: 0x39, Template: "sr", Instruction: "SRL", Register: "C"},
+		{Extended: true, Opcode: 0x3a, Template: "sr", Instruction: "SRL", Register: "D"},
+		{Extended: true, Opcode: 0x3b, Template: "sr", Instruction: "SRL", Register: "E"},
+		{Extended: true, Opcode: 0x3c, Template: "sr", Instruction: "SRL", Register: "H"},
+		{Extended: true, Opcode: 0x3d, Template: "sr", Instruction: "SRL", Register: "L"},
+		//{Extended: true, Opcode: 0x3e, Template: "sr", Instruction: "SRL", Register: "HL"},
+		{Extended: true, Opcode: 0x3f, Template: "sr", Instruction: "SRL", Register: "A"},
 		{Extended: true, Opcode: 0x40, Template: "bitnr", Bit: 0, Register: "B"},
 		{Extended: true, Opcode: 0x41, Template: "bitnr", Bit: 0, Register: "C"},
 		{Extended: true, Opcode: 0x42, Template: "bitnr", Bit: 0, Register: "D"},
