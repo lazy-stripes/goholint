@@ -13,6 +13,7 @@ import (
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu"
+	"go.tigris.fr/gameboy/serial"
 )
 
 func run() int {
@@ -27,11 +28,13 @@ func run() int {
 	ppu := ppu.New(lcd)
 	ppu.Interrupts = ints
 
+	serial := serial.New()
+
 	//cartridge := memory.NewROM("bin/tetris.gb", 0)
 	cartridge := memory.NewROM("bin/cpu_instrs/cpu_instrs.gb", 0)
 	wram := memory.NewRAM(0xc000, 0x2000)
-	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, hram, cartridge})
+	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, hram, cartridge})
 	cpu.MMU = mmu
 
 	// Main loop TODO: Gameboy.Run()
