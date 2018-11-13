@@ -39,11 +39,15 @@ type CPU struct {
 	interrupt   uint8  // Currently requested interrupt
 	temp8       uint8  // Internal work register storing 8-bit micro-operation results
 	temp16      uint16 // Internal work register storing 16-bit micro-operation results
+
+	debug     bool
+	startFrom uint16
+	oldPC     uint16
 }
 
 // New CPU running code in the given address space starting from 0.
 func New(code memory.Addressable) *CPU {
-	return &CPU{MMU: code, state: states.FetchOpCode}
+	return &CPU{MMU: code, state: states.FetchOpCode, startFrom: 0xFFFF}
 }
 
 // Tick advances the CPU state one step.
@@ -74,7 +78,14 @@ func (c *CPU) Tick() {
 	case states.Stopped:
 		return
 	case states.FetchOpCode:
+		if !c.debug && c.PC == c.startFrom {
+			c.debug = true
+		}
+		if c.debug && c.PC != c.oldPC {
+			fmt.Printf("PC=%04X (%02X)\n", c.PC, c.MMU.Read(uint(c.PC)))
+		}
 		opcode := c.NextByte()
+
 		if opcode == 0xcb { // Extended instruction set
 			c.state = states.FetchExtendedOpcode
 		} else {
