@@ -6,10 +6,12 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x{{.Address}}

@@ -4,7 +4,19 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Tick() (done bool) {
-	op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.{{with .Register}}{{.}}{{else}}NextByte(){{end}})), op.cpu.A)
+{{- if .Register}}
+	op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.{{.Register}})), op.cpu.A)
 	return true
+{{- else}}
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.NextByte()
+		op.step++
+	case 1:
+		op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.temp8)), op.cpu.A)
+		done = true
+	}
+	return
+{{- end}}
 }
 

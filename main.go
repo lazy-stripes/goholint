@@ -30,8 +30,18 @@ func run() int {
 
 	serial := serial.New()
 
-	//cartridge := memory.NewROM("bin/tetris.gb", 0)
-	cartridge := memory.NewROM("bin/cpu_instrs/cpu_instrs.gb", 0)
+	cartridge := memory.NewROM("bin/tetris.gb", 0)
+	//cartridge := memory.NewROM("bin/sml.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/03-op sp,hl.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/04-op r,imm.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/05-op rp.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/06-ld r,r.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/08-misc instrs.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/09-op r,r.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/10-bit ops.gb", 0)
+	//cartridge := memory.NewROM("bin/cpu_instrs/individual/11-op a,(hl).gb", 0)
+	//cartridge := memory.NewRAM(0, 0)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
 	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, hram, cartridge})
@@ -45,9 +55,6 @@ func run() int {
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
 		if tick == 229976-96 {
-			//			fmt.Println("STOP")
-		}
-		if cpu.PC == 0x98 {
 			//			fmt.Println("STOP")
 		}
 	}

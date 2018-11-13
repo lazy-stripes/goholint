@@ -1,0 +1,30 @@
+// {{.Opcode | printf "%02X"}}: SBC A,{{with .Address}}({{.}}){{else}}d8{{end}}		8 cycles
+type {{name .}} struct {
+	MultiStepsOp
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	carry := int((op.cpu.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	op.cpu.F = FlagN
+{{- if .Address}}
+	op.cpu.temp8 = op.cpu.{{.Address}}()
+{{- else}}
+	op.cpu.temp8 = op.cpu.NextByte()
+{{- end}}
+	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
+	// Trusting the Internet on this one.
+	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		op.cpu.F |= FlagH
+	}
+	if result < 0 {
+		op.cpu.F |= FlagC
+	}
+	op.cpu.A = uint8(result&0xff)
+	if op.cpu.A == 0 {
+		op.cpu.F |= FlagZ
+	}
+    return true
+}
+
+

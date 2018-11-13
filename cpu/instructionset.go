@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-11 23:14:56.682653746 +0100 CET m=+0.002250406. See instructions.go
+// Auto-generated on 2018-11-14 00:38:43.262550173 +0100 CET m=+0.002555895. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -145,6 +145,13 @@ var LR35902InstructionSet = [...]Instruction{
 	0x95: &op95{},
 	0x96: &op96{},
 	0x97: &op97{},
+	0x98: &op98{},
+	0x99: &op99{},
+	0x9a: &op9a{},
+	0x9b: &op9b{},
+	0x9c: &op9c{},
+	0x9d: &op9d{},
+	0x9f: &op9f{},
 	0xa0: &opA0{},
 	0xa1: &opA1{},
 	0xa2: &opA2{},
@@ -187,6 +194,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xc7: &opC7{},
 	0xc8: &opC8{},
 	0xc9: &opC9{},
+	0xca: &opCa{},
 	0xcd: &opCd{},
 	0xce: &opCe{},
 	0xcf: &opCf{},
@@ -198,6 +206,8 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd7: &opD7{},
 	0xd8: &opD8{},
 	0xd9: &opD9{},
+	0xda: &opDa{},
+	0xde: &opDe{},
 	0xdf: &opDf{},
 	0xe0: &opE0{},
 	0xe1: &opE1{},
@@ -316,6 +326,70 @@ var LR35902ExtendedInstructionSet = [...]Instruction{
 	0x7d: &opCb7d{},
 	0x7e: &opCb7e{},
 	0x7f: &opCb7f{},
+	0x80: &opCb80{},
+	0x81: &opCb81{},
+	0x82: &opCb82{},
+	0x83: &opCb83{},
+	0x84: &opCb84{},
+	0x85: &opCb85{},
+	0x86: &opCb86{},
+	0x87: &opCb87{},
+	0x88: &opCb88{},
+	0x89: &opCb89{},
+	0x8a: &opCb8a{},
+	0x8b: &opCb8b{},
+	0x8c: &opCb8c{},
+	0x8d: &opCb8d{},
+	0x8e: &opCb8e{},
+	0x8f: &opCb8f{},
+	0x90: &opCb90{},
+	0x91: &opCb91{},
+	0x92: &opCb92{},
+	0x93: &opCb93{},
+	0x94: &opCb94{},
+	0x95: &opCb95{},
+	0x96: &opCb96{},
+	0x97: &opCb97{},
+	0x98: &opCb98{},
+	0x99: &opCb99{},
+	0x9a: &opCb9a{},
+	0x9b: &opCb9b{},
+	0x9c: &opCb9c{},
+	0x9d: &opCb9d{},
+	0x9e: &opCb9e{},
+	0x9f: &opCb9f{},
+	0xa0: &opCbA0{},
+	0xa1: &opCbA1{},
+	0xa2: &opCbA2{},
+	0xa3: &opCbA3{},
+	0xa4: &opCbA4{},
+	0xa5: &opCbA5{},
+	0xa6: &opCbA6{},
+	0xa7: &opCbA7{},
+	0xa8: &opCbA8{},
+	0xa9: &opCbA9{},
+	0xaa: &opCbAa{},
+	0xab: &opCbAb{},
+	0xac: &opCbAc{},
+	0xad: &opCbAd{},
+	0xae: &opCbAe{},
+	0xaf: &opCbAf{},
+	0xb0: &opCbB0{},
+	0xb1: &opCbB1{},
+	0xb2: &opCbB2{},
+	0xb3: &opCbB3{},
+	0xb4: &opCbB4{},
+	0xb5: &opCbB5{},
+	0xb6: &opCbB6{},
+	0xb7: &opCbB7{},
+	0xb8: &opCbB8{},
+	0xb9: &opCbB9{},
+	0xba: &opCbBa{},
+	0xbb: &opCbBb{},
+	0xbc: &opCbBc{},
+	0xbd: &opCbBd{},
+	0xbe: &opCbBe{},
+	0xbf: &opCbBf{},
 }
 
 // 00: NOP				4 cycles
@@ -2295,6 +2369,181 @@ func (op *op97) Execute(c *CPU) (done bool) {
 }
 
 
+// 98: SBC A,B		4 cycles
+type op98 struct {
+	SingleStepOp
+}
+
+func (op *op98) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 99: SBC A,C		4 cycles
+type op99 struct {
+	SingleStepOp
+}
+
+func (op *op99) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9A: SBC A,D		4 cycles
+type op9a struct {
+	SingleStepOp
+}
+
+func (op *op9a) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9B: SBC A,E		4 cycles
+type op9b struct {
+	SingleStepOp
+}
+
+func (op *op9b) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9C: SBC A,H		4 cycles
+type op9c struct {
+	SingleStepOp
+}
+
+func (op *op9c) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9D: SBC A,L		4 cycles
+type op9d struct {
+	SingleStepOp
+}
+
+func (op *op9d) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9F: SBC A,A		4 cycles
+type op9f struct {
+	SingleStepOp
+}
+
+func (op *op9f) Execute(c *CPU) (done bool) {
+	carry := int((c.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	c.F = FlagN
+	result := int(c.A) - int(c.temp8) - carry
+	// Trusting the Internet on this one.
+	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		c.F |= FlagH
+	}
+	if result < 0 {
+		c.F |= FlagC
+	}
+	c.A = uint8(result&0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+
 // A0: AND B			4 cycles
 type opA0 struct {
 	SingleStepOp
@@ -3009,10 +3258,12 @@ type opC7 struct {
 func (op *opC7) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x00
@@ -3066,6 +3317,30 @@ func (op *opC9) Tick() (done bool) {
 		op.step++
 	case 2:
 		// [GEKKIO] mentions an internal delay.
+		done = true
+	}
+	return
+}
+
+// CA: JP Z,a16		16/12 cycles
+type opCa struct {
+	MultiStepsOp
+}
+
+func (op *opCa) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagZ == FlagZ {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
 	return
@@ -3132,10 +3407,12 @@ type opCf struct {
 func (op *opCf) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x08
@@ -3269,10 +3546,12 @@ type opD7 struct {
 func (op *opD7) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x10
@@ -3332,6 +3611,56 @@ func (op *opD9) Tick() (done bool) {
 	return
 }
 
+// DA: JP C,a16		16/12 cycles
+type opDa struct {
+	MultiStepsOp
+}
+
+func (op *opDa) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagC == FlagC {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
+// DE: SBC A,d8		8 cycles
+type opDe struct {
+	MultiStepsOp
+}
+
+func (op *opDe) Tick() (done bool) {
+	carry := int((op.cpu.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	op.cpu.F = FlagN
+	op.cpu.temp8 = op.cpu.NextByte()
+	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
+	// Trusting the Internet on this one.
+	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		op.cpu.F |= FlagH
+	}
+	if result < 0 {
+		op.cpu.F |= FlagC
+	}
+	op.cpu.A = uint8(result&0xff)
+	if op.cpu.A == 0 {
+		op.cpu.F |= FlagZ
+	}
+    return true
+}
+
+
 // DF: RST 18H		16 cycles
 type opDf struct {
 	MultiStepsOp
@@ -3340,10 +3669,12 @@ type opDf struct {
 func (op *opDf) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x18
@@ -3358,8 +3689,15 @@ type opE0 struct {
 }
 
 func (op *opE0) Tick() (done bool) {
-	op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.NextByte())), op.cpu.A)
-	return true
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.NextByte()
+		op.step++
+	case 1:
+		op.cpu.MMU.Write(uint(0xff00+uint16(op.cpu.temp8)), op.cpu.A)
+		done = true
+	}
+	return
 }
 
 // E1: POP HL		12 cycles
@@ -3436,10 +3774,12 @@ type opE7 struct {
 func (op *opE7) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x20
@@ -3500,10 +3840,12 @@ type opEf struct {
 func (op *opEf) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x28
@@ -3586,7 +3928,7 @@ type opF6 struct {
 }
 
 func (op *opF6) Tick() (done bool) {
-	op.cpu.A &= op.cpu.NextByte()
+	op.cpu.A |= op.cpu.NextByte()
 	// Flags z 0 0 0
 	op.cpu.F = 0
 	if op.cpu.A == 0 {
@@ -3603,10 +3945,12 @@ type opF7 struct {
 func (op *opF7) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x30
@@ -3685,10 +4029,12 @@ type opFf struct {
 func (op *opFf) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// [GEKKIO] mentions an internal delay.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
-		// PC high byte would be cleared here.
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x38
@@ -5263,6 +5609,702 @@ func (op *opCb7f) Execute(c *CPU) (done bool) {
 	} else {
 		c.F = (c.F & ^(FlagN | FlagZ)) | FlagH
 	}
+	return true
+}
+
+// CB 80: RES 0,B			8 cycles
+type opCb80 struct {
+	SingleStepOp
+}
+
+func (op *opCb80) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<0)
+	return true
+}
+
+// CB 81: RES 0,C			8 cycles
+type opCb81 struct {
+	SingleStepOp
+}
+
+func (op *opCb81) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<0)
+	return true
+}
+
+// CB 82: RES 0,D			8 cycles
+type opCb82 struct {
+	SingleStepOp
+}
+
+func (op *opCb82) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<0)
+	return true
+}
+
+// CB 83: RES 0,E			8 cycles
+type opCb83 struct {
+	SingleStepOp
+}
+
+func (op *opCb83) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<0)
+	return true
+}
+
+// CB 84: RES 0,H			8 cycles
+type opCb84 struct {
+	SingleStepOp
+}
+
+func (op *opCb84) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<0)
+	return true
+}
+
+// CB 85: RES 0,L			8 cycles
+type opCb85 struct {
+	SingleStepOp
+}
+
+func (op *opCb85) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<0)
+	return true
+}
+
+// CB 86: RES 0,(HL)			16 cycles
+type opCb86 struct {
+	MultiStepsOp
+}
+
+func (op *opCb86) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<0)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB 87: RES 0,A			8 cycles
+type opCb87 struct {
+	SingleStepOp
+}
+
+func (op *opCb87) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<0)
+	return true
+}
+
+// CB 88: RES 1,B			8 cycles
+type opCb88 struct {
+	SingleStepOp
+}
+
+func (op *opCb88) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<1)
+	return true
+}
+
+// CB 89: RES 1,C			8 cycles
+type opCb89 struct {
+	SingleStepOp
+}
+
+func (op *opCb89) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<1)
+	return true
+}
+
+// CB 8A: RES 1,D			8 cycles
+type opCb8a struct {
+	SingleStepOp
+}
+
+func (op *opCb8a) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<1)
+	return true
+}
+
+// CB 8B: RES 1,E			8 cycles
+type opCb8b struct {
+	SingleStepOp
+}
+
+func (op *opCb8b) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<1)
+	return true
+}
+
+// CB 8C: RES 1,H			8 cycles
+type opCb8c struct {
+	SingleStepOp
+}
+
+func (op *opCb8c) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<1)
+	return true
+}
+
+// CB 8D: RES 1,L			8 cycles
+type opCb8d struct {
+	SingleStepOp
+}
+
+func (op *opCb8d) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<1)
+	return true
+}
+
+// CB 8E: RES 1,(HL)			16 cycles
+type opCb8e struct {
+	MultiStepsOp
+}
+
+func (op *opCb8e) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<1)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB 8F: RES 1,A			8 cycles
+type opCb8f struct {
+	SingleStepOp
+}
+
+func (op *opCb8f) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<1)
+	return true
+}
+
+// CB 90: RES 2,B			8 cycles
+type opCb90 struct {
+	SingleStepOp
+}
+
+func (op *opCb90) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<2)
+	return true
+}
+
+// CB 91: RES 2,C			8 cycles
+type opCb91 struct {
+	SingleStepOp
+}
+
+func (op *opCb91) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<2)
+	return true
+}
+
+// CB 92: RES 2,D			8 cycles
+type opCb92 struct {
+	SingleStepOp
+}
+
+func (op *opCb92) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<2)
+	return true
+}
+
+// CB 93: RES 2,E			8 cycles
+type opCb93 struct {
+	SingleStepOp
+}
+
+func (op *opCb93) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<2)
+	return true
+}
+
+// CB 94: RES 2,H			8 cycles
+type opCb94 struct {
+	SingleStepOp
+}
+
+func (op *opCb94) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<2)
+	return true
+}
+
+// CB 95: RES 2,L			8 cycles
+type opCb95 struct {
+	SingleStepOp
+}
+
+func (op *opCb95) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<2)
+	return true
+}
+
+// CB 96: RES 2,(HL)			16 cycles
+type opCb96 struct {
+	MultiStepsOp
+}
+
+func (op *opCb96) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<2)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB 97: RES 2,A			8 cycles
+type opCb97 struct {
+	SingleStepOp
+}
+
+func (op *opCb97) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<2)
+	return true
+}
+
+// CB 98: RES 3,B			8 cycles
+type opCb98 struct {
+	SingleStepOp
+}
+
+func (op *opCb98) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<3)
+	return true
+}
+
+// CB 99: RES 3,C			8 cycles
+type opCb99 struct {
+	SingleStepOp
+}
+
+func (op *opCb99) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<3)
+	return true
+}
+
+// CB 9A: RES 3,D			8 cycles
+type opCb9a struct {
+	SingleStepOp
+}
+
+func (op *opCb9a) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<3)
+	return true
+}
+
+// CB 9B: RES 3,E			8 cycles
+type opCb9b struct {
+	SingleStepOp
+}
+
+func (op *opCb9b) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<3)
+	return true
+}
+
+// CB 9C: RES 3,H			8 cycles
+type opCb9c struct {
+	SingleStepOp
+}
+
+func (op *opCb9c) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<3)
+	return true
+}
+
+// CB 9D: RES 3,L			8 cycles
+type opCb9d struct {
+	SingleStepOp
+}
+
+func (op *opCb9d) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<3)
+	return true
+}
+
+// CB 9E: RES 3,(HL)			16 cycles
+type opCb9e struct {
+	MultiStepsOp
+}
+
+func (op *opCb9e) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<3)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB 9F: RES 3,A			8 cycles
+type opCb9f struct {
+	SingleStepOp
+}
+
+func (op *opCb9f) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<3)
+	return true
+}
+
+// CB A0: RES 4,B			8 cycles
+type opCbA0 struct {
+	SingleStepOp
+}
+
+func (op *opCbA0) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<4)
+	return true
+}
+
+// CB A1: RES 4,C			8 cycles
+type opCbA1 struct {
+	SingleStepOp
+}
+
+func (op *opCbA1) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<4)
+	return true
+}
+
+// CB A2: RES 4,D			8 cycles
+type opCbA2 struct {
+	SingleStepOp
+}
+
+func (op *opCbA2) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<4)
+	return true
+}
+
+// CB A3: RES 4,E			8 cycles
+type opCbA3 struct {
+	SingleStepOp
+}
+
+func (op *opCbA3) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<4)
+	return true
+}
+
+// CB A4: RES 4,H			8 cycles
+type opCbA4 struct {
+	SingleStepOp
+}
+
+func (op *opCbA4) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<4)
+	return true
+}
+
+// CB A5: RES 4,L			8 cycles
+type opCbA5 struct {
+	SingleStepOp
+}
+
+func (op *opCbA5) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<4)
+	return true
+}
+
+// CB A6: RES 4,(HL)			16 cycles
+type opCbA6 struct {
+	MultiStepsOp
+}
+
+func (op *opCbA6) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<4)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB A7: RES 4,A			8 cycles
+type opCbA7 struct {
+	SingleStepOp
+}
+
+func (op *opCbA7) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<4)
+	return true
+}
+
+// CB A8: RES 5,B			8 cycles
+type opCbA8 struct {
+	SingleStepOp
+}
+
+func (op *opCbA8) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<5)
+	return true
+}
+
+// CB A9: RES 5,C			8 cycles
+type opCbA9 struct {
+	SingleStepOp
+}
+
+func (op *opCbA9) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<5)
+	return true
+}
+
+// CB AA: RES 5,D			8 cycles
+type opCbAa struct {
+	SingleStepOp
+}
+
+func (op *opCbAa) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<5)
+	return true
+}
+
+// CB AB: RES 5,E			8 cycles
+type opCbAb struct {
+	SingleStepOp
+}
+
+func (op *opCbAb) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<5)
+	return true
+}
+
+// CB AC: RES 5,H			8 cycles
+type opCbAc struct {
+	SingleStepOp
+}
+
+func (op *opCbAc) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<5)
+	return true
+}
+
+// CB AD: RES 5,L			8 cycles
+type opCbAd struct {
+	SingleStepOp
+}
+
+func (op *opCbAd) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<5)
+	return true
+}
+
+// CB AE: RES 5,(HL)			16 cycles
+type opCbAe struct {
+	MultiStepsOp
+}
+
+func (op *opCbAe) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<5)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB AF: RES 5,A			8 cycles
+type opCbAf struct {
+	SingleStepOp
+}
+
+func (op *opCbAf) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<5)
+	return true
+}
+
+// CB B0: RES 6,B			8 cycles
+type opCbB0 struct {
+	SingleStepOp
+}
+
+func (op *opCbB0) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<6)
+	return true
+}
+
+// CB B1: RES 6,C			8 cycles
+type opCbB1 struct {
+	SingleStepOp
+}
+
+func (op *opCbB1) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<6)
+	return true
+}
+
+// CB B2: RES 6,D			8 cycles
+type opCbB2 struct {
+	SingleStepOp
+}
+
+func (op *opCbB2) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<6)
+	return true
+}
+
+// CB B3: RES 6,E			8 cycles
+type opCbB3 struct {
+	SingleStepOp
+}
+
+func (op *opCbB3) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<6)
+	return true
+}
+
+// CB B4: RES 6,H			8 cycles
+type opCbB4 struct {
+	SingleStepOp
+}
+
+func (op *opCbB4) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<6)
+	return true
+}
+
+// CB B5: RES 6,L			8 cycles
+type opCbB5 struct {
+	SingleStepOp
+}
+
+func (op *opCbB5) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<6)
+	return true
+}
+
+// CB B6: RES 6,(HL)			16 cycles
+type opCbB6 struct {
+	MultiStepsOp
+}
+
+func (op *opCbB6) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<6)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB B7: RES 6,A			8 cycles
+type opCbB7 struct {
+	SingleStepOp
+}
+
+func (op *opCbB7) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<6)
+	return true
+}
+
+// CB B8: RES 7,B			8 cycles
+type opCbB8 struct {
+	SingleStepOp
+}
+
+func (op *opCbB8) Execute(c *CPU) (done bool) {
+	c.B &= ^uint8(1<<7)
+	return true
+}
+
+// CB B9: RES 7,C			8 cycles
+type opCbB9 struct {
+	SingleStepOp
+}
+
+func (op *opCbB9) Execute(c *CPU) (done bool) {
+	c.C &= ^uint8(1<<7)
+	return true
+}
+
+// CB BA: RES 7,D			8 cycles
+type opCbBa struct {
+	SingleStepOp
+}
+
+func (op *opCbBa) Execute(c *CPU) (done bool) {
+	c.D &= ^uint8(1<<7)
+	return true
+}
+
+// CB BB: RES 7,E			8 cycles
+type opCbBb struct {
+	SingleStepOp
+}
+
+func (op *opCbBb) Execute(c *CPU) (done bool) {
+	c.E &= ^uint8(1<<7)
+	return true
+}
+
+// CB BC: RES 7,H			8 cycles
+type opCbBc struct {
+	SingleStepOp
+}
+
+func (op *opCbBc) Execute(c *CPU) (done bool) {
+	c.H &= ^uint8(1<<7)
+	return true
+}
+
+// CB BD: RES 7,L			8 cycles
+type opCbBd struct {
+	SingleStepOp
+}
+
+func (op *opCbBd) Execute(c *CPU) (done bool) {
+	c.L &= ^uint8(1<<7)
+	return true
+}
+
+// CB BE: RES 7,(HL)			16 cycles
+type opCbBe struct {
+	MultiStepsOp
+}
+
+func (op *opCbBe) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		op.cpu.temp8 &= ^uint8(1<<7)
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
+	}
+	return true
+}
+
+// CB BF: RES 7,A			8 cycles
+type opCbBf struct {
+	SingleStepOp
+}
+
+func (op *opCbBf) Execute(c *CPU) (done bool) {
+	c.A &= ^uint8(1<<7)
 	return true
 }
 
