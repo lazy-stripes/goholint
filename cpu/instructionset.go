@@ -525,7 +525,7 @@ func (op *op08) Tick() (done bool) {
 	case 2:
 		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.SP&0xff))
 	case 3:
-		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.SP>>8))
+		op.cpu.MMU.Write(uint(op.cpu.temp16+1), uint8(op.cpu.SP>>8))
 		done = true
 	}
 	op.step++
