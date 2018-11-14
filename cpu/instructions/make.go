@@ -242,13 +242,16 @@ func main() {
 		{Opcode: 0xc8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "Z"},
 		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
 		{Opcode: 0xca, Template: "calljp", Instruction: "JP", Operator: "=", Flag: "Z"},
+		// CB is prefix for extended instruction set.
+		{Opcode: 0xcc, Template: "calljp", Instruction: "CALL", Operator: "=", Flag: "Z"},
 		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
 		{Opcode: 0xce, Template: "adcaddr"},
 		{Opcode: 0xcf, Template: "rst", Address: "08"},
 		{Opcode: 0xd0, Template: "ret", Instruction: "RET", Operator: "!", Flag: "C"},
 		{Opcode: 0xd1, Template: "pop", High: "D", Low: "E"},
-
-		{Opcode: 0xd4, Template: "calljp", Instruction: "JP", Operator: "!", Flag: "C"},
+		{Opcode: 0xd2, Template: "calljp", Instruction: "JP", Operator: "!", Flag: "C"},
+		// No D3 opcode.
+		{Opcode: 0xd4, Template: "calljp", Instruction: "CALL", Operator: "!", Flag: "C"},
 		{Opcode: 0xd5, Template: "push", High: "D", Low: "E"},
 		{Opcode: 0xd6, Template: "subcpaddr", Instruction: "SUB"},
 		{Opcode: 0xd7, Template: "rst", Address: "10"},
@@ -256,7 +259,8 @@ func main() {
 
 		{Opcode: 0xd9, Template: "ret", Instruction: "RETI"},
 		{Opcode: 0xda, Template: "calljp", Instruction: "JP", Operator: "=", Flag: "C"},
-
+		// No DB opcode.
+		{Opcode: 0xdc, Template: "calljp", Instruction: "CALL", Operator: "=", Flag: "C"},
 		{Opcode: 0xde, Template: "sbcaddr"},
 		{Opcode: 0xdf, Template: "rst", Address: "18"},
 		{Opcode: 0xe0, Template: "ldioa"},

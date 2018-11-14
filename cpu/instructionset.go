@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-14 00:38:43.262550173 +0100 CET m=+0.002555895. See instructions.go
+// Auto-generated on 2018-11-14 14:13:21.42536532 +0100 CET. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -195,11 +195,13 @@ var LR35902InstructionSet = [...]Instruction{
 	0xc8: &opC8{},
 	0xc9: &opC9{},
 	0xca: &opCa{},
+	0xcc: &opCc{},
 	0xcd: &opCd{},
 	0xce: &opCe{},
 	0xcf: &opCf{},
 	0xd0: &opD0{},
 	0xd1: &opD1{},
+	0xd2: &opD2{},
 	0xd4: &opD4{},
 	0xd5: &opD5{},
 	0xd6: &opD6{},
@@ -207,6 +209,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd8: &opD8{},
 	0xd9: &opD9{},
 	0xda: &opDa{},
+	0xdc: &opDc{},
 	0xde: &opDe{},
 	0xdf: &opDf{},
 	0xe0: &opE0{},
@@ -3346,6 +3349,38 @@ func (op *opCa) Tick() (done bool) {
 	return
 }
 
+// CC: CALL Z,a16		24/12 cycles
+type opCc struct {
+	MultiStepsOp
+}
+
+func (op *opCc) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagZ == FlagZ {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
 // CD: CALL a16		24 cycles
 type opCd struct {
 	MultiStepsOp
@@ -3468,7 +3503,31 @@ func (op *opD1) Tick() (done bool) {
 	return
 }
 
-// D4: JP NC,a16		16/12 cycles
+// D2: JP NC,a16		16/12 cycles
+type opD2 struct {
+	MultiStepsOp
+}
+
+func (op *opD2) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagC != FlagC {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
+// D4: CALL NC,a16		24/12 cycles
 type opD4 struct {
 	MultiStepsOp
 }
@@ -3486,6 +3545,14 @@ func (op *opD4) Tick() (done bool) {
 			done = true
 		}
 	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
@@ -3629,6 +3696,38 @@ func (op *opDa) Tick() (done bool) {
 			done = true
 		}
 	case 2:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
+// DC: CALL C,a16		24/12 cycles
+type opDc struct {
+	MultiStepsOp
+}
+
+func (op *opDc) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagC == FlagC {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
