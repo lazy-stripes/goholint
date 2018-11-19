@@ -18,18 +18,18 @@ func (op *{{name .}}) Tick() (done bool) {
 		// Flags: 0 0 h c
 		op.cpu.F = 0
 
-		if int16(op.cpu.{{.Register}}{{if eq .Register "HL"}}(){{end}})&0xff+int16(op.offset)&0xff > 0xff {
+		// Need cast to signed for the potential substraction
+		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f) & 0x10 != 0 {
 			op.cpu.F |= FlagH
 		}
-		// Need cast to signed for the potential substraction
-		result := int32(op.cpu.{{.Register}}{{if eq .Register "HL"}}(){{end}}) + int32(op.offset)
-		if result > 0xffff {
+		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff) & 0x100 != 0 {
 			op.cpu.F |= FlagC
 		}
+		result := int16(op.cpu.SP) + int16(op.offset)
 {{- if eq .Register "SP"}}
-		op.cpu.{{.Register}} = uint16(result&0xffff)
+		op.cpu.{{.Register}} = uint16(result)
 {{- else}}
-		op.cpu.Set{{.Register}}(uint16(result&0xffff))
+		op.cpu.Set{{.Register}}(uint16(result))
 {{- end}}
 		done = true
 	}

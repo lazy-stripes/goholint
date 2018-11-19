@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-19 23:31:38.486401048 +0100 CET m=+0.002696817. See instructions.go
+// Auto-generated on 2018-11-19 23:47:40.992949103 +0100 CET m=+0.002815308. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -204,11 +204,13 @@ var LR35902InstructionSet = [...]Instruction{
 	0xc8: &opC8{},
 	0xc9: &opC9{},
 	0xca: &opCa{},
+	0xcc: &opCc{},
 	0xcd: &opCd{},
 	0xce: &opCe{},
 	0xcf: &opCf{},
 	0xd0: &opD0{},
 	0xd1: &opD1{},
+	0xd2: &opD2{},
 	0xd4: &opD4{},
 	0xd5: &opD5{},
 	0xd6: &opD6{},
@@ -216,6 +218,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd8: &opD8{},
 	0xd9: &opD9{},
 	0xda: &opDa{},
+	0xdc: &opDc{},
 	0xde: &opDe{},
 	0xdf: &opDf{},
 	0xe0: &opE0{},
@@ -3570,6 +3573,38 @@ func (op *opCa) Tick() (done bool) {
 	return
 }
 
+// CC: CALL Z,a16		24/12 cycles
+type opCc struct {
+	MultiStepsOp
+}
+
+func (op *opCc) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagZ == FlagZ {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
 // CD: CALL a16		24 cycles
 type opCd struct {
 	MultiStepsOp
@@ -3692,7 +3727,31 @@ func (op *opD1) Tick() (done bool) {
 	return
 }
 
-// D4: JP NC,a16		16/12 cycles
+// D2: JP NC,a16		16/12 cycles
+type opD2 struct {
+	MultiStepsOp
+}
+
+func (op *opD2) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagC != FlagC {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
+// D4: CALL NC,a16		24/12 cycles
 type opD4 struct {
 	MultiStepsOp
 }
@@ -3710,6 +3769,14 @@ func (op *opD4) Tick() (done bool) {
 			done = true
 		}
 	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
@@ -3853,6 +3920,38 @@ func (op *opDa) Tick() (done bool) {
 			done = true
 		}
 	case 2:
+		op.cpu.PC = op.cpu.temp16
+		done = true
+	}
+	return
+}
+
+// DC: CALL C,a16		24/12 cycles
+type opDc struct {
+	MultiStepsOp
+}
+
+func (op *opDc) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp16 = uint16(op.cpu.NextByte())
+		op.step++
+	case 1:
+		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
+		if op.cpu.F&FlagC == FlagC {
+			op.step++
+		} else {
+			done = true
+		}
+	case 2:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
+		op.step++
+	case 3:
+		op.cpu.SP--
+		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
+		op.step++
+	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
@@ -4030,15 +4129,15 @@ func (op *opE8) Tick() (done bool) {
 		// Flags: 0 0 h c
 		op.cpu.F = 0
 
-		if int16(op.cpu.SP)&0xff+int16(op.offset)&0xff > 0xff {
+		// Need cast to signed for the potential substraction
+		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f) & 0x10 != 0 {
 			op.cpu.F |= FlagH
 		}
-		// Need cast to signed for the potential substraction
-		result := int32(op.cpu.SP) + int32(op.offset)
-		if result > 0xffff {
+		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff) & 0x100 != 0 {
 			op.cpu.F |= FlagC
 		}
-		op.cpu.SP = uint16(result&0xffff)
+		result := int16(op.cpu.SP) + int16(op.offset)
+		op.cpu.SP = uint16(result)
 		done = true
 	}
 	return
@@ -4230,15 +4329,15 @@ func (op *opF8) Tick() (done bool) {
 		// Flags: 0 0 h c
 		op.cpu.F = 0
 
-		if int16(op.cpu.HL())&0xff+int16(op.offset)&0xff > 0xff {
+		// Need cast to signed for the potential substraction
+		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f) & 0x10 != 0 {
 			op.cpu.F |= FlagH
 		}
-		// Need cast to signed for the potential substraction
-		result := int32(op.cpu.HL()) + int32(op.offset)
-		if result > 0xffff {
+		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff) & 0x100 != 0 {
 			op.cpu.F |= FlagC
 		}
-		op.cpu.SetHL(uint16(result&0xffff))
+		result := int16(op.cpu.SP) + int16(op.offset)
+		op.cpu.SetHL(uint16(result))
 		done = true
 	}
 	return
