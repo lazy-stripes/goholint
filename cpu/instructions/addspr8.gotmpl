@@ -1,0 +1,38 @@
+// {{.Opcode | printf "%02X"}}: {{if eq .Register "SP"}}ADD SP,r8{{else}}LD HL,SP+r8{{end}}		{{if eq .Register "SP"}}16{{else}}12{{end}} cycles
+type {{name .}} struct {
+	MultiStepsOp
+	offset int8
+}
+
+func (op *{{name .}}) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.offset = int8(op.cpu.NextByte())
+		op.step++
+	case 1:
+{{- if eq .Register "SP"}}
+		// [REF NEEDED] extra cycle
+		op.step++
+	case 2:
+{{- end}}
+		// Flags: 0 0 h c
+		op.cpu.F = 0
+
+		if int16(op.cpu.{{.Register}}{{if eq .Register "HL"}}(){{end}})&0xff+int16(op.offset)&0xff > 0xff {
+			op.cpu.F |= FlagH
+		}
+		// Need cast to signed for the potential substraction
+		result := int32(op.cpu.{{.Register}}{{if eq .Register "HL"}}(){{end}}) + int32(op.offset)
+		if result > 0xffff {
+			op.cpu.F |= FlagC
+		}
+{{- if eq .Register "SP"}}
+		op.cpu.{{.Register}} = uint16(result&0xffff)
+{{- else}}
+		op.cpu.Set{{.Register}}(uint16(result&0xffff))
+{{- end}}
+		done = true
+	}
+	return
+}
+

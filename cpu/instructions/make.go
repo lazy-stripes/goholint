@@ -270,7 +270,7 @@ func main() {
 		{Opcode: 0xe5, Template: "push", High: "H", Low: "L"},
 		{Opcode: 0xe6, Template: "booladdr", Instruction: "AND", Operator: "&="},
 		{Opcode: 0xe7, Template: "rst", Address: "20"},
-
+		{Opcode: 0xe8, Template: "addspr8", Register: "SP"},
 		{Opcode: 0xe9, Template: "jphl"},
 
 		{Opcode: 0xea, Template: "lda16a"},
@@ -285,6 +285,7 @@ func main() {
 		{Opcode: 0xf5, Template: "push", High: "A", Low: "F"},
 		{Opcode: 0xf6, Template: "booladdr", Instruction: "OR", Operator: "|="},
 		{Opcode: 0xf7, Template: "rst", Address: "30"},
+		{Opcode: 0xf8, Template: "addspr8", Register: "HL"},
 		{Opcode: 0xf9, Template: "ldsphl"},
 
 		{Opcode: 0xfa, Template: "ldaa16"},

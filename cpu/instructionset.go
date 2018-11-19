@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-14 14:13:21.42536532 +0100 CET. See instructions.go
+// Auto-generated on 2018-11-19 19:46:21.705763487 +0100 CET m=+0.018889826. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -218,6 +218,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xe5: &opE5{},
 	0xe6: &opE6{},
 	0xe7: &opE7{},
+	0xe8: &opE8{},
 	0xe9: &opE9{},
 	0xea: &opEa{},
 	0xee: &opEe{},
@@ -228,6 +229,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xf5: &opF5{},
 	0xf6: &opF6{},
 	0xf7: &opF7{},
+	0xf8: &opF8{},
 	0xf9: &opF9{},
 	0xfa: &opFa{},
 	0xfb: &opFb{},
@@ -3887,6 +3889,38 @@ func (op *opE7) Tick() (done bool) {
 	return
 }
 
+// E8: ADD SP,r8		16 cycles
+type opE8 struct {
+	MultiStepsOp
+	offset int8
+}
+
+func (op *opE8) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.offset = int8(op.cpu.NextByte())
+		op.step++
+	case 1:
+		// [REF NEEDED] extra cycle
+		op.step++
+	case 2:
+		// Flags: 0 0 h c
+		op.cpu.F = 0
+
+		if int16(op.cpu.SP)&0xff+int16(op.offset)&0xff > 0xff {
+			op.cpu.F |= FlagH
+		}
+		// Need cast to signed for the potential substraction
+		result := int32(op.cpu.SP) + int32(op.offset)
+		if result > 0xffff {
+			op.cpu.F |= FlagC
+		}
+		op.cpu.SP = uint16(result&0xffff)
+		done = true
+	}
+	return
+}
+
 // E9: JP HL			4 cycles
 type opE9 struct {
 	SingleStepOp
@@ -4053,6 +4087,35 @@ func (op *opF7) Tick() (done bool) {
 		op.step++
 	case 2:
 		op.cpu.PC = 0x30
+		done = true
+	}
+	return
+}
+
+// F8: LD HL,SP+r8		12 cycles
+type opF8 struct {
+	MultiStepsOp
+	offset int8
+}
+
+func (op *opF8) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.offset = int8(op.cpu.NextByte())
+		op.step++
+	case 1:
+		// Flags: 0 0 h c
+		op.cpu.F = 0
+
+		if int16(op.cpu.HL())&0xff+int16(op.offset)&0xff > 0xff {
+			op.cpu.F |= FlagH
+		}
+		// Need cast to signed for the potential substraction
+		result := int32(op.cpu.HL()) + int32(op.offset)
+		if result > 0xffff {
+			op.cpu.F |= FlagC
+		}
+		op.cpu.SetHL(uint16(result&0xffff))
 		done = true
 	}
 	return
