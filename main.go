@@ -16,9 +16,7 @@ import (
 	"go.tigris.fr/gameboy/serial"
 )
 
-func run() int {
-	rompath := "bin/DMG_ROM.bin"
-	boot := memory.NewBoot(rompath)
+func run(fastBoot bool) int {
 
 	// Pre-instantiate CPU and interrupts so other components can access them too.
 	cpu := cpu.New(nil)
@@ -30,10 +28,20 @@ func run() int {
 
 	serial := serial.New()
 
-	cartridge := memory.NewROM("bin/tetris.gb", 0)
+	var boot memory.Addressable
+	if fastBoot {
+		// TODO: set vram and other registers
+		boot = memory.NewRAM(memory.BootAddr, 1)
+		cpu.PC = 0x0100
+	} else {
+		rompath := "bin/DMG_ROM.bin"
+		boot = memory.NewBoot(rompath)
+	}
+
+	//cartridge := memory.NewROM("bin/tetris.gb", 0)
 	//cartridge := memory.NewROM("bin/sml.gb", 0)
 	//cartridge := memory.NewROM("bin/cpu_instrs/individual/03-op sp,hl.gb", 0)
-	//cartridge := memory.NewROM("bin/cpu_instrs/individual/04-op r,imm.gb", 0)
+	cartridge := memory.NewROM("bin/cpu_instrs/individual/04-op r,imm.gb", 0)
 	//cartridge := memory.NewROM("bin/cpu_instrs/individual/05-op rp.gb", 0)
 	//cartridge := memory.NewROM("bin/cpu_instrs/individual/06-ld r,r.gb", 0)
 	//cartridge := memory.NewROM("bin/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb", 0)
@@ -65,8 +73,10 @@ func run() int {
 func main() {
 	runtime.LockOSThread()
 
+	var fastBoot = flag.Bool("fastboot", false, "bypass boot ROM execution")
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
@@ -80,5 +90,5 @@ func main() {
 		log.Println("CPU profiling written to: ", *cpuprofile)
 	}
 	sdl.Init(sdl.INIT_VIDEO)
-	run()
+	run(*fastBoot)
 }
