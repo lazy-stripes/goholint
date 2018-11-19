@@ -179,7 +179,14 @@ func main() {
 		{Opcode: 0x85, Template: "addr", Register: "L"},
 		{Opcode: 0x86, Template: "addaddr", Address: "HL"},
 		{Opcode: 0x87, Template: "addr", Register: "A"},
-
+		{Opcode: 0x88, Template: "adcr", Register: "B"},
+		{Opcode: 0x89, Template: "adcr", Register: "C"},
+		{Opcode: 0x8a, Template: "adcr", Register: "D"},
+		{Opcode: 0x8b, Template: "adcr", Register: "E"},
+		{Opcode: 0x8c, Template: "adcr", Register: "H"},
+		{Opcode: 0x8d, Template: "adcr", Register: "L"},
+		{Opcode: 0x8e, Template: "adcaddr", Address: "HL"},
+		{Opcode: 0x8f, Template: "adcr", Register: "A"},
 		{Opcode: 0x90, Template: "subcpr", Instruction: "SUB", Register: "B"},
 		{Opcode: 0x91, Template: "subcpr", Instruction: "SUB", Register: "C"},
 		{Opcode: 0x92, Template: "subcpr", Instruction: "SUB", Register: "D"},
@@ -194,9 +201,8 @@ func main() {
 		{Opcode: 0x9b, Template: "sbcr", Register: "E"},
 		{Opcode: 0x9c, Template: "sbcr", Register: "H"},
 		{Opcode: 0x9d, Template: "sbcr", Register: "L"},
-		//{Opcode: 0x9e, Template: "sbcaddr", Address: "HL"},
+		{Opcode: 0x9e, Template: "sbcaddr", Address: "HL"},
 		{Opcode: 0x9f, Template: "sbcr", Register: "A"},
-
 		{Opcode: 0xa0, Template: "boolr", Instruction: "AND", Operator: "&=", Register: "B"},
 		{Opcode: 0xa1, Template: "boolr", Instruction: "AND", Operator: "&=", Register: "C"},
 		{Opcode: 0xa2, Template: "boolr", Instruction: "AND", Operator: "&=", Register: "D"},
@@ -297,6 +303,7 @@ func main() {
 
 	extended := []data{
 		// FIXME: those should be dynamically generated there and then.
+		{Extended: true, Opcode: 0x06, Template: "rlcaddr", Address: "HL"},
 		{Extended: true, Opcode: 0x10, Template: "rlr", Register: "B"},
 		{Extended: true, Opcode: 0x11, Template: "rlr", Register: "C"},
 		{Extended: true, Opcode: 0x12, Template: "rlr", Register: "D"},

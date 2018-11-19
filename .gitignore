@@ -2,6 +2,7 @@ test
 debug
 debug.test
 *-dump.*
+*.prof
 *.zip
 .vscode/
 bin/

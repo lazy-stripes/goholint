@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-19 19:46:21.705763487 +0100 CET m=+0.018889826. See instructions.go
+// Auto-generated on 2018-11-19 23:31:38.486401048 +0100 CET m=+0.002696817. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -137,6 +137,14 @@ var LR35902InstructionSet = [...]Instruction{
 	0x85: &op85{},
 	0x86: &op86{},
 	0x87: &op87{},
+	0x88: &op88{},
+	0x89: &op89{},
+	0x8a: &op8a{},
+	0x8b: &op8b{},
+	0x8c: &op8c{},
+	0x8d: &op8d{},
+	0x8e: &op8e{},
+	0x8f: &op8f{},
 	0x90: &op90{},
 	0x91: &op91{},
 	0x92: &op92{},
@@ -151,6 +159,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0x9b: &op9b{},
 	0x9c: &op9c{},
 	0x9d: &op9d{},
+	0x9e: &op9e{},
 	0x9f: &op9f{},
 	0xa0: &opA0{},
 	0xa1: &opA1{},
@@ -195,13 +204,11 @@ var LR35902InstructionSet = [...]Instruction{
 	0xc8: &opC8{},
 	0xc9: &opC9{},
 	0xca: &opCa{},
-	0xcc: &opCc{},
 	0xcd: &opCd{},
 	0xce: &opCe{},
 	0xcf: &opCf{},
 	0xd0: &opD0{},
 	0xd1: &opD1{},
-	0xd2: &opD2{},
 	0xd4: &opD4{},
 	0xd5: &opD5{},
 	0xd6: &opD6{},
@@ -209,7 +216,6 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd8: &opD8{},
 	0xd9: &opD9{},
 	0xda: &opDa{},
-	0xdc: &opDc{},
 	0xde: &opDe{},
 	0xdf: &opDf{},
 	0xe0: &opE0{},
@@ -239,6 +245,7 @@ var LR35902InstructionSet = [...]Instruction{
 
 // LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
 var LR35902ExtendedInstructionSet = [...]Instruction{
+	0x06: &opCb06{},
 	0x10: &opCb10{},
 	0x11: &opCb11{},
 	0x12: &opCb12{},
@@ -2189,6 +2196,192 @@ func (op *op87) Execute(c *CPU) (done bool) {
     return true
 }
 
+// 88: ADC A,B		4 cycles
+type op88 struct {
+	SingleStepOp
+}
+
+func (op *op88) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.B & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.B) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 89: ADC A,C		4 cycles
+type op89 struct {
+	SingleStepOp
+}
+
+func (op *op89) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.C & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.C) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 8A: ADC A,D		4 cycles
+type op8a struct {
+	SingleStepOp
+}
+
+func (op *op8a) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.D & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.D) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 8B: ADC A,E		4 cycles
+type op8b struct {
+	SingleStepOp
+}
+
+func (op *op8b) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.E & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.E) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 8C: ADC A,H		4 cycles
+type op8c struct {
+	SingleStepOp
+}
+
+func (op *op8c) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.H & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.H) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 8D: ADC A,L		4 cycles
+type op8d struct {
+	SingleStepOp
+}
+
+func (op *op8d) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.L & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.L) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
+// 8E: ADC A,(HL)		8 cycles
+type op8e struct {
+	MultiStepsOp
+}
+
+func (op *op8e) Tick() (done bool) {
+	carry := (op.cpu.F & FlagC) >> 4
+	// Flags: z 0 h c
+	op.cpu.F = 0
+	value := op.cpu.MMU.Read(uint(op.cpu.HL()))
+	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
+		op.cpu.F |= FlagH
+	}
+	result := uint(op.cpu.A) + uint(value) + uint(carry)
+	if result > 0xff {
+		op.cpu.F |= FlagC
+	}
+	op.cpu.A = uint8(result & 0xff)
+	if op.cpu.A == 0 {
+		op.cpu.F |= FlagZ
+	}
+    return true
+}
+
+
+// 8F: ADC A,A		4 cycles
+type op8f struct {
+	SingleStepOp
+}
+
+func (op *op8f) Execute(c *CPU) (done bool) {
+	carry := (c.F & FlagC) >> 4
+	// Flags: z 0 h c
+	c.F = 0
+	if (c.A & 0x0f) + (c.A & 0x0f) + carry > 0x0f {
+		c.F |= FlagH
+	}
+	result := uint(c.A) + uint(c.A) + uint(carry)
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+    return true
+}
+
 // 90: SUB B		4 cycles
 type op90 struct {
 	SingleStepOp
@@ -2519,6 +2712,32 @@ func (op *op9d) Execute(c *CPU) (done bool) {
 	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
+	}
+    return true
+}
+
+
+// 9E: SBC A,(HL)		8 cycles
+type op9e struct {
+	MultiStepsOp
+}
+
+func (op *op9e) Tick() (done bool) {
+	carry := int((op.cpu.F & FlagC) >> 4)
+	// Flags: z 1 h c
+	op.cpu.F = FlagN
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
+	// Trusting the Internet on this one.
+	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+		op.cpu.F |= FlagH
+	}
+	if result < 0 {
+		op.cpu.F |= FlagC
+	}
+	op.cpu.A = uint8(result&0xff)
+	if op.cpu.A == 0 {
+		op.cpu.F |= FlagZ
 	}
     return true
 }
@@ -3351,38 +3570,6 @@ func (op *opCa) Tick() (done bool) {
 	return
 }
 
-// CC: CALL Z,a16		24/12 cycles
-type opCc struct {
-	MultiStepsOp
-}
-
-func (op *opCc) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp16 = uint16(op.cpu.NextByte())
-		op.step++
-	case 1:
-		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
-		if op.cpu.F&FlagZ == FlagZ {
-			op.step++
-		} else {
-			done = true
-		}
-	case 2:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
-		op.step++
-	case 3:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
-		op.step++
-	case 4:
-		op.cpu.PC = op.cpu.temp16
-		done = true
-	}
-	return
-}
-
 // CD: CALL a16		24 cycles
 type opCd struct {
 	MultiStepsOp
@@ -3505,31 +3692,7 @@ func (op *opD1) Tick() (done bool) {
 	return
 }
 
-// D2: JP NC,a16		16/12 cycles
-type opD2 struct {
-	MultiStepsOp
-}
-
-func (op *opD2) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp16 = uint16(op.cpu.NextByte())
-		op.step++
-	case 1:
-		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
-		if op.cpu.F&FlagC != FlagC {
-			op.step++
-		} else {
-			done = true
-		}
-	case 2:
-		op.cpu.PC = op.cpu.temp16
-		done = true
-	}
-	return
-}
-
-// D4: CALL NC,a16		24/12 cycles
+// D4: JP NC,a16		16/12 cycles
 type opD4 struct {
 	MultiStepsOp
 }
@@ -3547,14 +3710,6 @@ func (op *opD4) Tick() (done bool) {
 			done = true
 		}
 	case 2:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
-		op.step++
-	case 3:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
-		op.step++
-	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
@@ -3698,38 +3853,6 @@ func (op *opDa) Tick() (done bool) {
 			done = true
 		}
 	case 2:
-		op.cpu.PC = op.cpu.temp16
-		done = true
-	}
-	return
-}
-
-// DC: CALL C,a16		24/12 cycles
-type opDc struct {
-	MultiStepsOp
-}
-
-func (op *opDc) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp16 = uint16(op.cpu.NextByte())
-		op.step++
-	case 1:
-		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
-		if op.cpu.F&FlagC == FlagC {
-			op.step++
-		} else {
-			done = true
-		}
-	case 2:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC>>8))
-		op.step++
-	case 3:
-		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.PC&0x00ff))
-		op.step++
-	case 4:
 		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
@@ -4200,6 +4323,34 @@ func (op *opFf) Tick() (done bool) {
 		op.step++
 	case 2:
 		op.cpu.PC = 0x38
+		done = true
+	}
+	return
+}
+
+// 06: RLC (HL)				16 cycles
+type opCb06 struct {
+	MultiStepsOp
+}
+
+func (op *opCb06) Tick() (done bool) {
+	switch op.step {
+	case 0:
+		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+		op.step++
+	case 1:
+		// Flags z 0 0 c
+		op.cpu.F = 0x00
+		result := op.cpu.temp8 << 1 & 0xff
+		if op.cpu.temp8&0x80 != 0 {
+			result |= 1
+			op.cpu.F |= FlagC
+		}
+
+		if result == 0 {
+			op.cpu.F |= FlagZ
+		}
+		op.cpu.MMU.Write(uint(op.cpu.HL()), op.cpu.temp8)
 		done = true
 	}
 	return
