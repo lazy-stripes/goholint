@@ -1,0 +1,13 @@
+{{- /* Common bit used by RRCA and extended RRC r instructions.
+       Might require assiging op.cpu to local variable c in Tick(). */ -}}
+	result := c.{{.Register}} >> 1
+	// Flags z 0 0 c
+	c.F = 0x00
+	if result == 0 {
+		c.F |= FlagZ
+	}
+	if c.{{.Register}}&1 > 0 {
+		result |= (1 << 7)
+		c.F |= FlagC
+	}
+	c.{{.Register}} = result

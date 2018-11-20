@@ -1,0 +1,18 @@
+// {{.Opcode | printf "%02X"}}: {{.Instruction}}			4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	z := c.F & FlagZ
+{{- if eq .Instruction "SCF"}}
+	// Flags: - 0 0 1
+	c.F = FlagC | z
+{{- else}}
+	// Flags: - 0 0 c
+	c.F = (c.F ^ FlagC) & FlagC
+	c.F |= z
+{{- end}}
+	return true
+}
+

@@ -58,7 +58,7 @@ func main() {
 		{Opcode: 0x0c, Template: "incr", Register: "C"},
 		{Opcode: 0x0d, Template: "decr", Register: "C"},
 		{Opcode: 0x0e, Template: "ldrd8", Register: "C"},
-
+		{Opcode: 0x0f, Template: "rrca", Register: "A"},
 		{Opcode: 0x10, Template: "stop"},
 		{Opcode: 0x11, Template: "ldrrd16", High: "D", Low: "E"},
 		{Opcode: 0x12, Template: "ldaddrr", Address: "DE", Register: "A"},
@@ -98,7 +98,7 @@ func main() {
 		{Opcode: 0x34, Template: "incaddr", Address: "HL"},
 		{Opcode: 0x35, Template: "decaddr", Address: "HL"},
 		{Opcode: 0x36, Template: "ldaddrd8", Address: "HL"},
-
+		{Opcode: 0x37, Template: "scfccf", Instruction: "SCF"},
 		{Opcode: 0x38, Template: "jr", Operator: "=", Flag: "C"},
 		{Opcode: 0x39, Template: "addhlrr", High: "S", Low: "P"},
 		{Opcode: 0x3a, Template: "ldidahl", Operator: "-"},
@@ -106,7 +106,7 @@ func main() {
 		{Opcode: 0x3c, Template: "incr", Register: "A"},
 		{Opcode: 0x3d, Template: "decr", Register: "A"},
 		{Opcode: 0x3e, Template: "ldrd8", Register: "A"},
-
+		{Opcode: 0x3f, Template: "scfccf", Instruction: "CCF"},
 		{Opcode: 0x40, Template: "ldrr", Register: "B", OtherRegister: "B"},
 		{Opcode: 0x41, Template: "ldrr", Register: "B", OtherRegister: "C"},
 		{Opcode: 0x42, Template: "ldrr", Register: "B", OtherRegister: "D"},
@@ -303,7 +303,22 @@ func main() {
 
 	extended := []data{
 		// FIXME: those should be dynamically generated there and then.
+		{Extended: true, Opcode: 0x00, Template: "rlcr", Register: "B"},
+		{Extended: true, Opcode: 0x01, Template: "rlcr", Register: "C"},
+		{Extended: true, Opcode: 0x02, Template: "rlcr", Register: "D"},
+		{Extended: true, Opcode: 0x03, Template: "rlcr", Register: "E"},
+		{Extended: true, Opcode: 0x04, Template: "rlcr", Register: "H"},
+		{Extended: true, Opcode: 0x05, Template: "rlcr", Register: "L"},
 		{Extended: true, Opcode: 0x06, Template: "rlcaddr", Address: "HL"},
+		{Extended: true, Opcode: 0x07, Template: "rrcr", Register: "A"},
+		{Extended: true, Opcode: 0x08, Template: "rrcr", Register: "B"},
+		{Extended: true, Opcode: 0x09, Template: "rrcr", Register: "C"},
+		{Extended: true, Opcode: 0x0a, Template: "rrcr", Register: "D"},
+		{Extended: true, Opcode: 0x0b, Template: "rrcr", Register: "E"},
+		{Extended: true, Opcode: 0x0c, Template: "rrcr", Register: "H"},
+		{Extended: true, Opcode: 0x0d, Template: "rrcr", Register: "L"},
+		{Extended: true, Opcode: 0x0e, Template: "rrcaddr", Address: "HL"},
+		{Extended: true, Opcode: 0x0f, Template: "rrcr", Register: "A"},
 		{Extended: true, Opcode: 0x10, Template: "rlr", Register: "B"},
 		{Extended: true, Opcode: 0x11, Template: "rlr", Register: "C"},
 		{Extended: true, Opcode: 0x12, Template: "rlr", Register: "D"},
