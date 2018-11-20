@@ -285,7 +285,7 @@ func main() {
 
 		{Opcode: 0xf0, Template: "ldaio"},
 		{Opcode: 0xf1, Template: "pop", High: "A", Low: "F"},
-
+		{Opcode: 0xf2, Template: "ldaio", Register: "C"},
 		{Opcode: 0xf3, Template: "interrupt", Instruction: "DI"},
 
 		{Opcode: 0xf5, Template: "push", High: "A", Low: "F"},

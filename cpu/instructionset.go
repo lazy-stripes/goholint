@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-19 23:47:40.992949103 +0100 CET m=+0.002815308. See instructions.go
+// Auto-generated on 2018-11-20 14:54:55.415206136 +0100 CET. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -234,6 +234,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xef: &opEf{},
 	0xf0: &opF0{},
 	0xf1: &opF1{},
+	0xf2: &opF2{},
 	0xf3: &opF3{},
 	0xf5: &opF5{},
 	0xf6: &opF6{},
@@ -4243,6 +4244,16 @@ func (op *opF1) Tick() (done bool) {
 		done = true
 	}
 	return
+}
+
+// F2: LD A,(FF00+C)		8 cycles
+type opF2 struct {
+	MultiStepsOp
+}
+
+func (op *opF2) Tick() (done bool) {
+	op.cpu.A = op.cpu.MMU.Read(uint(0xff00+uint16(op.cpu.C)))
+	return true
 }
 
 // F3: DI		4 cycles
