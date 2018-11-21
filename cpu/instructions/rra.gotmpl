@@ -4,7 +4,7 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
-	// FIXME: [OPCODES] says flags are 0 0 0 c. Couldn't confirm.
+	// Flags 0 0 0 c
 	{{template "rr.gotmpl" .}}
 	return true
 }

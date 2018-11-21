@@ -1,4 +1,4 @@
-// {{.Opcode | printf "%02X"}}: INC ({{.Address}})			12 cycles
+// CB {{.Opcode | printf "%02X"}}: {{.Instruction}} {{.Address}}			16 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
@@ -9,15 +9,13 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
 		op.step++
 	case 1:
-		// Flags z 0 h -
-		op.cpu.F &= FlagC
-		if op.cpu.temp8&0x0f == 0x0f {
-			op.cpu.F |= FlagH
-		}
-		op.cpu.temp8++
+		// Flags z 0 0 0
+		op.cpu.F = 0x00
+		op.cpu.temp8 = ((op.cpu.temp8 & 0x0f) << 4) | ((op.cpu.temp8 & 0xf0) >> 4)
 		if op.cpu.temp8 == 0 {
 			op.cpu.F |= FlagZ
 		}
+
 		op.cpu.MMU.Write(uint(op.cpu.{{.Address}}()), op.cpu.temp8)
 		done = true
 	}

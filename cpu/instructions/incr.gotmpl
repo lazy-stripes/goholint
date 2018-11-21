@@ -6,7 +6,7 @@ type {{name .}} struct {
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	// Flags z 0 h -
 	c.F &= FlagC
-	if c.{{.Register}} == 0x0f {
+	if c.{{.Register}}&0x0f == 0x0f {
 		c.F |= FlagH
 	}
 	c.{{.Register}}++

@@ -1,13 +1,15 @@
-{{- /* Common bit used by RRCA and extended RRC r instructions.
-       Might require assiging op.cpu to local variable c in Tick(). */ -}}
+{{- /* Common bit used by RRCA and extended RRC r instructions. */ -}}
 	result := c.{{.Register}} >> 1
 	// Flags z 0 0 c
 	c.F = 0x00
-	if result == 0 {
-		c.F |= FlagZ
-	}
 	if c.{{.Register}}&1 > 0 {
 		result |= (1 << 7)
 		c.F |= FlagC
 	}
+{{- /* [OPCODES] Non-extended RRCA instruction clears flag Z. */ -}}
+{{- if .Extended}}
+	if result == 0 {
+		c.F |= FlagZ
+	}
+{{- end}}
 	c.{{.Register}} = result

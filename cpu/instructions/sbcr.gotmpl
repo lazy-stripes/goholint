@@ -7,9 +7,9 @@ func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	carry := int((c.F & FlagC) >> 4)
 	// Flags: z 1 h c
 	c.F = FlagN
-	result := int(c.A) - int(c.temp8) - carry
+	result := int(c.A) - int(c.{{.Register}}) - carry
 	// Trusting the Internet on this one.
-	if (c.A ^ c.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+	if (c.A ^ c.{{.Register}} ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {

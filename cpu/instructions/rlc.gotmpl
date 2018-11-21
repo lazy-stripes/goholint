@@ -6,8 +6,10 @@
 		result |= 1
 		c.F |= FlagC
 	}
-
+{{- /* [OPCODES] Non-extended RLCA instruction clears flag Z. */ -}}
+{{- if .Extended}}
 	if result == 0 {
 		c.F |= FlagZ
 	}
+{{- end}}
 	c.{{.Register}} = result

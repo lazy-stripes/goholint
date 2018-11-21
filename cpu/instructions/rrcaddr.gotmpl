@@ -12,12 +12,12 @@ func (op *{{name .}}) Tick() (done bool) {
 		// Flags z 0 0 c
 		op.cpu.F = 0x00
 		result := op.cpu.temp8 >> 1
-		if result == 0 {
-			op.cpu.F |= FlagZ
-		}
-		if op.cpu.temp8&1 > 0 {
+		if op.cpu.temp8&1 != 0 {
 			result |= (1 << 7)
 			op.cpu.F |= FlagC
+		}
+		if result == 0 {
+			op.cpu.F |= FlagZ
 		}
 
 		op.cpu.MMU.Write(uint(op.cpu.{{.Address}}()), result)

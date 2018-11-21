@@ -1,0 +1,10 @@
+// CB {{.Opcode | printf "%02X"}}: SET {{.Bit}},{{.Register}}			8 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	c.{{.Register}} |= uint8(1<<{{.Bit}})
+	return true
+}
+

@@ -1,14 +1,16 @@
-{{- /* Common bit used by RLA and extended RL r instructions.
-       Might require assiging op.cpu to local variable c in Tick(). */ -}}
+{{- /* Common bit used by RLA and extended RL r instructions. */ -}}
 	result := c.{{.Register}} << 1 & 0xff
 	if c.F&FlagC > 0 {
 		result |= 1
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
+{{- /* [OPCODES] Non-extended RLA instruction clears flag Z. */ -}}
+{{- if .Extended}}
 	if result == 0 {
 		c.F |= FlagZ
 	}
+{{- end}}
 	if c.{{.Register}}&(1<<7) > 0 {
 		c.F |= FlagC
 	}

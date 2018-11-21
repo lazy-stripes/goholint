@@ -1,15 +1,15 @@
-// CB {{.Opcode | printf "%02X"}}: {{.Instruction}}	{{.Register}}			8 cycles
+// CB {{.Opcode | printf "%02X"}}: {{.Instruction}} {{.Register}}			8 cycles
 type {{name .}} struct {
 	SingleStepOp
 }
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
-	// Flags z 0 0 c
+	// Flags z 0 0 c (though [OPCODES] says z 0 0 0 for SRA)
 	c.F = 0x00
-	if c.{{.Register}}&1 > 0 {
+	if c.{{.Register}}&1 != 0 {
 		c.F |= FlagC
 	}
-	c.{{.Register}} = (c.{{.Register}} >> 1){{if eq .Instruction "SRL"}} | (c.{{.Register}} & (1 << 7)){{end}}
+	c.{{.Register}} = (c.{{.Register}} >> 1){{if eq .Instruction "SRA"}} | (c.{{.Register}} & (1 << 7)){{end}}
 	if c.{{.Register}} == 0 {
 		c.F |= FlagZ
 	}

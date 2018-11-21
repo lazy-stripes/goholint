@@ -1,0 +1,35 @@
+// 27: DAA				4 cycles
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	// Huge thanks to www.z80.info/z80syntx.htm and coffee-gb for that one.
+	result := int(c.A)
+	if c.F&FlagN != 0 {
+		if c.F&FlagH != 0 {
+			result = (result - 0x06) & 0xff
+		}
+		if c.F&FlagC != 0 {
+			result = (result - 0x60) & 0xff
+		}
+	} else {
+		if (c.F&FlagH != 0) || (result&0x0f > 9) {
+			result += 0x06
+		}
+		if (c.F&FlagC != 0) || (result > 0x9f) {
+			result += 0x60
+		}
+	}
+	// Flags z - 0 c
+	c.F &= FlagN | FlagC
+	if result > 0xff {
+		c.F |= FlagC
+	}
+	c.A = uint8(result & 0xff)
+	if c.A == 0 {
+		c.F |= FlagZ
+	}
+	return true
+}
+
