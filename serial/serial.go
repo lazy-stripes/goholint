@@ -2,8 +2,6 @@ package serial
 
 import (
 	"fmt"
-
-	"go.tigris.fr/gameboy/memory"
 )
 
 // Register addresses
@@ -14,24 +12,34 @@ const (
 
 // Serial registers for game link. Used only for debug for now.
 type Serial struct {
-	memory.Registers
-
 	SB, SC uint8
 }
 
 // New instantiates a Serial addressable mapping to FF01 and FF02.
 func New() *Serial {
-	s := Serial{Registers: memory.Registers{}}
-	s.Registers[0xff01] = &s.SB
-	s.Registers[0xff02] = &s.SC
-	return &s
+	return &Serial{}
 }
 
-// Override write for Serial Transfer Control
+func (s *Serial) Contains(addr uint) bool {
+	return addr == AddrSB || addr == AddrSC
+}
+
+func (s *Serial) Read(addr uint) uint8 {
+	if addr == AddrSB {
+		return s.SB
+	} else if addr == AddrSC {
+		return s.SC | 0x7e
+	} else {
+		panic(fmt.Sprintf("broken MMU: illegal address %04x requested!", addr))
+	}
+}
+
 func (s *Serial) Write(addr uint, value uint8) {
-	s.Registers.Write(addr, value)
-	if addr == AddrSC {
-		if value&(1<<7) > 0 {
+	if addr == AddrSB {
+		s.SB = value
+	} else if addr == AddrSC {
+		s.SC = value
+		if value&(1<<7) != 0 {
 			fmt.Printf("%c", s.SB)
 		}
 	}
