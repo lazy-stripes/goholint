@@ -1,7 +1,10 @@
 package timer
 
 import (
+	"fmt"
+
 	"go.tigris.fr/gameboy/interrupts"
+	"go.tigris.fr/gameboy/log"
 	"go.tigris.fr/gameboy/memory"
 )
 
@@ -23,46 +26,60 @@ type Timer struct {
 	TMA        uint8
 	TAC        uint8
 
-	ticks int
+	ticks int // Only counted to measure overflow delay
 }
 
 // New Timer instance.
 func New() *Timer {
-	t := Timer{memory.NewEmptyMMU()}
-	t.Add(memory.Registers{
-		AddrTIMA: &t.TIMA,
-		AddrTMA:  &t.TMA,
-		AddrTAC:  &t.TAC,
-	})
-	return &t
+	return &Timer{MMU: memory.NewEmptyMMU()}
+}
+
+// Contains returns true is requested address is a timer register.
+func (t *Timer) Contains(addr uint) bool {
+	return addr >= AddrDIV && addr <= AddrTAC
 }
 
 // Read a byte from one of the registers, accounting for DIV and TAC.
-func (t *Timer) Read(addr uint) uint8 {
+func (t *Timer) Read(addr uint) (value uint8) {
 	switch addr {
 	case AddrDIV:
-		return uint8(t.DIV >> 8)
+		value = uint8(t.DIV >> 8)
 	case AddrTIMA:
-		return t.TIMA
+		value = t.TIMA
 	case AddrTMA:
-		return t.TMA
+		value = t.TMA
 	case AddrTAC:
-		return t.TAC & 0xf8
+		value = t.TAC & 0xf8
 	default:
-		return 0xff
+		panic("Broken MMU")
 	}
+	if log.Enabled["timer"] {
+		fmt.Printf("Timer.Read(0x%04x): 0x%02x\n", addr, value)
+	}
+	return
 }
 
 // Write a byte to one of the registers, accounting for DIV
 func (t *Timer) Write(addr uint, value uint8) {
-	if addr == AddrDIV {
+	if log.Enabled["timer"] {
+		fmt.Printf("Timer.Write(0x%04x, 0x%02x)\n", addr, value)
+	}
+	switch addr {
+	case AddrDIV:
 		t.DIV = 0
-	} else {
-		t.MMU.Write(addr, value)
+	case AddrTIMA:
+		t.TIMA = value
+	case AddrTMA:
+		t.TMA = value
+	case AddrTAC:
+		t.TAC = value
+	default:
+		panic("Broken MMU")
 	}
 }
 
 // Tick advances the timer state one step.
 func (t *Timer) Tick() {
-
+	// TODO: pretty much everything
+	t.DIV++
 }
