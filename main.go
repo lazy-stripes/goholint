@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -11,6 +12,7 @@ import (
 	"go.tigris.fr/gameboy/cpu"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
+	gblog "go.tigris.fr/gameboy/log"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu"
 	"go.tigris.fr/gameboy/serial"
@@ -76,13 +78,35 @@ func run(romPath string, fastBoot bool) int {
 	return 0
 }
 
+// User-defined type to parse a list of module names for which debug output muist be enabled.
+type module []string
+
+// String is the method to format the flag's value, part of the flag.Value interface.
+// The String method's output will be used in diagnostics.
+func (m *module) String() string {
+	return fmt.Sprint(*m)
+}
+
+// Set is the method to set the flag value, part of the flag.Value interface.
+// Set's argument is a string to be parsed to set the flag. Flag can be specified multiple times.
+func (m *module) Set(value string) error {
+	*m = append(*m, value)
+	return nil
+}
+
 func main() {
 	runtime.LockOSThread()
 
 	var fastBoot = flag.Bool("fastboot", false, "bypass boot ROM execution")
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	var romPath = flag.String("rom", "", "ROM file to load")
+	var debugModules module
+	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
+
+	for _, m := range debugModules {
+		gblog.Enabled[m] = true
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
