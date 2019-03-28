@@ -9,6 +9,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/veandco/go-sdl2/sdl"
+
 	"go.tigris.fr/gameboy/cpu"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
@@ -16,6 +17,7 @@ import (
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu"
 	"go.tigris.fr/gameboy/serial"
+	"go.tigris.fr/gameboy/timer"
 )
 
 func run(romPath string, fastBoot bool) int {
@@ -29,6 +31,7 @@ func run(romPath string, fastBoot bool) int {
 	ppu.Interrupts = ints
 
 	serial := serial.New()
+	timer := timer.New()
 
 	var boot memory.Addressable
 	if fastBoot {
@@ -48,12 +51,13 @@ func run(romPath string, fastBoot bool) int {
 	}
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, hram, cartridge})
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, timer, hram, cartridge})
 	cpu.MMU = mmu
 
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
 	for {
+		timer.Tick()
 		cpu.Tick()
 		ppu.Tick()
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
