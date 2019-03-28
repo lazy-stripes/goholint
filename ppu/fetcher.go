@@ -2,7 +2,6 @@ package ppu
 
 import (
 	"go.tigris.fr/gameboy/fifo"
-	"go.tigris.fr/gameboy/log"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu/states"
 )
@@ -52,7 +51,7 @@ func (f *Fetcher) Tick() {
 	case states.ReadTileID:
 		f.tileID = f.vRAM.Read(f.mapAddr + uint(f.tileOffset))
 		f.state = states.ReadTileData0
-		log.Printf("%04x: %02x\n", f.mapAddr+uint(f.tileOffset), f.tileID)
+		//log.Printf("%04x: %02x\n", f.mapAddr+uint(f.tileOffset), f.tileID)
 
 	case states.ReadTileData0:
 		f.ReadTileLine(0)

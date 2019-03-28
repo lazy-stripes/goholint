@@ -6,9 +6,8 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"go.tigris.fr/gameboy/interrupts"
-
 	"go.tigris.fr/gameboy/cpu/states"
+	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/memory"
 )
 
@@ -35,7 +34,7 @@ type CPU struct {
 
 	instruction Instruction
 	ticks       uint
-	state       int    // FIXME: enum
+	state       int
 	interrupt   uint8  // Currently requested interrupt
 	temp8       uint8  // Internal work register storing 8-bit micro-operation results
 	temp16      uint16 // Internal work register storing 16-bit micro-operation results
@@ -128,6 +127,8 @@ func (c *CPU) Tick() {
 		case requested&interrupts.VBlank != 0:
 			c.interrupt = interrupts.VBlank
 			// TODO: all other interrupts
+		default:
+			fmt.Printf(" !!! Unimplemented interrupt requested: %02x\n", requested)
 		}
 
 		c.state = states.InterruptPushPCHigh

@@ -114,7 +114,7 @@ func (s *SDL) Enabled() bool {
 	return s.enabled
 }
 
-// Disable turns off the display. A disabled GB screen will be drawn at VBmlank time.
+// Disable turns off the display. A disabled GB screen will be drawn at VBlank time.
 func (s *SDL) Disable() {
 	s.enabled = false
 }
