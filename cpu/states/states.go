@@ -14,5 +14,6 @@ const (
 	InterruptCall
 
 	// Useful combinations
-	Interruptible = FetchOpCode | Halted | Stopped
+	Interruptible     = FetchOpCode | Halted | Stopped
+	HandlingInterrupt = InterruptWait0 | InterruptWait1 | InterruptPushPCHigh | InterruptPushPCLow | InterruptCall
 )
