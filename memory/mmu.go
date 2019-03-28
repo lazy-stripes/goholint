@@ -11,6 +11,11 @@ func NewMMU(spaces []Addressable) *MMU {
 	return &MMU{spaces}
 }
 
+// NewEmptyMMU returns an instance of MMU with no address space.
+func NewEmptyMMU() *MMU {
+	return &MMU{[]memory.Addressable{}}
+}
+
 // Add an address space at the end of this MMU's list.
 func (m *MMU) Add(space Addressable) {
 	m.Spaces = append(m.Spaces, space)
