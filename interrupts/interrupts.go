@@ -51,7 +51,7 @@ func (i *Interrupts) Contains(addr uint) bool {
 	return addr == AddrIF || addr == AddrIE
 }
 
-// Read returns the value stored at the given address.
+// Read returns the value stored in the requested interrupt register, accounting for IF exploitable bits.
 func (i *Interrupts) Read(addr uint) uint8 {
 	switch addr {
 	case AddrIF:
@@ -62,7 +62,7 @@ func (i *Interrupts) Read(addr uint) uint8 {
 	panic(fmt.Sprintf("Broken MMU: out-of-range address %#x requested", addr))
 }
 
-// Write attempts to store the given value at the given address. Not all address spaces are writable.
+// Write stores the given value in the given interrupt register, accounting for IF exploitable bits.
 func (i *Interrupts) Write(addr uint, value uint8) {
 	switch addr {
 	case AddrIF:
