@@ -3,15 +3,15 @@ package cpu
 // Instruction templates are used to generate state-machine structs for each opcode.
 //go:generate go run instructions/make.go -o instructionset.go
 
-// Instructions. Each takes a CPU pointer and will modify its internal state.
-// Source: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+// Each instruction takes a CPU pointer and will modify its internal state.
+// Source: [OPCODES] http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 
 // Number of cycles reflects the information given in resource linked above.
 // Note that reading the instruction byte itself takes 4 cycles (8 for CB xx instructions.)
 // Those 4 cycles are included in the count indicated in the helper's comment.
-// Each subsequent Operation pushed on the CPU will take an additional 4 cycles.
+// Each subsequent instruction tick will take an additional 4 cycles.
 
-// An Instruction to be executed by a CPU, implemented as a state machine executing a new step every 4 cycles.
+// Instruction to be executed by a CPU, implemented as a state machine executing a new step every 4 cycles.
 type Instruction interface {
 	Execute(c *CPU) (done bool)
 	Tick() (done bool)

@@ -1,4 +1,4 @@
-// Auto-generated on 2018-11-21 23:08:03.876191771 +0100 CET m=+0.003109553. See instructions.go
+// Auto-generated on 2019-04-02 22:24:14.639312645 +0200 CEST m=+0.279342208. See instructions.go
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -6011,26 +6011,20 @@ func (op *opCb45) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 46: BIT 0,(HL)			16 cycles
+// CB 46: BIT 0,(HL)			12 cycles
 type opCb46 struct {
 	MultiStepsOp
 }
 
 func (op *opCb46) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<0) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<0) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 47: BIT 0,A			8 cycles
@@ -6138,26 +6132,20 @@ func (op *opCb4d) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 4E: BIT 1,(HL)			16 cycles
+// CB 4E: BIT 1,(HL)			12 cycles
 type opCb4e struct {
 	MultiStepsOp
 }
 
 func (op *opCb4e) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<1) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<1) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 4F: BIT 1,A			8 cycles
@@ -6265,26 +6253,20 @@ func (op *opCb55) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 56: BIT 2,(HL)			16 cycles
+// CB 56: BIT 2,(HL)			12 cycles
 type opCb56 struct {
 	MultiStepsOp
 }
 
 func (op *opCb56) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<2) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<2) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 57: BIT 2,A			8 cycles
@@ -6392,26 +6374,20 @@ func (op *opCb5d) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 5E: BIT 3,(HL)			16 cycles
+// CB 5E: BIT 3,(HL)			12 cycles
 type opCb5e struct {
 	MultiStepsOp
 }
 
 func (op *opCb5e) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<3) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<3) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 5F: BIT 3,A			8 cycles
@@ -6519,26 +6495,20 @@ func (op *opCb65) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 66: BIT 4,(HL)			16 cycles
+// CB 66: BIT 4,(HL)			12 cycles
 type opCb66 struct {
 	MultiStepsOp
 }
 
 func (op *opCb66) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<4) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<4) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 67: BIT 4,A			8 cycles
@@ -6646,26 +6616,20 @@ func (op *opCb6d) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 6E: BIT 5,(HL)			16 cycles
+// CB 6E: BIT 5,(HL)			12 cycles
 type opCb6e struct {
 	MultiStepsOp
 }
 
 func (op *opCb6e) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<5) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<5) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 6F: BIT 5,A			8 cycles
@@ -6773,26 +6737,20 @@ func (op *opCb75) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 76: BIT 6,(HL)			16 cycles
+// CB 76: BIT 6,(HL)			12 cycles
 type opCb76 struct {
 	MultiStepsOp
 }
 
 func (op *opCb76) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<6) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<6) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 77: BIT 6,A			8 cycles
@@ -6900,26 +6858,20 @@ func (op *opCb7d) Execute(c *CPU) (done bool) {
 	return true
 }
 
-// CB 7E: BIT 7,(HL)			16 cycles
+// CB 7E: BIT 7,(HL)			12 cycles
 type opCb7e struct {
 	MultiStepsOp
 }
 
 func (op *opCb7e) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<7) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.HL()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<7) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
 // CB 7F: BIT 7,A			8 cycles

@@ -1,22 +1,16 @@
-// CB {{.Opcode | printf "%02X"}}: BIT {{.Bit}},({{.Address}})			16 cycles
+// CB {{.Opcode | printf "%02X"}}: BIT {{.Bit}},({{.Address}})			12 cycles
 type {{name .}} struct {
 	MultiStepsOp
 }
 
 func (op *{{name .}}) Tick() (done bool) {
-	switch op.step {
-	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
-		op.step++
-	case 1:
-		// Flags z 0 1 -
-		if op.cpu.temp8&(1<<{{.Bit}}) == 0 {
-			op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
-		} else {
-			op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
-		}
-		done = true
+	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	// Flags z 0 1 -
+	if op.cpu.temp8&(1<<{{.Bit}}) == 0 {
+		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
+	} else {
+		op.cpu.F = (op.cpu.F & ^(FlagN | FlagZ)) | FlagH
 	}
-	return
+	return true
 }
 
