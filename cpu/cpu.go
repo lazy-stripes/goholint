@@ -126,6 +126,9 @@ func (c *CPU) Tick() {
 		switch {
 		case requested&interrupts.VBlank != 0:
 			c.interrupt = interrupts.VBlank
+			// TODO: LCDStat
+		case requested&interrupts.Timer != 0:
+			c.interrupt = interrupts.Timer
 			// TODO: all other interrupts
 		default:
 			fmt.Printf(" !!! Unimplemented interrupt requested: %02x\n", requested)

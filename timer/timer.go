@@ -1,8 +1,9 @@
+// Package timer implements the DMG Timer as described in:
+// [TIMER1] http://gbdev.gg8.se/wiki/articles/Timer_and_Divider_Registers
+// [TIMER2] http://gbdev.gg8.se/wiki/articles/Timer_Obscure_Behaviour
 package timer
 
 import (
-	"fmt"
-
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/log"
 	"go.tigris.fr/gameboy/memory"
@@ -16,6 +17,9 @@ const (
 	AddrTAC  = 0xff07
 )
 
+// FrequencyBits map TAC frequency select value to related bits in DIV.
+var FrequencyBits = [4]uint{9, 3, 5, 7}
+
 // Timer address space handling timers and related interrupts.
 type Timer struct {
 	*memory.MMU
@@ -26,7 +30,8 @@ type Timer struct {
 	TMA        uint8
 	TAC        uint8
 
-	ticks int // Only counted to measure overflow delay
+	prevEdge bool // Falling edge detector of sorts
+	ticks    int  // Only counted to measure overflow delay
 }
 
 // New Timer instance.
@@ -53,17 +58,13 @@ func (t *Timer) Read(addr uint) (value uint8) {
 	default:
 		panic("Broken MMU")
 	}
-	if log.Enabled["timer"] {
-		fmt.Printf("Timer.Read(0x%04x): 0x%02x\n", addr, value)
-	}
-	return
+	log.Printf("timer", "Timer.Read(0x%04x): 0x%02x\n", addr, value)
+	return value
 }
 
-// Write a byte to one of the registers, accounting for DIV
+// Write a byte to one of the registers, accounting for DIV.
 func (t *Timer) Write(addr uint, value uint8) {
-	if log.Enabled["timer"] {
-		fmt.Printf("Timer.Write(0x%04x, 0x%02x)\n", addr, value)
-	}
+	log.Printf("timer", "Timer.Write(0x%04x, 0x%02x)\n", addr, value)
 	switch addr {
 	case AddrDIV:
 		t.DIV = 0
@@ -80,6 +81,19 @@ func (t *Timer) Write(addr uint, value uint8) {
 
 // Tick advances the timer state one step.
 func (t *Timer) Tick() {
-	// TODO: pretty much everything
 	t.DIV++
+
+	// [TIMER2] Detect falling edge in (TAC.Freq AND TAC.Enable)
+	bit := FrequencyBits[t.TAC&3]
+	edge := (t.DIV&(1<<bit) != 0) && (t.TAC&4 != 0)
+	if !edge && t.prevEdge {
+		t.TIMA++
+		if t.TIMA == 0 {
+			// [TIMER2] TMA loading and interrupt are delayed 4 cycles. (TODO)
+			t.TIMA = t.TMA
+			t.Interrupts.Request(interrupts.Timer)
+		}
+	}
+
+	t.prevEdge = edge
 }

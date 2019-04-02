@@ -32,6 +32,7 @@ func run(romPath string, fastBoot bool) int {
 
 	serial := serial.New()
 	timer := timer.New()
+	timer.Interrupts = ints
 
 	var boot memory.Addressable
 	if fastBoot {
