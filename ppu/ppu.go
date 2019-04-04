@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 
+	"go.tigris.fr/gameboy/debug"
 	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
@@ -104,6 +105,21 @@ func New(display lcd.Display) *PPU {
 	return &p
 }
 
+// Write override that handles read-only registers and bits.
+func (p *PPU) Write(addr uint, value uint8) {
+	switch addr {
+	case AddrSTAT:
+		debug.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
+		p.STAT = p.STAT&0x07 | value&0xf8
+	case AddrLY:
+		// [PANDOCS] says writing to it "resets counter"?
+		debug.Printf("ppu", "PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
+		debug.Printf("ppu", "Write to LY. What do?")
+	default:
+		p.MMU.Write(addr, value)
+	}
+}
+
 // Tick advances the CPU state one step.
 func (p *PPU) Tick() {
 	p.Cycle++
@@ -143,6 +159,7 @@ func (p *PPU) Tick() {
 			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
 
 			p.x = 0
+			p.STAT = p.STAT&0xf8 | 0x03 // Mode 3
 			p.state = states.PixelTransfer
 		}
 
@@ -158,6 +175,7 @@ func (p *PPU) Tick() {
 		p.x += p.Pop()
 		if p.x == 160 {
 			p.LCD.HBlank()
+			p.STAT = p.STAT & 0xf8 // Mode 0
 			p.state = states.HBlank
 		}
 
@@ -170,10 +188,12 @@ func (p *PPU) Tick() {
 			if p.LY == 144 {
 				p.LCD.VBlank()
 				p.Interrupts.Request(interrupts.VBlank)
+				p.STAT = p.STAT&0xf8 | 0x01 // Mode 1
 				p.state = states.VBlank
 			} else {
 				// Prepare to go back to OAM search state.
 				p.oamIndex = 0
+				p.STAT = p.STAT&0xf8 | 0x01 // Mode 2
 				p.state = states.OAMSearch
 			}
 		}
@@ -213,11 +233,6 @@ func (p *PPU) TileData() (addr uint, signedID bool) {
 		return 0x8000, false
 	}
 	return 0x9000, true
-}
-
-// Read a byte from VRAM/registers in the proper number of cycles.
-func (p *PPU) Read(addr uint) uint8 {
-	return p.MMU.Read(addr)
 }
 
 // Pop tries shifting a pixel out of the FIFO and returns the number of shifted pixels (0 or 1).
