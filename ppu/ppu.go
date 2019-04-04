@@ -27,7 +27,6 @@ const (
 	AddrSCX  = 0xff43
 	AddrLY   = 0xff44
 	AddrLYC  = 0xff45
-	AddrDMA  = 0xff46
 	AddrBGP  = 0xff47
 	AddrOBP0 = 0xff48
 	AddrOBP1 = 0xff49
@@ -71,7 +70,7 @@ type PPU struct {
 	WY, WX     uint8
 	BGP        uint8
 	OBP0, OBP1 uint8
-	// TODO: DMA, address space to OAM, put in CPU
+	// TODO: address space to OAM, put in CPU
 
 	ticks int
 	state states.State
@@ -92,7 +91,6 @@ func New(display lcd.Display) *PPU {
 		AddrSCX:  &p.SCX,
 		AddrLY:   &p.LY,
 		AddrLYC:  &p.LYC,
-		AddrDMA:  nil,
 		AddrBGP:  &p.BGP,
 		AddrOBP0: &p.OBP0,
 		AddrOBP1: &p.OBP1,
