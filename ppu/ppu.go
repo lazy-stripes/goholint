@@ -15,7 +15,24 @@ import (
 )
 
 // ClockFactor representing the number of ticks taken by each step (base is 4).
+// Used in Fetcher's Tick() method.
 var ClockFactor = 2
+
+// Register addresses.
+const (
+	AddrLCDC = 0xff40
+	AddrSTAT = 0xff41
+	AddrSCY  = 0xff42
+	AddrSCX  = 0xff43
+	AddrLY   = 0xff44
+	AddrLYC  = 0xff45
+	AddrDMA  = 0xff46
+	AddrBGP  = 0xff47
+	AddrOBP0 = 0xff48
+	AddrOBP1 = 0xff49
+	AddrWY   = 0xff4a
+	AddrWX   = 0xff4b
+)
 
 // LCDC flags. XXX: Move to subpackage lcdc for nicer namespacing?
 const (
@@ -66,19 +83,20 @@ type PPU struct {
 // New PPU instance.
 func New(display lcd.Display) *PPU {
 	fifo := fifo.New(16, 8)
-	p := PPU{MMU: memory.NewMMU([]memory.Addressable{}), FIFO: fifo, LCD: display}
+	p := PPU{MMU: memory.NewEmptyMMU(), FIFO: fifo, LCD: display}
 	p.Add(memory.Registers{
-		0xff40: &p.LCDC,
-		0xff41: &p.STAT,
-		0xff42: &p.SCY,
-		0xff43: &p.SCX,
-		0xff44: &p.LY,
-		0xff45: &p.LYC,
-		0xff47: &p.BGP,
-		0xff48: &p.OBP0,
-		0xff49: &p.OBP1,
-		0xff4a: &p.WY,
-		0xff4b: &p.WX,
+		AddrLCDC: &p.LCDC,
+		AddrSTAT: &p.STAT,
+		AddrSCY:  &p.SCY,
+		AddrSCX:  &p.SCX,
+		AddrLY:   &p.LY,
+		AddrLYC:  &p.LYC,
+		AddrDMA:  nil,
+		AddrBGP:  &p.BGP,
+		AddrOBP0: &p.OBP0,
+		AddrOBP1: &p.OBP1,
+		AddrWY:   &p.WY,
+		AddrWX:   &p.WX,
 	})
 	p.Add(memory.NewVRAM(0x8000, 0x2000)) // VRAM
 	p.Add(memory.NewVRAM(0xfe00, 0xa0))   // OAM RAM (TODO: mapped OBJ struct)

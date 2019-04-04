@@ -71,7 +71,7 @@ func run(romPath string, fastBoot bool) int {
 	return 0
 }
 
-// User-defined type to parse a list of module names for which debug output muist be enabled.
+// User-defined type to parse a list of module names for which debug output must be enabled.
 type module []string
 
 // String is the method to format the flag's value, part of the flag.Value interface.
