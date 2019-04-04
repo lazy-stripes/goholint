@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"go.tigris.fr/gameboy/log"
+	"go.tigris.fr/gameboy/debug"
 )
 
 // SDL display shifting pixels out to a single texture.
@@ -47,10 +47,10 @@ func NewSDL() *SDL {
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if info, err := renderer.GetInfo(); err == nil {
-		log.Println("lcd", "Renderer info:")
-		log.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
-		log.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
-		log.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
+		debug.Println("lcd", "Renderer info:")
+		debug.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
+		debug.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
+		debug.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 	if err != nil {
 		window.Destroy()

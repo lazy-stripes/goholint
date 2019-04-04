@@ -11,9 +11,9 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 
 	"go.tigris.fr/gameboy/cpu"
+	"go.tigris.fr/gameboy/debug"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
-	gblog "go.tigris.fr/gameboy/log"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu"
 	"go.tigris.fr/gameboy/serial"
@@ -98,7 +98,7 @@ func main() {
 	flag.Parse()
 
 	for _, m := range debugModules {
-		gblog.Enabled[m] = true
+		debug.Enabled[m] = true
 	}
 
 	if *cpuprofile != "" {

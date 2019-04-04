@@ -3,7 +3,7 @@ package interrupts
 import (
 	"fmt"
 
-	"go.tigris.fr/gameboy/log"
+	"go.tigris.fr/gameboy/debug"
 )
 
 // Namespaced const flags because still procrastinating.
@@ -69,7 +69,7 @@ func (i *Interrupts) Write(addr uint, value uint8) {
 		*i.regIF = value & 0x1f
 	case AddrIE:
 		*i.regIE = value
-		log.Printf("interrupts", " !!! IE=%#x\n", value)
+		debug.Printf("interrupts", " !!! IE=%#x\n", value)
 	}
 }
 
