@@ -17,20 +17,22 @@ var Enabled = make(map[string]bool)
 var Context = func() string { return "" }
 
 // Print displays a message just like fmt.Print but only if Enabled is true
-// for the given module name (or if 'all' was enabled).
+// for the given module name (or if 'all' was enabled). Also it automatically
+// tacks a linefeed at the end.
 func Print(name string, v ...interface{}) {
 	if Enabled[name] || Enabled["all"] {
 		fmt.Print(Context())
-		fmt.Print(v...)
+		fmt.Println(fmt.Sprint(v...))
 	}
 }
 
 // Printf displays a message just like fmt.Printf but only if Enabled is true
-// for the given module name (or if 'all' was enabled).
+// for the given module name (or if 'all' was enabled). Also it automatically
+// tacks a linefeed at the end.
 func Printf(name string, format string, v ...interface{}) {
 	if Enabled[name] || Enabled["all"] {
 		fmt.Print(Context())
-		fmt.Printf(format, v...)
+		fmt.Println(fmt.Sprintf(format, v...))
 	}
 }
 
