@@ -5,12 +5,12 @@ type State int
 
 // Mere collection of constants because I was procrastinating when I did that for package cpu.
 
-// PPU states.
+// PPU states, ordered so the enum corresponds to its STAT mode number.
 const (
-	OAMSearch = iota // 0, default value for ppu.state
-	PixelTransfer
-	HBlank
-	VBlank
+	HBlank        = iota // Mode 0
+	VBlank               // Mode 1
+	OAMSearch            // Mode 2, initial value for PPU
+	PixelTransfer        // Mode 3
 )
 
 // Fetcher states.

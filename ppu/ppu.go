@@ -100,6 +100,7 @@ func New(display lcd.Display) *PPU {
 	p.Add(memory.NewVRAM(0x8000, 0x2000)) // VRAM
 	p.Add(memory.NewVRAM(0xfe00, 0xa0))   // OAM RAM (TODO: mapped OBJ struct)
 	p.Fetcher = Fetcher{fifo: fifo, vRAM: p.MMU}
+	p.state = states.OAMSearch
 	return &p
 }
 
@@ -108,7 +109,7 @@ func (p *PPU) Write(addr uint, value uint8) {
 	switch addr {
 	case AddrSTAT:
 		debug.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
-		p.STAT = p.STAT&0x07 | value&0xf8
+		p.STAT = value & 0xf8
 	case AddrLY:
 		// [PANDOCS] says writing to it "resets counter"?
 		debug.Printf("ppu", "PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
@@ -116,6 +117,19 @@ func (p *PPU) Write(addr uint, value uint8) {
 	default:
 		p.MMU.Write(addr, value)
 	}
+}
+
+// Read override that handles exact STAT lower bits' values at any given time.
+func (p *PPU) Read(addr uint) uint8 {
+	if addr == AddrSTAT {
+		// We never write to STAT bits 0-2 so we (safely?) assume they're 0.
+		stat := p.STAT | uint8(p.state) // Mode
+		if p.LY == p.LYC {
+			stat |= 4
+		}
+		return stat
+	}
+	return p.MMU.Read(addr)
 }
 
 // Tick advances the CPU state one step.
@@ -157,7 +171,6 @@ func (p *PPU) Tick() {
 			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
 
 			p.x = 0
-			p.STAT = p.STAT&0xf8 | 0x03 // Mode 3
 			p.state = states.PixelTransfer
 		}
 
@@ -173,7 +186,6 @@ func (p *PPU) Tick() {
 		p.x += p.Pop()
 		if p.x == 160 {
 			p.LCD.HBlank()
-			p.STAT = p.STAT & 0xf8 // Mode 0
 			p.state = states.HBlank
 		}
 
@@ -191,7 +203,6 @@ func (p *PPU) Tick() {
 			} else {
 				// Prepare to go back to OAM search state.
 				p.oamIndex = 0
-				p.STAT = p.STAT&0xf8 | 0x01 // Mode 2
 				p.state = states.OAMSearch
 			}
 		}
