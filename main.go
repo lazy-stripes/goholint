@@ -52,7 +52,9 @@ func run(romPath string, fastBoot bool) int {
 	}
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, timer, hram, cartridge})
+	dma := &memory.DMA{}
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, timer, dma, hram, cartridge})
+	dma.MMU = mmu
 	cpu.MMU = mmu
 
 	// Main loop TODO: Gameboy.Run()
@@ -60,6 +62,7 @@ func run(romPath string, fastBoot bool) int {
 	for {
 		timer.Tick()
 		cpu.Tick()
+		dma.Tick()
 		ppu.Tick()
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
