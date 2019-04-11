@@ -98,7 +98,7 @@ func (s *SDL) Close() {
 	s.window.Destroy()
 }
 
-// Clear draws a disabled GB screen (white background with a blank line through the middle).
+// Clear draws a disabled GB screen (white background with a black line through the middle).
 func (s *SDL) Clear() {
 	s.renderer.Copy(s.blank, nil, nil)
 	s.renderer.Present()
@@ -116,6 +116,7 @@ func (s *SDL) Enabled() bool {
 
 // Disable turns off the display. A disabled GB screen will be drawn at VBlank time.
 func (s *SDL) Disable() {
+	s.offset = 0
 	s.enabled = false
 }
 

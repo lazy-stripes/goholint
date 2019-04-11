@@ -145,10 +145,16 @@ func (p *PPU) Tick() {
 				p.LCD.Blank()
 			}
 		} else {
+			p.state = states.OAMSearch
 			p.LCD.Enable()
 		}
 	} else {
 		if p.LCDC&LCDCDisplayEnable == 0 {
+			// Disable LCD. Clean up internal state.
+			p.LY = 0
+			p.x = 0
+			// STAT mode flag is zero when LCD is disabled. Apparently.
+			p.state = 0
 			p.LCD.Disable()
 		}
 	}
@@ -198,7 +204,7 @@ func (p *PPU) Tick() {
 			if p.LY == 144 {
 				p.LCD.VBlank()
 				p.Interrupts.Request(interrupts.VBlank)
-				p.STAT = p.STAT&0xf8 | 0x01 // Mode 1
+
 				p.state = states.VBlank
 			} else {
 				// Prepare to go back to OAM search state.
