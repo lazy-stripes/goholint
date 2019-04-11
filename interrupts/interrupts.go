@@ -69,7 +69,7 @@ func (i *Interrupts) Write(addr uint, value uint8) {
 		*i.regIF = value & 0x1f
 	case AddrIE:
 		*i.regIE = value
-		debug.Printf("interrupts", " !!! IE=%#x\n", value)
+		debug.Printf("interrupts", " !!! IE=%#x", value)
 	}
 }
 

@@ -57,6 +57,9 @@ func run(romPath string, fastBoot bool) int {
 	dma.MMU = mmu
 	cpu.MMU = mmu
 
+	// Add CPU-specific context to debug output.
+	debug.Context = cpu.Context
+
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
 	for {

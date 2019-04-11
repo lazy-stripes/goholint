@@ -233,6 +233,11 @@ func (c *CPU) NextWord() uint16 {
 	return uint16(c.NextByte()) | uint16(c.NextByte())<<8
 }
 
+// Context returns a printable context to prepend to log messages.
+func (c *CPU) Context() string {
+	return fmt.Sprintf("[PC=%04x] ", c.PC)
+}
+
 // For missing opcodses debugz.
 func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
