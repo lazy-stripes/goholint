@@ -49,19 +49,23 @@ func (d *DMA) Write(addr uint, value uint8) {
 	// TODO: what happens if transfer is already active?!
 }
 
-// Tick advances DMA transfer one step if it's active. Called every clock cycle.
+// Tick advances DMA transfer one step if it's active. Called every clock tick.
 func (d *DMA) Tick() {
 	if !d.isActive {
 		return
 	}
 	d.ticks++
-	if d.ticks > 0xa0 {
-		debug.Printf("dma", "DMA transfer done")
-		d.isActive = false
+
+	// DMA transfer takes 160*4 ticks (160 "machine cycles").
+	if d.ticks < 160*4 {
+		if d.ticks%4 == 0 {
+			// [VIDEO] It takes 160 cycles to complete a 160-byte DMA transfer, right?
+			d.MMU.Write(d.dest, d.MMU.Read(d.src))
+			d.src++
+			d.dest++
+		}
 		return
 	}
-	// [VIDEO] It takes 160 cycles to complete a 160-byte DMA transfer, right?
-	d.MMU.Write(d.dest, d.MMU.Read(d.src))
-	d.src++
-	d.dest++
+	debug.Printf("dma", "DMA transfer done")
+	d.isActive = false
 }
