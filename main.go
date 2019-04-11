@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/pprof"
 
@@ -93,6 +94,18 @@ func (m *module) Set(value string) error {
 	return nil
 }
 
+func handleInterrupt(c chan os.Signal) {
+	// Wait for signel, quit cleanly with potential extra debug info if needed.
+	<-c
+	fmt.Println("\nTerminated...")
+
+	// Force stopping CPU profiling.
+	pprof.StopCPUProfile()
+
+	// TODO: dump RAM/VRAM/Other if requested in parameters.
+	os.Exit(-1)
+}
+
 func main() {
 	runtime.LockOSThread()
 
@@ -102,6 +115,10 @@ func main() {
 	var debugModules module
 	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
+
+	c := make(chan os.Signal, 1)
+	go handleInterrupt(c)
+	signal.Notify(c, os.Interrupt)
 
 	for _, m := range debugModules {
 		debug.Enabled[m] = true
