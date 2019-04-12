@@ -1,8 +1,6 @@
 package memory
 
-import (
-	"fmt"
-)
+import "go.tigris.fr/gameboy/debug"
 
 // BootAddr is the address of BOOT register in I/O RAM.
 const BootAddr = 0xff50
@@ -37,7 +35,7 @@ func (b *Boot) Write(addr uint, value uint8) {
 	if addr == BootAddr {
 		b.Register = value
 		b.disabled = true
-		fmt.Println(" !!! BootROM disabled.")
+		debug.Print("boot", "BootROM disabled.")
 	} else {
 		b.ROM.Write(addr, value) // Shouldn't happen but will log it if it does
 	}
