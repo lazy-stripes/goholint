@@ -58,6 +58,7 @@ const (
 type PPU struct {
 	*memory.MMU
 	*fifo.FIFO
+	OAM
 	Fetcher
 	Interrupts *interrupts.Interrupts
 	Cycle      int
@@ -74,8 +75,6 @@ type PPU struct {
 
 	ticks int
 	state states.State
-
-	oamIndex int
 
 	x uint
 }
@@ -97,9 +96,17 @@ func New(display lcd.Display) *PPU {
 		AddrWY:   &p.WY,
 		AddrWX:   &p.WX,
 	})
-	p.Add(memory.NewVRAM(0x8000, 0x2000)) // VRAM
-	p.Add(memory.NewVRAM(0xfe00, 0xa0))   // OAM RAM (TODO: mapped OBJ struct)
-	p.Fetcher = Fetcher{fifo: fifo, vRAM: p.MMU}
+
+	videoRAM := memory.NewVRAM(0x8000, 0x2000)
+	oamRAM := memory.NewVRAM(AddrOAM, 0xa0)
+
+	p.Fetcher = Fetcher{fifo: fifo, vRAM: videoRAM}
+	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
+		lcdc: &p.LCDC}
+
+	p.Add(videoRAM)
+	p.Add(oamRAM)
+
 	p.state = states.OAMSearch
 	return &p
 }
@@ -145,6 +152,7 @@ func (p *PPU) Tick() {
 				p.LCD.Blank()
 			}
 		} else {
+			p.OAM.Start()
 			p.state = states.OAMSearch
 			p.LCD.Enable()
 		}
@@ -166,8 +174,7 @@ func (p *PPU) Tick() {
 	switch p.state {
 	case states.OAMSearch:
 		// TODO
-		p.oamIndex++
-		if p.oamIndex >= 40 {
+		if p.OAM.Tick() {
 			// Initialize fetcher for background.
 			y := p.SCY + p.LY
 			tileLine := y % 8
@@ -208,7 +215,7 @@ func (p *PPU) Tick() {
 				p.state = states.VBlank
 			} else {
 				// Prepare to go back to OAM search state.
-				p.oamIndex = 0
+				p.OAM.Start()
 				p.state = states.OAMSearch
 			}
 		}
@@ -223,7 +230,7 @@ func (p *PPU) Tick() {
 		if p.ticks >= 456 {
 			p.ticks = 0
 			if p.LY == 0 { // We wrapped back to 0 about 452 ticks ago. Start rendering from top of screen again.
-				p.oamIndex = 0
+				p.OAM.Start()
 				p.state = states.OAMSearch
 				// TODO: interrupts
 			} else {

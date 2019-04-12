@@ -20,3 +20,9 @@ const (
 	ReadTileData1
 	PushToFIFO
 )
+
+// OAM states.
+const (
+	ReadSpriteY = iota
+	ReadSpriteX
+)
