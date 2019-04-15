@@ -1,5 +1,7 @@
 package ppu
 
+// Source: [TUGBT] https://www.youtube.com/watch?v=HyzD8pNlpwI&t=2747s
+
 import (
 	"bufio"
 	"image"
@@ -75,7 +77,8 @@ type PPU struct {
 	ticks int
 	state states.State
 
-	x uint
+	toDrop uint8 // Pixels to drop for SCX
+	x      uint8
 }
 
 // New PPU instance.
@@ -99,12 +102,12 @@ func New(display lcd.Display) *PPU {
 	videoRAM := memory.NewVRAM(0x8000, 0x2000)
 	oamRAM := memory.NewVRAM(AddrOAM, 0xa0)
 
-	p.Fetcher = Fetcher{fifo: fifo, vRAM: videoRAM}
-	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
-		lcdc: &p.LCDC}
-
 	p.Add(videoRAM)
 	p.Add(oamRAM)
+
+	p.Fetcher = Fetcher{fifo: fifo, vRAM: p.MMU}
+	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
+		lcdc: &p.LCDC}
 
 	p.state = states.OAMSearch
 	return &p
@@ -129,10 +132,12 @@ func (p *PPU) Write(addr uint, value uint8) {
 func (p *PPU) Read(addr uint) uint8 {
 	if addr == AddrSTAT {
 		// We never write to STAT bits 0-2 so we (safely?) assume they're 0.
+		debug.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
 		stat := p.STAT | uint8(p.state) // Mode
 		if p.LY == p.LYC {
 			stat |= 4
 		}
+		//debug.Printf("ppu", "PPU.Read(0x%04x[STAT]) = 0x%02x", addr, stat)
 		return stat
 	}
 	return p.MMU.Read(addr)
@@ -160,7 +165,7 @@ func (p *PPU) Tick() {
 			// Disable LCD. Clean up internal state.
 			p.LY = 0
 			p.x = 0
-			// STAT mode flag is zero when LCD is disabled. Apparently.
+			// [TCAFBD] STAT mode flag is zero when LCD is off.
 			p.state = 0
 			p.LCD.Disable()
 		}
@@ -172,7 +177,7 @@ func (p *PPU) Tick() {
 
 	switch p.state {
 	case states.OAMSearch:
-		// TODO
+		// Tick will return true when all OAM space has been searched.
 		if p.OAM.Tick() {
 			// Initialize fetcher for background.
 			y := p.SCY + p.LY
@@ -183,15 +188,36 @@ func (p *PPU) Tick() {
 			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
 
 			p.x = 0
+			p.toDrop = p.SCX % 8
 			p.state = states.PixelTransfer
 		}
 
 	case states.PixelTransfer:
 		p.Fetcher.Tick()
+
 		// TODO: handle display mode
-		// TODO: drop pixels according to SCX
-		// TODO: sprites display
 		if p.FIFO.Size() <= 8 {
+			return
+		}
+
+		if p.Fetcher.state&states.FetchingSprite > 0 {
+			return
+		}
+
+		// TODO: Windows
+
+		// Mix in sprite pixels. Now I DO grok why FIFO needs those 8 pixels. ♥
+		for _, sprite := range p.OAM.Sprites {
+			if sprite.X == p.x {
+
+				//p.Fetcher.FetchSprite(sprite)
+				return
+			}
+		}
+
+		// Drop pixels according to SCX
+		if p.toDrop > 0 {
+			p.toDrop -= p.Drop()
 			return
 		}
 
@@ -223,7 +249,7 @@ func (p *PPU) Tick() {
 		// Simply wait the proper number of clock cycles. Special case for last line.
 		if p.ticks == 4 && p.LY == 153 {
 			p.LY = 0
-			// Request interrupt. Maybe add a hook to LY setter?
+			// Request interrupt.
 		}
 
 		if p.ticks >= 456 {
@@ -256,12 +282,25 @@ func (p *PPU) TileData() (addr uint, signedID bool) {
 	return 0x9000, true
 }
 
-// Pop tries shifting a pixel out of the FIFO and returns the number of shifted pixels (0 or 1).
-func (p *PPU) Pop() uint {
+// Pop tries shifting a pixel out of the FIFO to the LCD and returns the
+// number of shifted dropped pixels (0 or 1).
+func (p *PPU) Pop() uint8 {
+	return p.pop(false)
+}
+
+// Drop tries taking a pixel out of the FIFO and discarding it to account for
+// SCX. It returns the number of dropped pixels (0 or 1).
+func (p *PPU) Drop() uint8 {
+	return p.pop(true)
+}
+
+func (p *PPU) pop(drop bool) uint8 {
 	if pixel, err := p.FIFO.Pop(); err == nil {
-		// This was shamefully taken from coffee-gb.
-		color := (p.BGP >> (pixel.(uint8) << 1)) & 3
-		p.LCD.Write(lcd.Pixel(color))
+		if !drop {
+			// This was shamefully taken from coffee-gb.
+			color := (p.BGP >> (pixel.(uint8) << 1)) & 3
+			p.LCD.Write(lcd.Pixel(color))
+		}
 		return 1
 	}
 	return 0

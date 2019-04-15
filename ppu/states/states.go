@@ -13,12 +13,21 @@ const (
 	PixelTransfer        // Mode 3
 )
 
-// Fetcher states.
+// Fetcher states. Using bitfield to allow combinations. ([TUGBT] 00:37:52)
 const (
-	ReadTileID = iota
+	ReadTileID = 1 << iota
 	ReadTileData0
 	ReadTileData1
 	PushToFIFO
+	ReadSpriteID
+	ReadSpriteFlags
+	ReadSpriteData0
+	ReadSpriteData1
+	MixInFIFO
+
+	// Useful combinations.
+	FetchingSprite = ReadSpriteID | ReadSpriteFlags | ReadSpriteData0 |
+		ReadSpriteData1 | MixInFIFO
 )
 
 // OAM states.
