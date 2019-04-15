@@ -29,7 +29,8 @@ const (
 	ScreenHeight = 144
 )
 
-// Default palette colors with separate RGB components for easier use with SDL API. Kinda greenish.
+// Default palette colors with separate RGB components for easier use with SDL
+// API. Kinda greenish.
 const (
 	ColorWhite      = 0xe0f0e7
 	ColorWhiteR     = (ColorWhite >> 16) & 0xff

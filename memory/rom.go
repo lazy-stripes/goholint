@@ -24,5 +24,6 @@ func NewROM(filename string, start uint) *ROM {
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
 func (r *ROM) Write(addr uint, value uint8) {
-	debug.Printf("rom", "Attempt to write %x to read-only address space at %#x\n", value, addr)
+	debug.Printf("rom", "Attempt to write %x to read-only address space at %#x",
+		value, addr)
 }
