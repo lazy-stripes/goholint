@@ -8,8 +8,7 @@ import (
 // AddrOAM represents the base address of OAM RAM.
 const AddrOAM = 0xfe00
 
-// OAM represents an address space holding a list of sprites to display for the
-// current scanline.
+// OAM computes a list of sprites to display for the current scanline.
 type OAM struct {
 	Sprites []Sprite
 
@@ -41,10 +40,33 @@ func (o *OAM) Tick() (done bool) {
 			break
 		}
 
+		height := uint8(8)
+		if *o.lcdc&LCDCSpriteSize != 0 {
+			height = 16
+		}
+
+		// [TUGBT] 00:46:00
+		//              0
+		// [Sprite.Y]---+-------
+		//              |
+		// [LY]- - - - -+- - - -
+		//              |
+		//              |
+		// [Sprite.Y+H]-+-------
+		//              |
+		//              .
+		//             144
+		o.sprite.X = o.ram.Read(o.sprite.Address + 1)
+		if o.sprite.X != 0 {
+			y := *o.ly + 16
+			if o.sprite.Y <= y && o.sprite.Y+height > y {
+				o.Sprites = append(o.Sprites, o.sprite)
+			}
+		}
+
+		o.state = states.ReadSpriteY
 		o.index++
 	}
-	if o.index >= 40 {
-		return true
-	}
-	return false
+
+	return o.index >= 40
 }
