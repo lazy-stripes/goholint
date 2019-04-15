@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"go.tigris.fr/gameboy/debug"
-	"go.tigris.fr/gameboy/fifo"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/memory"
@@ -57,7 +56,7 @@ const (
 // PPU address space handling video RAM and display.
 type PPU struct {
 	*memory.MMU
-	*fifo.FIFO
+	*FIFO
 	OAM
 	Fetcher
 	Interrupts *interrupts.Interrupts
@@ -81,7 +80,7 @@ type PPU struct {
 
 // New PPU instance.
 func New(display lcd.Display) *PPU {
-	fifo := fifo.New(16, 8)
+	fifo := NewFifo(16, 8)
 	p := PPU{MMU: memory.NewEmptyMMU(), FIFO: fifo, LCD: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,

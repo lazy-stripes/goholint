@@ -1,4 +1,4 @@
-package fifo
+package ppu
 
 import "errors"
 
@@ -12,8 +12,8 @@ type FIFO struct {
 	minLen int
 }
 
-// New returns an empty FIFO of the given size with the given minimum length.
-func New(size, minLen int) *FIFO {
+// NewFifo returns an empty FIFO of the given size with the given minimum length.
+func NewFifo(size, minLen int) *FIFO {
 	return &FIFO{fifo: make([]interface{}, size), minLen: minLen}
 }
 
