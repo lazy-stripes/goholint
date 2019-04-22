@@ -9,9 +9,9 @@ import (
 	"image/png"
 	"os"
 
-	"go.tigris.fr/gameboy/debug"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
+	"go.tigris.fr/gameboy/logger"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu/states"
 )
@@ -117,12 +117,12 @@ func New(display lcd.Display) *PPU {
 func (p *PPU) Write(addr uint, value uint8) {
 	switch addr {
 	case AddrSTAT:
-		debug.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
+		logger.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
 		p.STAT = value & 0xf8
 	case AddrLY:
 		// [PANDOCS] says writing to it "resets counter"?
-		debug.Printf("ppu", "PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
-		debug.Printf("ppu", "Write to LY. What do?")
+		logger.Printf("ppu", "PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
+		logger.Printf("ppu", "Write to LY. What do?")
 	default:
 		p.MMU.Write(addr, value)
 	}
@@ -132,7 +132,7 @@ func (p *PPU) Write(addr uint, value uint8) {
 func (p *PPU) Read(addr uint) uint8 {
 	if addr == AddrSTAT {
 		// We never write to STAT bits 0-2 so we (safely?) assume they're 0.
-		debug.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
+		logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
 		stat := p.STAT | uint8(p.state) // Mode
 		if p.LY == p.LYC {
 			stat |= 4

@@ -1,6 +1,6 @@
 package memory
 
-import "go.tigris.fr/gameboy/debug"
+import "go.tigris.fr/gameboy/logger"
 
 // BootAddr is the address of BOOT register in I/O RAM.
 const BootAddr = 0xff50
@@ -17,12 +17,13 @@ func NewBoot(filename string) *Boot {
 	return &Boot{ROM: *NewROM(filename, 0)}
 }
 
-// Contains returns true if the given address belongs to the ROM or BOOT register, false otherwise.
+// Contains returns true if the given address belongs to the ROM or BOOT
+// register, false otherwise.
 func (b *Boot) Contains(addr uint) bool {
 	return addr == BootAddr || (!b.disabled && b.ROM.Contains(addr))
 }
 
-// Read returns the value stored at the given address in ROM or in BOOT register.
+// Read returns the value stored at the given address in ROM or BOOT register.
 func (b *Boot) Read(addr uint) uint8 {
 	if addr == BootAddr {
 		return b.Register
@@ -35,7 +36,7 @@ func (b *Boot) Write(addr uint, value uint8) {
 	if addr == BootAddr {
 		b.Register = value
 		b.disabled = true
-		debug.Print("boot", "BootROM disabled.")
+		logger.Print("boot", "BootROM disabled.")
 	} else {
 		b.ROM.Write(addr, value) // Shouldn't happen but will log it if it does
 	}

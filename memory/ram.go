@@ -26,7 +26,8 @@ func (r RAM) Contains(addr uint) bool {
 	return addr >= r.Start && addr < r.Start+uint(len(r.Bytes))
 }
 
-// NewVRAM instantiates a slice of the given size to represent RAM, initialized with random values.
+// NewVRAM instantiates a slice of the given size to represent RAM, initialized
+// with random values.
 func NewVRAM(start, size uint) *RAM {
 	vram := NewRAM(start, size)
 	for i := range vram.Bytes {

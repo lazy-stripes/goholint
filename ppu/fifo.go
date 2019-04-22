@@ -2,8 +2,9 @@ package ppu
 
 import "errors"
 
-// FIFO storing generic items and supporting a minimum size under which it can't Pop.
-// TODO: try implementing a specific PixelFIFO and see if it helps with performances.
+// FIFO storing generic items and supporting a minimum size under which it
+// can't Pop.
+// TODO: for priorities and palettes, we DO need a specific PixelFIFO.
 type FIFO struct {
 	fifo   []interface{}
 	out    int
@@ -39,7 +40,7 @@ func (f *FIFO) Push(item interface{}) error {
 
 // Pop an item out of the FIFO.
 func (f *FIFO) Pop() (item interface{}, err error) {
-	// Do nothing if we only have the minimum length or less available to shift out.
+	// Do nothing if we only have the minimum length or less to shift out.
 	if f.len <= f.minLen {
 		return 0, errFIFOUnderrun
 	}

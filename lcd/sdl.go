@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"go.tigris.fr/gameboy/debug"
+	"go.tigris.fr/gameboy/logger"
 )
 
 // SDL display shifting pixels out to a single texture.
@@ -47,10 +47,10 @@ func NewSDL() *SDL {
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if info, err := renderer.GetInfo(); err == nil {
-		debug.Println("lcd", "Renderer info:")
-		debug.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
-		debug.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
-		debug.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
+		logger.Println("lcd", "Renderer info:")
+		logger.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
+		logger.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
+		logger.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 	if err != nil {
 		window.Destroy()
@@ -139,11 +139,9 @@ func (s *SDL) HBlank() {
 func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
-		s.renderer.Clear()
+		//s.renderer.Clear()
 		s.renderer.Copy(s.texture, nil, nil)
 		s.renderer.Present()
-		//for t := time.Now(); time.Now().Sub(t) < time.Nanosecond*400; {
-		//}
 
 		if s.offset != ScreenWidth*ScreenHeight*4 {
 			fmt.Println("MISSING PIXELS!")

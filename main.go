@@ -12,9 +12,9 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 
 	"go.tigris.fr/gameboy/cpu"
-	"go.tigris.fr/gameboy/debug"
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
+	"go.tigris.fr/gameboy/logger"
 	"go.tigris.fr/gameboy/memory"
 	"go.tigris.fr/gameboy/ppu"
 	"go.tigris.fr/gameboy/serial"
@@ -59,7 +59,7 @@ func run(romPath string, fastBoot bool) int {
 	cpu.MMU = mmu
 
 	// Add CPU-specific context to debug output.
-	debug.Context = cpu.Context
+	logger.Context = cpu.Context
 
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
@@ -121,7 +121,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	for _, m := range debugModules {
-		debug.Enabled[m] = true
+		logger.Enabled[m] = true
 	}
 
 	if *cpuprofile != "" {

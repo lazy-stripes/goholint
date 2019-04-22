@@ -1,4 +1,5 @@
-package debug
+// Package logger allows configurable, per-package logging.
+package logger
 
 import (
 	"fmt"

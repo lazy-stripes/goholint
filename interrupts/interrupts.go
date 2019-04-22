@@ -3,7 +3,7 @@ package interrupts
 import (
 	"fmt"
 
-	"go.tigris.fr/gameboy/debug"
+	"go.tigris.fr/gameboy/logger"
 )
 
 // Namespaced const flags because still procrastinating.
@@ -26,7 +26,8 @@ const (
 	AddrIE      = 0xffff
 )
 
-// InterruptAddress is a quick and dirty mapping between an interrupt flag and its address.
+// InterruptAddress is a quick and dirty mapping between an interrupt flag and
+// its address.
 var InterruptAddress = [...]uint16{
 	VBlank:  AddrVBlank,
 	LCDStat: AddrLCDStat,
@@ -46,12 +47,14 @@ func New(regIF, regIE *uint8) *Interrupts {
 	return &Interrupts{regIF, regIE}
 }
 
-// Contains returns true if the given address belongs to the address space, false otherwise.
+// Contains returns true if the given address belongs to the address space,
+// false otherwise.
 func (i *Interrupts) Contains(addr uint) bool {
 	return addr == AddrIF || addr == AddrIE
 }
 
-// Read returns the value stored in the requested interrupt register, accounting for IF exploitable bits.
+// Read returns the value stored in the requested interrupt register, accounting
+// for IF exploitable bits.
 func (i *Interrupts) Read(addr uint) uint8 {
 	switch addr {
 	case AddrIF:
@@ -62,18 +65,19 @@ func (i *Interrupts) Read(addr uint) uint8 {
 	panic(fmt.Sprintf("Broken MMU: out-of-range address %#x requested", addr))
 }
 
-// Write stores the given value in the given interrupt register, accounting for IF exploitable bits.
+// Write stores the given value in the given interrupt register, accounting for
+// IF exploitable bits.
 func (i *Interrupts) Write(addr uint, value uint8) {
 	switch addr {
 	case AddrIF:
 		*i.regIF = value & 0x1f
 	case AddrIE:
 		*i.regIE = value
-		debug.Printf("interrupts", " !!! IE=%#x", value)
+		logger.Printf("interrupts", " !!! IE=%#x", value)
 	}
 }
 
-// Request sets the bit corresponding to the requested interrupt type (V-Blank, etc)
+// Request sets the bit corresponding to the requested interrupt type.
 func (i *Interrupts) Request(interrupt uint8) {
 	*i.regIF |= interrupt
 }

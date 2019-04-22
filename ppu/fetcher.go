@@ -66,7 +66,7 @@ func (f *Fetcher) Tick() {
 	case states.ReadTileID:
 		f.tileID = f.vRAM.Read(f.mapAddr + uint(f.tileOffset))
 		f.state = states.ReadTileData0
-		//debug.Printf("fetcher", "%04x: %02x\n", f.mapAddr+uint(f.tileOffset), f.tileID)
+		//logger.Printf("fetcher", "%04x: %02x\n", f.mapAddr+uint(f.tileOffset), f.tileID)
 
 	case states.ReadTileData0:
 		f.ReadTileLine(0, f.dataAddr, f.tileID, f.signedID, f.tileLine, 0, &f.tileData)

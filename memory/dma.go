@@ -1,6 +1,6 @@
 package memory
 
-import "go.tigris.fr/gameboy/debug"
+import "go.tigris.fr/gameboy/logger"
 
 // DMA implementation. Source:
 // [VIDEO] http://gbdev.gg8.se/wiki/articles/Video_Display#FF46_-_DMA_-_DMA_Transfer_and_Start_Address_.28R.2FW.29
@@ -45,7 +45,7 @@ func (d *DMA) Write(addr uint, value uint8) {
 	d.ticks = 0
 	d.isActive = true
 
-	debug.Printf("dma", "Start DMA transfer 0x%04x→0xfe00", d.src)
+	logger.Printf("dma", "Start DMA transfer 0x%04x→0xfe00", d.src)
 	// TODO: what happens if transfer is already active?!
 }
 
@@ -66,6 +66,6 @@ func (d *DMA) Tick() {
 		}
 		return
 	}
-	debug.Printf("dma", "DMA transfer done")
+	logger.Printf("dma", "DMA transfer done")
 	d.isActive = false
 }

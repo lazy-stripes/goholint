@@ -4,8 +4,8 @@
 package timer
 
 import (
-	"go.tigris.fr/gameboy/debug"
 	"go.tigris.fr/gameboy/interrupts"
+	"go.tigris.fr/gameboy/logger"
 	"go.tigris.fr/gameboy/memory"
 )
 
@@ -58,13 +58,13 @@ func (t *Timer) Read(addr uint) (value uint8) {
 	default:
 		panic("Broken MMU")
 	}
-	debug.Printf("timer", "Timer.Read(0x%04x): 0x%02x", addr, value)
+	logger.Printf("timer", "Timer.Read(0x%04x): 0x%02x", addr, value)
 	return value
 }
 
 // Write a byte to one of the registers, accounting for DIV.
 func (t *Timer) Write(addr uint, value uint8) {
-	debug.Printf("timer", "Timer.Write(0x%04x, 0x%02x)", addr, value)
+	logger.Printf("timer", "Timer.Write(0x%04x, 0x%02x)", addr, value)
 	switch addr {
 	case AddrDIV:
 		t.DIV = 0

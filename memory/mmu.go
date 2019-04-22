@@ -1,12 +1,12 @@
 package memory
 
-// MMU manages an arbitrary number of ordered address spaces, starting with the DMG boot ROM by default.
-// It also satisfies the AddressSpace interface.
+// MMU manages an arbitrary number of ordered address spaces. It also satisfies
+// the AddressSpace interface.
 type MMU struct {
 	Spaces []Addressable
 }
 
-// NewMMU returns an instance of MMU initialized with optional address spaces.
+// NewMMU returns an instance of MMU initialized with existing address spaces.
 func NewMMU(spaces []Addressable) *MMU {
 	return &MMU{spaces}
 }
@@ -22,8 +22,9 @@ func (m *MMU) Add(space Addressable) {
 	m.Spaces = append(m.Spaces, space)
 }
 
-// Contains returns whether one of the address spaces known to the MMU contains the given address. The first
-// address space in the internal list containing a given address will shadow any other.
+// Contains returns whether one of the address spaces known to the MMU contains
+// the given address. The first address space in the internal list containing a
+// given address will shadow any other that may contain it.
 func (m *MMU) Contains(addr uint) bool {
 	for _, space := range m.Spaces {
 		if space.Contains(addr) {
@@ -40,10 +41,12 @@ func (m *MMU) space(addr uint) Addressable {
 			return space
 		}
 	}
-	return nil // TODO: VOID
+	return nil
 }
 
-// Read finds the first address space compatible with the given address and returns the value at that address.
+// Read finds the first address space compatible with the given address and
+// returns the value at that address. If no space contains the requested
+// address, it returns 0xff (emulates black bar on boot).
 func (m *MMU) Read(addr uint) uint8 {
 	if space := m.space(addr); space != nil {
 		return space.Read(addr)
@@ -51,8 +54,8 @@ func (m *MMU) Read(addr uint) uint8 {
 	return 0xff
 }
 
-// Write finds the first address space compatible with the given address and attempts writing the given value to that
-// address. TODO: error handling for write only?
+// Write finds the first address space compatible with the given address and
+// attempts writing the given value to that address.
 func (m *MMU) Write(addr uint, value uint8) {
 	if space := m.space(addr); space != nil {
 		space.Write(addr, value)

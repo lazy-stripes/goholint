@@ -3,7 +3,7 @@ package serial
 import (
 	"fmt"
 
-	"go.tigris.fr/gameboy/debug"
+	"go.tigris.fr/gameboy/logger"
 )
 
 // Register addresses
@@ -43,7 +43,7 @@ func (s *Serial) Write(addr uint, value uint8) {
 		s.SC = value
 		if value&(1<<7) != 0 {
 			// Print characters for now to print GB ROM test results.
-			debug.Printf("serial", "%c", s.SB)
+			logger.Printf("serial", "%c", s.SB)
 
 			// For now, always assume no connection.
 			s.SB = 0xff

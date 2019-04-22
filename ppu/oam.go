@@ -47,6 +47,8 @@ func (o *OAM) Tick() (done bool) {
 
 		// [TUGBT] 00:46:00
 		//              0
+		//              .
+		//              |
 		// [Sprite.Y]---+-------
 		//              |
 		// [LY]- - - - -+- - - -
