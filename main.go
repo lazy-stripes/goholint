@@ -41,16 +41,10 @@ func run(romPath string, fastBoot bool) int {
 		boot = memory.NewRAM(memory.BootAddr, 1)
 		cpu.PC = 0x0100
 	} else {
-		rompath := "bin/DMG_ROM.bin"
-		boot = memory.NewBoot(rompath)
+		boot = memory.NewBoot("bin/DMG_ROM.bin")
 	}
 
-	var cartridge memory.Addressable
-	if romPath == "" {
-		cartridge = memory.NewRAM(0, 0)
-	} else {
-		cartridge = memory.NewROM(romPath, 0)
-	}
+	cartridge := memory.NewCartridge(romPath)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
 	dma := &memory.DMA{}

@@ -22,7 +22,7 @@ func (r RAM) Write(addr uint16, value uint8) {
 }
 
 // Contains indicates true as long as address fits in the slice. Careful not
-// to wrap utin16 here.
+// to wrap uint16 here.
 func (r RAM) Contains(addr uint16) bool {
 	return addr >= r.Start && addr <= r.Start+uint16(len(r.Bytes))-1
 }
