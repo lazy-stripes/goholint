@@ -100,7 +100,7 @@ func New(display lcd.Display) *PPU {
 	})
 
 	videoRAM := memory.NewVRAM(0x8000, 0x2000)
-	oamRAM := memory.NewVRAM(AddrOAM, 0xa0)
+	oamRAM := memory.NewRAM(AddrOAM, 0xa0)
 
 	p.Add(videoRAM)
 	p.Add(oamRAM)
