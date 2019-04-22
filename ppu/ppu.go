@@ -206,11 +206,17 @@ func (p *PPU) Tick() {
 
 		// TODO: Windows
 
-		// Mix in sprite pixels. Now I DO grok why FIFO needs those 8 pixels. ♥
-		for _, sprite := range p.OAM.Sprites {
-			if sprite.X == p.x {
+		// Find out if a sprite (that hasn't yet been fetched) should be
+		// displayed at the current X position.
+		for i, sprite := range p.OAM.Sprites {
+			if sprite.Fetched {
+				continue
+			}
 
-				//p.Fetcher.FetchSprite(sprite)
+			// TODO: sprite.X < 8 when we have a ROM to test it.
+			if sprite.X > 0 && sprite.X-8 == p.x {
+				p.Fetcher.FetchSprite(sprite, 0, p.LY+16-sprite.Y) // TODO: 16px height
+				p.OAM.Sprites[i].Fetched = true
 				return
 			}
 		}

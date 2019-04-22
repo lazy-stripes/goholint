@@ -12,8 +12,8 @@ type Fetcher struct {
 	vRAM            memory.Addressable
 	ticks           int
 	state, oldState states.State
-	mapAddr         uint // Start address of tile map row
-	dataAddr        uint
+	mapAddr         uint  // Start address of BG/Windows map row
+	dataAddr        uint  // Start address of Sprite/BG tile data
 	tileOffset      uint8 // X offset in the tile map row (will wrap around)
 	tileLine        uint8 // Y offset (in pixels) in the tile
 	signedID        bool
@@ -21,11 +21,12 @@ type Fetcher struct {
 	tileID   uint8
 	tileData [8]uint8
 
-	sprite       Sprite // Stores X, Y and address
+	sprite       Sprite // Stores X, Y and address in OAM
 	spriteID     uint8
 	spriteFlags  uint8
 	spriteOffset uint8 // X offset for sprite (if not fully on screen)
 	spriteLine   uint8 // Y offset (in pixels) in the sprite
+	spriteData   [8]uint8
 }
 
 // Start fetching a line of pixels from the given tile in the given tilemap
@@ -39,10 +40,11 @@ func (f *Fetcher) Start(mapAddr, dataAddr uint, tileOffset, tileLine uint8, sign
 	f.fifo.Clear()
 }
 
-// FetchSprite pauses the current fetching tate to read sprite data and mix it
+// FetchSprite pauses the current fetching state to read sprite data and mix it
 // in the pixel FIFO.
-func (f *Fetcher) FetchSprite(sprite Sprite, mixOffset, spriteLine uint8) {
+func (f *Fetcher) FetchSprite(sprite Sprite, spriteOffset, spriteLine uint8) {
 	f.sprite = sprite
+	f.spriteOffset, f.spriteLine = spriteOffset, spriteLine
 	f.oldState = f.state
 	f.state = states.ReadSpriteID
 }
@@ -67,11 +69,11 @@ func (f *Fetcher) Tick() {
 		//debug.Printf("fetcher", "%04x: %02x\n", f.mapAddr+uint(f.tileOffset), f.tileID)
 
 	case states.ReadTileData0:
-		f.ReadTileLine(0)
+		f.ReadTileLine(0, f.dataAddr, f.tileID, f.signedID, f.tileLine, 0, &f.tileData)
 		f.state = states.ReadTileData1
 
 	case states.ReadTileData1:
-		f.ReadTileLine(1)
+		f.ReadTileLine(1, f.dataAddr, f.tileID, f.signedID, f.tileLine, 0, &f.tileData)
 		f.state = states.PushToFIFO
 
 	case states.PushToFIFO:
@@ -83,7 +85,7 @@ func (f *Fetcher) Tick() {
 			f.state = states.ReadTileID
 		}
 	case states.ReadSpriteID:
-		f.spriteID = f.vRAM.Read(f.sprite.Address + 2) // We already read X,Y bytes
+		f.spriteID = f.vRAM.Read(f.sprite.Address + 2) // We already read X&Y
 		f.state = states.ReadSpriteFlags
 
 	case states.ReadSpriteFlags:
@@ -92,43 +94,57 @@ func (f *Fetcher) Tick() {
 
 	case states.ReadSpriteData0:
 		// TODO: 16px high sprites
-		f.ReadSpriteLine(0)
+		f.ReadTileLine(0, 0x8000, f.spriteID, false, f.spriteLine, f.spriteFlags, &f.spriteData)
 		f.state = states.ReadSpriteData1
 
 	case states.ReadSpriteData1:
-		f.ReadSpriteLine(1)
+		f.ReadTileLine(1, 0x8000, f.spriteID, false, f.spriteLine, f.spriteFlags, &f.spriteData)
 		f.state = states.MixInFIFO
 
 	case states.MixInFIFO:
-		if f.fifo.Size() <= 8 {
-			for i := 0; i < 8; i++ { // TODO: PixelFIFO directly handling [8]uint8
-				f.fifo.Push(f.tileData[i])
-			}
-			f.tileOffset = (f.tileOffset + 1) % 32
-			f.state = states.ReadTileID
+		if f.fifo.Size() < 8 {
+			break
 		}
+
+		// Mix sprite pixels with FIFO, taking into account offset if sprite
+		// is only partially displayed (i.e. entering screen from the left).
+		// TODO: use f.spriteOffset
+		for i := 0; i < 8; i++ {
+			f.fifo.Mix(i, f.spriteData[i])
+		}
+		f.state = f.oldState
 	}
 }
 
-// ReadTileLine updates internal pixel buffer with LSB or MSB tile line depending on parameter.
-func (f *Fetcher) ReadTileLine(byteOffset uint8) {
-	// TODO: attributes, 16-pixel height, reverse (well, sprites really)
+// ReadTileLine updates internal pixel buffer with LSB or MSB tile line
+// depending on current state.
+func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint, tileID uint8, signedID bool, tileLine uint8, flags uint8, data *[8]uint8) {
+	// TODO: attributes, 16-pixel height
 	var offset uint
-	if f.signedID {
-		offset = uint(int(f.dataAddr) + (int(f.tileID) * 16))
+	if signedID {
+		offset = uint(int(tileDataAddr) + int(int8(tileID))*16)
 	} else {
-		offset = f.dataAddr + (uint(f.tileID) * 16)
+		offset = tileDataAddr + (uint(tileID) * 16)
 	}
-	addr := offset + (uint(f.tileLine) * 2)
+	if flags&SpriteFlipY != 0 {
+		tileLine = 7 - tileLine // TODO: 16px height
+	}
+	addr := offset + (uint(tileLine) * 2)
 
-	pixelData := f.vRAM.Read(addr + uint(byteOffset))
+	pixelData := f.vRAM.Read(addr + uint(bitPlane))
 	for bitPos := 7; bitPos >= 0; bitPos-- {
-		if byteOffset == 0 {
+		var pixelIndex uint
+		if flags&SpriteFlipX != 0 {
+			pixelIndex = uint(bitPos)
+		} else {
+			pixelIndex = 7 - uint(bitPos)
+		}
+		if bitPlane == 0 {
 			// Least significant bit, replace previous value.
-			f.tileData[7-bitPos] = (pixelData >> uint(bitPos)) & 1
+			data[pixelIndex] = (pixelData >> uint(bitPos)) & 1
 		} else {
 			// Most significant bit, update previous value.
-			f.tileData[7-bitPos] |= ((pixelData >> uint(bitPos)) & 1) << 1
+			data[pixelIndex] |= ((pixelData >> uint(bitPos)) & 1) << 1
 		}
 	}
 }

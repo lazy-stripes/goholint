@@ -53,3 +53,13 @@ func (f *FIFO) Pop() (item interface{}, err error) {
 func (f *FIFO) Size() int {
 	return f.len
 }
+
+// Mix pixel data in the lower half of the FIFO.
+// FIXME: this is where genericity finally bites us. We do need a PixelFifo.
+func (f *FIFO) Mix(offset int, item interface{}) {
+	// TODO: store pixel data, so we can mix depending on priorities and stuff.
+	if item.(uint8) == 0 {
+		return
+	}
+	f.fifo[(f.out+offset)%len(f.fifo)] = item
+}
