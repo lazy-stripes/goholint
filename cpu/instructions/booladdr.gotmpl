@@ -5,7 +5,7 @@ type {{name .}} struct {
 
 func (op *{{name .}}) Tick() (done bool) {
 {{- if .Address}}
-	op.cpu.A {{.Operator}} op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	op.cpu.A {{.Operator}} op.cpu.MMU.Read(op.cpu.{{.Address}}())
 {{- else}}
 	op.cpu.A {{.Operator}} op.cpu.NextByte()
 {{- end}}

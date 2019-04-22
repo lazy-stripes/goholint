@@ -22,11 +22,11 @@ func New() *Serial {
 	return &Serial{}
 }
 
-func (s *Serial) Contains(addr uint) bool {
+func (s *Serial) Contains(addr uint16) bool {
 	return addr == AddrSB || addr == AddrSC
 }
 
-func (s *Serial) Read(addr uint) uint8 {
+func (s *Serial) Read(addr uint16) uint8 {
 	if addr == AddrSB {
 		return s.SB
 	} else if addr == AddrSC {
@@ -36,14 +36,16 @@ func (s *Serial) Read(addr uint) uint8 {
 	}
 }
 
-func (s *Serial) Write(addr uint, value uint8) {
+func (s *Serial) Write(addr uint16, value uint8) {
 	if addr == AddrSB {
 		s.SB = value
 	} else if addr == AddrSC {
 		s.SC = value
 		if value&(1<<7) != 0 {
 			// Print characters for now to print GB ROM test results.
-			logger.Printf("serial", "%c", s.SB)
+			if logger.Enabled["serial"] {
+				fmt.Printf("%c", s.SB)
+			}
 
 			// For now, always assume no connection.
 			s.SB = 0xff

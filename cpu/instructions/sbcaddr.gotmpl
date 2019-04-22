@@ -8,7 +8,7 @@ func (op *{{name .}}) Tick() (done bool) {
 	// Flags: z 1 h c
 	op.cpu.F = FlagN
 {{- if .Address}}
-	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.{{.Address}}())
 {{- else}}
 	op.cpu.temp8 = op.cpu.NextByte()
 {{- end}}

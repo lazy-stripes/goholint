@@ -6,15 +6,15 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		// Waiting cycle according to [GEKKIO]. To align with memory timing?
+		// Waiting cycle according to [GEKKIO].
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.{{.High}}))
+		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.{{.High}}))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(uint(op.cpu.SP), uint8(op.cpu.{{.Low}}))
+		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.{{.Low}}))
 		done = true
 	}
 	return

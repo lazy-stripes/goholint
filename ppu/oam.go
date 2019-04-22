@@ -28,7 +28,7 @@ func (o *OAM) Start() {
 
 // Tick advances OAM search one step and returns true when the search is over.
 func (o *OAM) Tick() (done bool) {
-	o.sprite.Address = AddrOAM + uint(o.index*4)
+	o.sprite.Address = AddrOAM + uint16(o.index*4)
 	switch o.state {
 	case states.ReadSpriteY:
 		o.sprite.Y = o.ram.Read(o.sprite.Address)

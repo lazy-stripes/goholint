@@ -14,7 +14,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		}
 	case 1:
 {{- end}}
-		op.cpu.PC = uint16(op.cpu.MMU.Read(uint(op.cpu.SP)))
+		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 {{- if .Flag}}
@@ -22,7 +22,7 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- else}}
 	case 1:
 {{- end}}
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(uint(op.cpu.SP))) << 8
+		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 {{- if .Flag}}

@@ -16,7 +16,7 @@ type DMA struct {
 
 	isActive  bool
 	ticks     int
-	src, dest uint
+	src, dest uint16
 }
 
 // NewDMA returns an instance of DMA managing the actual register and memory
@@ -27,20 +27,20 @@ func NewDMA(mmu Addressable) *DMA {
 }
 
 // Contains return true if the requested address is the DMA register.
-func (d *DMA) Contains(addr uint) bool {
+func (d *DMA) Contains(addr uint16) bool {
 	return addr == AddrDMA
 }
 
 // Read returns the content of the DMA register.
-func (d *DMA) Read(addr uint) uint8 {
+func (d *DMA) Read(addr uint16) uint8 {
 	return d.DMA
 }
 
 // Write sets the start address for memory transfer in the DMA register and
 // initiates said transfer.
-func (d *DMA) Write(addr uint, value uint8) {
+func (d *DMA) Write(addr uint16, value uint8) {
 	d.DMA = value
-	d.src = uint(value) * 0x100
+	d.src = uint16(value) * 0x100
 	d.dest = 0xfe00 // OAM RAM
 	d.ticks = 0
 	d.isActive = true

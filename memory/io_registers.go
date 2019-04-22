@@ -13,16 +13,16 @@ type IORegister struct {
 }
 
 // IORegisters represented as an address space mapping to a memory location and a write hook.
-type IORegisters map[uint]*IORegister
+type IORegisters map[uint16]*IORegister
 
 // Contains returns true if the address corresponds to a register.
-func (r IORegisters) Contains(addr uint) (present bool) {
+func (r IORegisters) Contains(addr uint16) (present bool) {
 	_, present = r[addr]
 	return
 }
 
 // Read returns the byte at the given address in VRAM corresponding to a register.
-func (r IORegisters) Read(addr uint) uint8 {
+func (r IORegisters) Read(addr uint16) uint8 {
 	if io, present := r[addr]; present {
 		if io.ReadHook != nil {
 			return io.ReadHook(io)
@@ -33,7 +33,7 @@ func (r IORegisters) Read(addr uint) uint8 {
 }
 
 // Write sets the byte at the given address in VRAM to the given value. TODO: checks
-func (r IORegisters) Write(addr uint, value uint8) {
+func (r IORegisters) Write(addr uint16, value uint8) {
 	// Set register by default, unless hook exists. Used to implement R/O registers.
 	if io, present := r[addr]; present {
 		if io.WriteHook != nil {

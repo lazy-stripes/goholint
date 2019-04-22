@@ -40,12 +40,12 @@ func New() *Timer {
 }
 
 // Contains returns true is requested address is a timer register.
-func (t *Timer) Contains(addr uint) bool {
+func (t *Timer) Contains(addr uint16) bool {
 	return addr >= AddrDIV && addr <= AddrTAC
 }
 
 // Read a byte from one of the registers, accounting for DIV and TAC.
-func (t *Timer) Read(addr uint) (value uint8) {
+func (t *Timer) Read(addr uint16) (value uint8) {
 	switch addr {
 	case AddrDIV:
 		value = uint8(t.DIV >> 8)
@@ -63,7 +63,7 @@ func (t *Timer) Read(addr uint) (value uint8) {
 }
 
 // Write a byte to one of the registers, accounting for DIV.
-func (t *Timer) Write(addr uint, value uint8) {
+func (t *Timer) Write(addr uint16, value uint8) {
 	logger.Printf("timer", "Timer.Write(0x%04x, 0x%02x)", addr, value)
 	switch addr {
 	case AddrDIV:

@@ -12,6 +12,6 @@ const (
 // current scanline as well as its address in OAM RAM.
 type Sprite struct {
 	X, Y    uint8
-	Address uint
+	Address uint16
 	Fetched bool // Set to true after this sprite was treated for a given line.
 }

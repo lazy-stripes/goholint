@@ -19,12 +19,12 @@ func NewBoot(filename string) *Boot {
 
 // Contains returns true if the given address belongs to the ROM or BOOT
 // register, false otherwise.
-func (b *Boot) Contains(addr uint) bool {
+func (b *Boot) Contains(addr uint16) bool {
 	return addr == BootAddr || (!b.disabled && b.ROM.Contains(addr))
 }
 
 // Read returns the value stored at the given address in ROM or BOOT register.
-func (b *Boot) Read(addr uint) uint8 {
+func (b *Boot) Read(addr uint16) uint8 {
 	if addr == BootAddr {
 		return b.Register
 	}
@@ -32,7 +32,7 @@ func (b *Boot) Read(addr uint) uint8 {
 }
 
 // Write is only supported for BOOT register and disables the boot ROM.
-func (b *Boot) Write(addr uint, value uint8) {
+func (b *Boot) Write(addr uint16, value uint8) {
 	if addr == BootAddr {
 		b.Register = value
 		b.disabled = true

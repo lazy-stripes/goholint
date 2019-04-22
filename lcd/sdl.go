@@ -39,7 +39,7 @@ func NewSDL() *SDL {
 	*/
 	window, err := sdl.CreateWindow("gb.go",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
+		ScreenWidth*2, ScreenHeight*2, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
 		return nil // TODO: result, err

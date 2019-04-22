@@ -64,6 +64,7 @@ func run(romPath string, fastBoot bool) int {
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
 	for {
+		//t := time.Now()
 		timer.Tick()
 		cpu.Tick()
 		dma.Tick()
@@ -73,6 +74,8 @@ func run(romPath string, fastBoot bool) int {
 		if tick == 229976-96 {
 			//			fmt.Println("STOP")
 		}
+		//for time.Now().Sub(t) < time.Nanosecond*100 {
+		//}
 	}
 
 	return 0

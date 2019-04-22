@@ -4,7 +4,7 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.{{.Address}}())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<{{.Bit}}) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH

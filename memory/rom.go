@@ -13,7 +13,7 @@ type ROM struct {
 }
 
 // NewROM instantiates a read-only chunk of memory from a binary dump.
-func NewROM(filename string, start uint) *ROM {
+func NewROM(filename string, start uint16) *ROM {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Printf(" !!! Cannot read ROM file %s (%s)\n", filename, err)
@@ -23,7 +23,7 @@ func NewROM(filename string, start uint) *ROM {
 }
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
-func (r *ROM) Write(addr uint, value uint8) {
+func (r *ROM) Write(addr uint16, value uint8) {
 	logger.Printf("rom", "Attempt to write %x to read-only address space at %#x",
 		value, addr)
 }

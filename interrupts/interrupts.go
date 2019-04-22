@@ -49,13 +49,13 @@ func New(regIF, regIE *uint8) *Interrupts {
 
 // Contains returns true if the given address belongs to the address space,
 // false otherwise.
-func (i *Interrupts) Contains(addr uint) bool {
+func (i *Interrupts) Contains(addr uint16) bool {
 	return addr == AddrIF || addr == AddrIE
 }
 
 // Read returns the value stored in the requested interrupt register, accounting
 // for IF exploitable bits.
-func (i *Interrupts) Read(addr uint) uint8 {
+func (i *Interrupts) Read(addr uint16) uint8 {
 	switch addr {
 	case AddrIF:
 		return *i.regIF & 0x1f
@@ -67,7 +67,7 @@ func (i *Interrupts) Read(addr uint) uint8 {
 
 // Write stores the given value in the given interrupt register, accounting for
 // IF exploitable bits.
-func (i *Interrupts) Write(addr uint, value uint8) {
+func (i *Interrupts) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrIF:
 		*i.regIF = value & 0x1f

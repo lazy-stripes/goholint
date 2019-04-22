@@ -41,6 +41,11 @@ func typeName(d *data) (name string) {
 	return fmt.Sprintf("%s%s", prefix, strings.Title(fmt.Sprintf("%02x", d.Opcode)))
 }
 
+// Nicely formatted timestamp for generated file header.
+func dateNow() string {
+	return time.Now().Format(time.RFC3339)
+}
+
 func main() {
 	instructions := []data{
 		{Opcode: 0x00, Template: "nop"},
@@ -556,7 +561,7 @@ func main() {
 		{Extended: true, Opcode: 0xff, Template: "setnr", Bit: 7, Register: "A"},
 	}
 
-	funcs := template.FuncMap{"date": time.Now, "lower": strings.ToLower, "name": typeName}
+	funcs := template.FuncMap{"date": dateNow, "lower": strings.ToLower, "name": typeName}
 	t := template.New("header.gotmpl").Funcs(funcs)
 	t = template.Must(t.ParseGlob("instructions/*.gotmpl"))
 

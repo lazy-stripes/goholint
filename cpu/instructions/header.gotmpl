@@ -1,4 +1,5 @@
 // Auto-generated on {{date}}. See instructions.go
+
 package cpu
 
 import "go.tigris.fr/gameboy/cpu/states"
@@ -10,7 +11,7 @@ var LR35902InstructionSet = [...]Instruction{
 {{- end}}
 }
 
-// LR35902ExtendedInstructionSet is the array of extension opcodes for the DMG CPU.
+// LR35902ExtendedInstructionSet is the array of CB xx opcodes for the DMG CPU.
 var LR35902ExtendedInstructionSet = [...]Instruction{
 {{- range .Extended }}
 	{{.Opcode | printf "%#02x"}}: &{{name .}}{},

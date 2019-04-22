@@ -81,7 +81,7 @@ func (c *CPU) Tick() {
 			c.debug = true
 		}
 		if c.debug && c.PC != c.oldPC {
-			fmt.Printf("PC=%04X (%02X)\n", c.PC, c.MMU.Read(uint(c.PC)))
+			fmt.Printf("PC=%04X (%02X)\n", c.PC, c.MMU.Read(c.PC))
 		}
 		opcode := c.NextByte()
 
@@ -138,12 +138,12 @@ func (c *CPU) Tick() {
 
 	case states.InterruptPushPCHigh:
 		c.SP--
-		c.MMU.Write(uint(c.SP), uint8(c.PC>>8))
+		c.MMU.Write(c.SP, uint8(c.PC>>8))
 		c.state = states.InterruptPushPCLow
 
 	case states.InterruptPushPCLow:
 		c.SP--
-		c.MMU.Write(uint(c.SP), uint8(c.PC&0xff))
+		c.MMU.Write(c.SP, uint8(c.PC&0xff))
 		c.state = states.InterruptCall
 
 	case states.InterruptCall:
@@ -223,7 +223,7 @@ func (c *CPU) String() string {
 
 // NextByte returns the next byte pointed to by PC.
 func (c *CPU) NextByte() uint8 {
-	value := c.MMU.Read(uint(c.PC))
+	value := c.MMU.Read(c.PC)
 	c.PC++
 	return value
 }
@@ -242,9 +242,9 @@ func (c *CPU) Context() string {
 func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
 		if extended {
-			fmt.Printf("Execute error at extended instruction %#04x (0xCB %#02x) (%v)\n", c.PC-2, c.MMU.Read(uint(c.PC-1)), r)
+			fmt.Printf("Execute error at extended instruction %#04x (0xCB %#02x) (%v)\n", c.PC-2, c.MMU.Read(c.PC-1), r)
 		} else {
-			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n", c.PC-1, c.MMU.Read(uint(c.PC-1)), r)
+			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n", c.PC-1, c.MMU.Read(c.PC-1), r)
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
 		// Dump memory
@@ -253,7 +253,7 @@ func instructionError(c *CPU, extended bool) {
 				f.Close()
 			}()
 			buf := make([]byte, 1, 1)
-			for addr := uint(0); addr < 0x10000; addr++ {
+			for addr := uint16(0); addr <= 0xffff; addr++ {
 				buf[0] = c.MMU.Read(addr)
 				f.Write(buf)
 			}

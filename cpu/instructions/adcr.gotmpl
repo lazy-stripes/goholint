@@ -10,7 +10,7 @@ func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	if (c.A & 0x0f) + (c.{{.Register}} & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
-	result := uint(c.A) + uint(c.{{.Register}}) + uint(carry)
+	result := uint16(c.A) + uint16(c.{{.Register}}) + uint16(carry)
 	if result > 0xff {
 		c.F |= FlagC
 	}

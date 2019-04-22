@@ -6,11 +6,11 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(uint(op.cpu.{{.Address}}()))
+		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.{{.Address}}())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<{{.Bit}})
-		op.cpu.MMU.Write(uint(op.cpu.{{.Address}}()), op.cpu.temp8)
+		op.cpu.MMU.Write(op.cpu.{{.Address}}(), op.cpu.temp8)
 		done = true
 	}
 	return

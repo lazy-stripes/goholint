@@ -114,7 +114,7 @@ func New(display lcd.Display) *PPU {
 }
 
 // Write override that handles read-only registers and bits.
-func (p *PPU) Write(addr uint, value uint8) {
+func (p *PPU) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrSTAT:
 		logger.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
@@ -129,7 +129,7 @@ func (p *PPU) Write(addr uint, value uint8) {
 }
 
 // Read override that handles exact STAT lower bits' values at any given time.
-func (p *PPU) Read(addr uint) uint8 {
+func (p *PPU) Read(addr uint16) uint8 {
 	if addr == AddrSTAT {
 		// We never write to STAT bits 0-2 so we (safely?) assume they're 0.
 		logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
@@ -183,7 +183,7 @@ func (p *PPU) Tick() {
 			y := p.SCY + p.LY
 			tileLine := y % 8
 			tileOffset := p.SCX / 8
-			tileMapRowAddr := p.BGMap() + (uint(y/8) * 32)
+			tileMapRowAddr := p.BGMap() + (uint16(y/8) * 32)
 			tileDataAddr, signedID := p.TileData()
 			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
 
@@ -273,7 +273,7 @@ func (p *PPU) Tick() {
 }
 
 // BGMap returns the base address of the background map in VRAM.
-func (p *PPU) BGMap() uint {
+func (p *PPU) BGMap() uint16 {
 	if (p.LCDC & LCDCBGTileMapDisplayeSelect) > 0 {
 		return 0x9c00
 	}
@@ -281,7 +281,7 @@ func (p *PPU) BGMap() uint {
 }
 
 // TileData returns the base address of the background or window tile data in VRAM.
-func (p *PPU) TileData() (addr uint, signedID bool) {
+func (p *PPU) TileData() (addr uint16, signedID bool) {
 	if (p.LCDC & LCDCBGWindowTileDataSelect) > 0 {
 		return 0x8000, false
 	}
@@ -313,7 +313,7 @@ func (p *PPU) pop(drop bool) uint8 {
 }
 
 // DumpTiles writes tiles from VRAM into a PNG file to test the decoder.
-func (p *PPU) DumpTiles(addr, len uint) {
+func (p *PPU) DumpTiles(addr, len uint16) {
 
 	// FIXME: handle native palettes
 	palette := color.Palette{
@@ -356,7 +356,7 @@ func (p *PPU) DumpTiles(addr, len uint) {
 }
 
 // Decode reads 8 pixels from VRAM and returns them as an array of colors (aka palette indexes). TODO: Fetcher.
-func (p *PPU) Decode(addr uint) (line []uint8) {
+func (p *PPU) Decode(addr uint16) (line []uint8) {
 	lineLo := p.Read(addr)
 	lineHi := p.Read(addr + 1)
 	// TODO: push directly to FIFO

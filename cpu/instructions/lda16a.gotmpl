@@ -10,7 +10,7 @@ func (op *{{name .}}) Tick() (done bool) {
 	case 1:
 		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
-		op.cpu.MMU.Write(uint(op.cpu.temp16), uint8(op.cpu.A))
+		op.cpu.MMU.Write(op.cpu.temp16, op.cpu.A)
 		done = true
 	}
 	op.step++

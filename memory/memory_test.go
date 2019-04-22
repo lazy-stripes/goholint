@@ -8,7 +8,7 @@ import (
 
 func TestRAMContains(t *testing.T) {
 	cases := []struct {
-		in   uint
+		in   uint16
 		want bool
 	}{
 		{0x0000, true},
@@ -27,13 +27,13 @@ func TestRAMContains(t *testing.T) {
 }
 
 func TestRAMWrite(t *testing.T) {
-	cases := []uint{
+	cases := []uint16{
 		0x0000,
 		0x0042,
 		0x007F,
 	}
 
-	error := uint(0x0080)
+	error := uint16(0x0080)
 
 	ram := NewRAM(0, 128)
 	for _, c := range cases {
@@ -51,10 +51,10 @@ func TestRAMWrite(t *testing.T) {
 }
 
 func TestRAMRead(t *testing.T) {
-	error := uint(0x0080)
+	error := uint16(0x0080)
 
 	ram := NewRAM(0, 128)
-	for addr := uint(0); addr < uint(128); addr++ {
+	for addr := uint16(0); addr < uint16(128); addr++ {
 		in := uint8(rand.Intn(0xFF))
 		ram.Write(addr, in)
 		if got := ram.Read(addr); got != in {
@@ -75,7 +75,7 @@ func TestRAMRead(t *testing.T) {
 func TestMMU(t *testing.T) {
 	rompath := "../bin/DMG_ROM.bin"
 	rom := NewROM(rompath, 0)
-	ram := NewRAM(0, 0x10000)
+	ram := NewRAM(0, 0xffff)
 	boot := NewMMU([]Addressable{rom, ram})
 
 	romdump, err := ioutil.ReadFile(rompath)
@@ -83,12 +83,12 @@ func TestMMU(t *testing.T) {
 		t.Errorf("Invalid ROM path '%s'", rompath)
 	}
 	for addr, want := range romdump {
-		if got := boot.Read(uint(addr)); got != want {
+		if got := boot.Read(uint16(addr)); got != want {
 			t.Errorf("Byte mismatch at offset %d (expected %x, read %x)", addr, want, got)
 		}
 	}
 
-	for romaddr := uint(0); romaddr < 0x100; romaddr++ {
+	for romaddr := uint16(0); romaddr < 0x100; romaddr++ {
 		want := boot.Read(romaddr)
 		boot.Write(romaddr, want+1)
 		got := boot.Read(romaddr)
@@ -97,7 +97,7 @@ func TestMMU(t *testing.T) {
 		}
 	}
 
-	for addr := uint(0x100); addr < 0x10000; addr++ {
+	for addr := uint16(0x100); addr <= 0xffff; addr++ {
 		want := boot.Read(addr) + 1
 		boot.Write(addr, want)
 		got := boot.Read(addr)
