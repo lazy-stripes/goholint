@@ -2,10 +2,10 @@ package ppu
 
 // Sprite flags
 const (
-	SpritePriority = 1 << iota
+	SpritePalette = 1 << (iota + 4)
 	SpriteFlipX
 	SpriteFlipY
-	SpritePalette
+	SpritePriority
 )
 
 // Sprite type holds (x,y) coordinates of the current pixel of a sprite in the
