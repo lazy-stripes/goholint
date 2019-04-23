@@ -15,6 +15,15 @@ const (
 	Joypad              // Bit 4 (INT 60h)
 )
 
+// LCDC STAT specific bits for PPU-related interrupts
+const (
+	STATMode0 = 1 << (iota + 3) // Bit 3
+	STATMode1                   // Bit 4
+	STATMode2                   // Bit 5
+	STATLYCLY                   // Bit 6
+
+)
+
 // Interrupt vectors and register addresses.
 const (
 	AddrVBlank  = 0x0040

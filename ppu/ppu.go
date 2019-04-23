@@ -3,12 +3,6 @@ package ppu
 // Source: [TUGBT] https://www.youtube.com/watch?v=HyzD8pNlpwI&t=2747s
 
 import (
-	"bufio"
-	"image"
-	"image/color"
-	"image/png"
-	"os"
-
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/logger"
@@ -132,12 +126,12 @@ func (p *PPU) Write(addr uint16, value uint8) {
 func (p *PPU) Read(addr uint16) uint8 {
 	if addr == AddrSTAT {
 		// We never write to STAT bits 0-2 so we (safely?) assume they're 0.
-		logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
+		//logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) - p.state=0x%02x, p.STAT=0x%02x", addr, p.state, p.STAT)
 		stat := p.STAT | uint8(p.state) // Mode
 		if p.LY == p.LYC {
 			stat |= 4
 		}
-		//debug.Printf("ppu", "PPU.Read(0x%04x[STAT]) = 0x%02x", addr, stat)
+		logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) = 0x%02x", addr, stat)
 		return stat
 	}
 	return p.MMU.Read(addr)
@@ -250,12 +244,14 @@ func (p *PPU) Tick() {
 				p.state = states.OAMSearch
 			}
 		}
+		if p.LY == p.LYC {
+			p.RequestLCDInterrupt(interrupts.STATLYCLY)
+		}
 
 	case states.VBlank:
 		// Simply wait the proper number of clock cycles. Special case for last line.
 		if p.ticks == 4 && p.LY == 153 {
 			p.LY = 0
-			// Request interrupt.
 		}
 
 		if p.ticks >= 456 {
@@ -267,7 +263,9 @@ func (p *PPU) Tick() {
 			} else {
 				p.LY++
 			}
-			// TODO: LYC=LY interrupt
+		}
+		if p.LY == p.LYC {
+			p.RequestLCDInterrupt(interrupts.STATLYCLY)
 		}
 	}
 }
@@ -312,58 +310,10 @@ func (p *PPU) pop(drop bool) uint8 {
 	return 0
 }
 
-// DumpTiles writes tiles from VRAM into a PNG file to test the decoder.
-func (p *PPU) DumpTiles(addr, len uint16) {
-
-	// FIXME: handle native palettes
-	palette := color.Palette{
-		color.RGBA{0xff, 0xff, 0xff, 0xff},
-		color.RGBA{0xaa, 0xaa, 0xaa, 0xff},
-		color.RGBA{0x55, 0x55, 0x55, 0xff},
-		color.RGBA{0x00, 0x00, 0x00, 0xff},
+// RequestLCDInterrupt checks STAT bits when an interrupt condition occurs and
+// requests an actual interrupt if the corresponding bit is set.
+func (p *PPU) RequestLCDInterrupt(interrupt uint8) {
+	if p.STAT&interrupt != 0 {
+		p.Interrupts.Request(interrupts.LCDStat)
 	}
-
-	start := addr
-	// Don't bother re-aligning tile lines yet, use an 8-pixels wide image.
-	dump := image.NewPaletted(image.Rect(0, 0, 8, int(8*len)), palette)
-	offset := 0
-	for tile := 0; tile < int(len); tile++ {
-		for line := 0; line < 8; line++ {
-			pixels := p.Decode(start)
-			for _, pixel := range pixels {
-				dump.Pix[offset] = pixel
-				offset++
-			}
-			start += 2 // 2 bytes per tile line
-		}
-	}
-
-	f, err := os.Create("tiles-dump.png")
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	w := bufio.NewWriter(f)
-	png.Encode(w, dump)
-	w.Flush()
-
-	// Dump VRAM for checks
-	//ioutil.WriteFile("vram-dump.bin", p.vram.Bytes, 0666)
-}
-
-// Decode reads 8 pixels from VRAM and returns them as an array of colors (aka palette indexes). TODO: Fetcher.
-func (p *PPU) Decode(addr uint16) (line []uint8) {
-	lineLo := p.Read(addr)
-	lineHi := p.Read(addr + 1)
-	// TODO: push directly to FIFO
-	line = make([]uint8, 0, 8)
-	for bit := 7; bit >= 0; bit-- {
-		pixel := (lineHi>>uint(bit)&1)<<1 | (lineLo >> uint(bit) & 1)
-		line = append(line, pixel)
-	}
-	return line
 }
