@@ -55,6 +55,11 @@ func run(romPath string, fastBoot bool) int {
 	// Add CPU-specific context to debug output.
 	logger.Context = cpu.Context
 
+	// Handle interrupt, store pointer to CPU for debug info.
+	c := make(chan os.Signal, 1)
+	go handleInterrupt(c, cpu)
+	signal.Notify(c, os.Interrupt)
+
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
 	for {
@@ -91,15 +96,17 @@ func (m *module) Set(value string) error {
 	return nil
 }
 
-func handleInterrupt(c chan os.Signal) {
-	// Wait for signel, quit cleanly with potential extra debug info if needed.
+func handleInterrupt(c chan os.Signal, cpu *cpu.CPU) {
+	// Wait for signal, quit cleanly with potential extra debug info if needed.
 	<-c
 	fmt.Println("\nTerminated...")
 
 	// Force stopping CPU profiling.
 	pprof.StopCPUProfile()
 
-	// TODO: dump RAM/VRAM/Other if requested in parameters.
+	// TODO: only dump RAM/VRAM/Other if requested in parameters.
+	fmt.Print(cpu)
+
 	os.Exit(-1)
 }
 
@@ -112,10 +119,6 @@ func main() {
 	var debugModules module
 	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
-
-	c := make(chan os.Signal, 1)
-	go handleInterrupt(c)
-	signal.Notify(c, os.Interrupt)
 
 	for _, m := range debugModules {
 		logger.Enabled[m] = true
