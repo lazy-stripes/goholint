@@ -41,7 +41,7 @@ func run(romPath string, fastBoot bool) int {
 		boot = memory.NewRAM(memory.BootAddr, 1)
 		cpu.PC = 0x0100
 	} else {
-		boot = memory.NewBoot("bin/DMG_ROM.bin")
+		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
 	}
 
 	cartridge := memory.NewCartridge(romPath)

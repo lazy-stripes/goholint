@@ -45,7 +45,7 @@ git clone https://git.tigris.fr/public/gameboy.git
 
 The emulator ships without any kind of ROM for hopefully obvious reasons. If
 you want a scrolling logo, the emulator needs a boot ROM it will attempt to
-read from `bin/DMG_ROM.bin`.
+read from `bin/boot/dmg_rom.bin`.
 
 (Note: if you don't want to hunt down the GameBoy's boot ROM, simply start the
 emulator with the `‑fastboot` parameter to bypass it entirely.)
