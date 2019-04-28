@@ -16,8 +16,7 @@ type ROM struct {
 func NewROM(filename string, start uint16) *ROM {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Printf(" !!! Cannot read ROM file %s (%s)\n", filename, err)
-		return nil
+		panic(fmt.Sprintf(" !!! Cannot read ROM file %s (%s)\n", filename, err))
 	}
 	return &ROM{RAM{Start: start, Bytes: bytes}}
 }

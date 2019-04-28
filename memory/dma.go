@@ -46,7 +46,6 @@ func (d *DMA) Write(addr uint16, value uint8) {
 	d.isActive = true
 
 	logger.Printf("dma", "Start DMA transfer 0x%04x→0xfe00", d.src)
-	// TODO: what happens if transfer is already active?!
 }
 
 // Tick advances DMA transfer one step if it's active. Called every clock tick.

@@ -239,6 +239,21 @@ func (c *CPU) Context() string {
 	return fmt.Sprintf("[PC=%04x] ", c.PC)
 }
 
+// DumpRAM writes current RAM values to a file. TODO: make filename configurable.
+func (c *CPU) DumpRAM() {
+	if f, err := os.Create("ram-dump.bin"); err == nil {
+		defer func() {
+			f.Close()
+		}()
+		buf := make([]byte, 1, 1)
+		for addr := uint16(0); addr < 0xffff; addr++ {
+			buf[0] = c.MMU.Read(addr)
+			f.Write(buf)
+		}
+		fmt.Println("RAM dumped to ram-dump.bin")
+	}
+}
+
 // For missing opcodses debugz.
 func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
@@ -249,17 +264,7 @@ func instructionError(c *CPU, extended bool) {
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
 		// Dump memory
-		if f, err := os.Create("ram-dump.bin"); err == nil {
-			defer func() {
-				f.Close()
-			}()
-			buf := make([]byte, 1, 1)
-			for addr := uint16(0); addr <= 0xffff; addr++ {
-				buf[0] = c.MMU.Read(addr)
-				f.Write(buf)
-			}
-			fmt.Println("RAM dumped to ram-dump.bin")
-		}
+		c.DumpRAM()
 
 		// Manually stop profile here, since the Exit below will shortcut the deferred call in main.
 		pprof.StopCPUProfile()

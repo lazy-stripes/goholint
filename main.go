@@ -101,11 +101,12 @@ func handleInterrupt(c chan os.Signal, cpu *cpu.CPU) {
 	<-c
 	fmt.Println("\nTerminated...")
 
-	// Force stopping CPU profiling.
-	pprof.StopCPUProfile()
-
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
 	fmt.Print(cpu)
+	cpu.DumpRAM()
+
+	// Force stopping CPU profiling.
+	pprof.StopCPUProfile()
 
 	os.Exit(-1)
 }

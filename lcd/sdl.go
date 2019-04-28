@@ -46,16 +46,16 @@ func NewSDL() *SDL {
 	}
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	if err != nil {
+		window.Destroy()
+		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
+		return nil // TODO: result, err
+	}
 	if info, err := renderer.GetInfo(); err == nil {
 		logger.Println("lcd", "Renderer info:")
 		logger.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t\n", info.Flags&sdl.RENDERER_SOFTWARE != 0)
 		logger.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t\n", info.Flags&sdl.RENDERER_ACCELERATED != 0)
 		logger.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t\n", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
-	}
-	if err != nil {
-		window.Destroy()
-		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
-		return nil // TODO: result, err
 	}
 
 	// The way SDL textures handle endianness is unclear, but it seems ABGR format works with our RGBA buffer.
