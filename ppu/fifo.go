@@ -2,20 +2,13 @@ package ppu
 
 import "errors"
 
-// FIFO storing generic items and supporting a minimum size under which it
-// can't Pop.
-// TODO: for priorities and palettes, we DO need a specific PixelFIFO.
+// FIFO holds the PPU's pixel FIFO shifting out pixels to the display with the
+// guarantee that there will always be 8 pixels available to mix sprites in.
 type FIFO struct {
-	fifo   []interface{}
-	out    int
-	in     int
-	len    int
-	minLen int
-}
-
-// NewFifo returns an empty FIFO of the given size with the given minimum length.
-func NewFifo(size, minLen int) *FIFO {
-	return &FIFO{fifo: make([]interface{}, size), minLen: minLen}
+	fifo [16]Pixel
+	out  int
+	in   int
+	len  int
 }
 
 // Pre-defined errors to only instantiate them once.
@@ -28,26 +21,26 @@ func (f *FIFO) Clear() {
 }
 
 // Push an item in the FIFO.
-func (f *FIFO) Push(item interface{}) error {
+func (f *FIFO) Push(pixel Pixel) error {
 	if f.len == len(f.fifo) {
 		return errFIFOOverflow
 	}
-	f.fifo[f.in] = item
+	f.fifo[f.in] = pixel
 	f.in = (f.in + 1) % len(f.fifo)
 	f.len++
 	return nil
 }
 
 // Pop an item out of the FIFO.
-func (f *FIFO) Pop() (item interface{}, err error) {
+func (f *FIFO) Pop() (pixel Pixel, err error) {
 	// Do nothing if we only have the minimum length or less to shift out.
-	if f.len <= f.minLen {
-		return 0, errFIFOUnderrun
+	if f.len <= 8 {
+		return pixel, errFIFOUnderrun
 	}
-	item = f.fifo[f.out]
+	pixel = f.fifo[f.out]
 	f.out = (f.out + 1) % len(f.fifo)
 	f.len--
-	return item, nil
+	return pixel, nil
 }
 
 // Size returns the current number of items in the FIFO.
@@ -55,12 +48,21 @@ func (f *FIFO) Size() int {
 	return f.len
 }
 
-// Mix pixel data in the lower half of the FIFO.
-// FIXME: this is where genericity finally bites us. We do need a PixelFifo.
-func (f *FIFO) Mix(offset int, item interface{}) {
-	// TODO: store pixel data, so we can mix depending on priorities and stuff.
-	if item.(uint8) == 0 {
+// Mix sprite pixel data in the lower half of the FIFO. Priorities are hard to
+// understand in most docs I've seen, so this is empirical at best.
+func (f *FIFO) Mix(offset int, pixel Pixel) {
+	index := (f.out + offset) % len(f.fifo)
+	current := f.fifo[index]
+
+	// Discard pixel if it's transparent.
+	if pixel.Color == 0 {
 		return
 	}
-	f.fifo[(f.out+offset)%len(f.fifo)] = item
+
+	// Mix pixel in if the current one is from the background.
+	// TODO: OBJ-BG priority attribute bit.
+	// TODO: OAM index, possibly needed in Pixel struct.
+	if current.Palette == PixelBGP {
+		f.fifo[index] = pixel
+	}
 }

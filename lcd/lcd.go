@@ -5,8 +5,8 @@ import (
 	"image/color"
 )
 
-// Pixel is an index into a display-defined palette.
-type Pixel uint8
+// ColorIndex into a display-defined 4-color palette.
+type ColorIndex uint8
 
 // Palette containing 4 indexed colors.
 type Palette [4]color.NRGBA
@@ -17,7 +17,7 @@ type Display interface {
 	Enabled() bool
 	Disable()
 	Close()
-	Write(pixel Pixel)
+	Write(colorIndex uint8)
 	HBlank()
 	VBlank()
 	Blank()
@@ -85,9 +85,9 @@ func (c *Console) Disable() {
 }
 
 // Write prints out a pixel from our rune palette if display is enabled.
-func (c *Console) Write(pixel Pixel) {
+func (c *Console) Write(colorIndex uint8) {
 	if c.enabled {
-		fmt.Printf("%c", c.Palette[pixel])
+		fmt.Printf("%c", c.Palette[colorIndex])
 	}
 }
 

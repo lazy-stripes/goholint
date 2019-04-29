@@ -52,7 +52,7 @@ const (
 // PPU address space handling video RAM and display.
 type PPU struct {
 	*memory.MMU
-	*FIFO
+	FIFO
 	OAM
 	Fetcher
 	Interrupts *interrupts.Interrupts
@@ -66,19 +66,21 @@ type PPU struct {
 	WY, WX     uint8
 	BGP        uint8
 	OBP0, OBP1 uint8
-	// TODO: address space to OAM, put in CPU
 
 	ticks int
 	state states.State
 
 	toDrop uint8 // Pixels to drop for SCX
 	x      uint8
+
+	// Quick and dirty mapping of PixelPalette index to palette register
+	// for quick access when pushing pixels to LCD.
+	palettes [3]*uint8
 }
 
 // New PPU instance.
 func New(display lcd.Display) *PPU {
-	fifo := NewFifo(16, 8)
-	p := PPU{MMU: memory.NewEmptyMMU(), FIFO: fifo, LCD: display}
+	p := PPU{MMU: memory.NewEmptyMMU(), LCD: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,
 		AddrSTAT: &p.STAT,
@@ -99,11 +101,13 @@ func New(display lcd.Display) *PPU {
 	p.Add(videoRAM)
 	p.Add(oamRAM)
 
-	p.Fetcher = Fetcher{fifo: fifo, vRAM: p.MMU}
+	p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU}
 	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
 		lcdc: &p.LCDC}
 
+	p.palettes = [3]*uint8{&p.BGP, &p.OBP0, &p.OBP1}
 	p.state = states.OAMSearch
+
 	return &p
 }
 
@@ -301,9 +305,10 @@ func (p *PPU) Drop() uint8 {
 func (p *PPU) pop(drop bool) uint8 {
 	if pixel, err := p.FIFO.Pop(); err == nil {
 		if !drop {
+			palette := *p.palettes[pixel.Palette]
 			// This was shamefully taken from coffee-gb.
-			color := (p.BGP >> (pixel.(uint8) << 1)) & 3
-			p.LCD.Write(lcd.Pixel(color))
+			color := (palette >> (pixel.Color << 1)) & 3
+			p.LCD.Write(color)
 		}
 		return 1
 	}

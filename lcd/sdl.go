@@ -121,12 +121,12 @@ func (s *SDL) Disable() {
 }
 
 // Write adds a new pixel (a mere index into our screen palette) to the texture buffer.
-func (s *SDL) Write(pixel Pixel) {
+func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		s.buffer[s.offset] = s.Palette[pixel].R
-		s.buffer[s.offset+1] = s.Palette[pixel].G
-		s.buffer[s.offset+2] = s.Palette[pixel].B
-		s.buffer[s.offset+3] = s.Palette[pixel].A
+		s.buffer[s.offset] = s.Palette[colorIndex].R
+		s.buffer[s.offset+1] = s.Palette[colorIndex].G
+		s.buffer[s.offset+2] = s.Palette[colorIndex].B
+		s.buffer[s.offset+3] = s.Palette[colorIndex].A
 		s.offset += 4
 	}
 }
