@@ -3,4 +3,5 @@ test
 *.prof
 *.zip
 .vscode/
+bin/boot/
 bin/roms/

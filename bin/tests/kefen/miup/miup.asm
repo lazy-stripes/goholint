@@ -1,4 +1,6 @@
-; Tiny test to try rgbds. Break scroll and see...
+; Small test to display and scroll sprites, then do the same with a window,
+; then question life choices. Still, a good way to test currently missing
+; features of the emulator.
 
 INCLUDE "header.asm"
 
@@ -16,35 +18,53 @@ init_oam:
 	DEC C
 	JR NZ, .copy_loop
 
+FADE_DELAY_ADDR EQU $D000
+FADE_DELAY EQU $10
+init_fade:
+	; Set delay between each color change (in frame number).
+	LD A, FADE_DELAY
+	LD HL, FADE_DELAY_ADDR
+	LD [HL], A
+
+	; Logo doesn't care about the palette's high nibble, but we do: we want
+	; to simply substract 4 to the palette byte until it's zero.
+	LD A, $0C
+	LDH [$FF00+$47], A
+
 init_tiles:
-	; XXX: turning LCD off for now.
-	;XOR A
-	;LD [$FF00+$40],A
+	; Turn LCD off to safely access VRAM. FIXME: gb.go doesn't care. It should!
+	XOR A
+	LD [$FF00+$40],A
+
+	; Default palette: 0123
+	LD A, $E4
+	LD [$FF00+$48], A	; FIXME: handle OBJ palettes in gb.go
 
 	; Copy tile data to VRAM.
 	LD DE, tiles_data
 	LD HL, $81A0	; Right after Nintendo logo tiles
 	LD BC, tiles_data.end - tiles_data
+
 .copy_loop
 	LD A, [DE]
 	INC DE
 	LD [HLI], A
 	DEC BC	; Does not set zero flag so we need to check
-	LD A, B
-	CP 0
+	LD A, 0
+	CP B
 	JR NZ, .copy_loop
-	LD A, C
-	CP 0
+	CP C
 	JR NZ, .copy_loop
 
-	;LD A, $91
-	;LD [$FF00+$40],A
+	; Turn LCD back on
+	LD A, $93
+	LD [$FF00+$40],A
 
 init_dma:
-	CALL copy_dma_routine
+	CALL install_dma_routine
 
 	; Init state and enable vblank interrupt.
-	LD HL, state_update_sprites
+	LD HL, state_fade_logo
 	LD A, $01
 	LD [$FF00+$FF], A
 	EI
@@ -78,6 +98,39 @@ joypad:
 ;
 ; Game states
 ;
+
+; Make Nintendo logo fade to white. Eebildz sprite is too big to scroll in
+; without messing with it anyway.
+; BIOS palette is $FC, but we only care about bits 2-3. They'll go from 3 to 0.
+state_fade_logo:
+	; Delay.
+	PUSH HL
+	LD HL, FADE_DELAY_ADDR
+	DEC [HL]
+	JR Z, .reset
+
+	; If delay's not elapsed, restore HL and break here.
+	POP HL
+	RET
+
+.reset:
+	; Reset if elapsed. Restore HL when done.
+	LD A, FADE_DELAY
+	LD [HL], A
+	POP HL
+
+	; Decrease palette entry.
+	LDH A, [$FF00+$47]
+	SUB 4
+	LDH [$FF00+$47], A
+	JR NZ, .end
+
+	; Zero reached. Load next state.
+	LD HL, state_update_sprites
+.end
+	RET
+
+
 state_update_sprites:
 	; TODO: actually update OAM shadow RAM
 
@@ -99,7 +152,7 @@ dma_routine:
 
 
 ; Copy DMA routine defined above to high RAM ($FF80).
-copy_dma_routine:
+install_dma_routine:
 	LD C, $80
 	LD B, dma_routine.end - dma_routine
 	LD HL, dma_routine
@@ -118,7 +171,7 @@ sprites_data:
 	; It will probably work better to scroll in a window with those tiles.
 	; Erm... actually that sprite is way too big, should have done the math.
 	; XXX: base coordinates are top-left for now.
-	; Using $1A offset to put our tiles right after the Nintendo logo.
+	; Using $1A id offset to put our tiles right after the Nintendo logo.
 	;   Y    X    #    Palette
 	DB $10, $08, $00+$1A, $00	; #0  ( 8,16)
 	DB $10, $10, $01+$1A, $00	; #1  (16,16)
