@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
@@ -21,7 +22,7 @@ import (
 	"go.tigris.fr/gameboy/timer"
 )
 
-func run(romPath string, fastBoot bool) int {
+func run(romPath string, fastBoot bool, waitKey bool) int {
 
 	// Pre-instantiate CPU and interrupts so other components can access them too.
 	cpu := cpu.New(nil)
@@ -59,6 +60,12 @@ func run(romPath string, fastBoot bool) int {
 	c := make(chan os.Signal, 1)
 	go handleInterrupt(c, cpu)
 	signal.Notify(c, os.Interrupt)
+
+	// Wait for keypress if requested, so obs has time to capture window.
+	if waitKey {
+		fmt.Print("Press 'Enter' to start...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	}
 
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
@@ -117,6 +124,7 @@ func main() {
 	var fastBoot = flag.Bool("fastboot", false, "bypass boot ROM execution")
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	var romPath = flag.String("rom", "", "ROM file to load")
+	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
 	var debugModules module
 	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
@@ -138,5 +146,5 @@ func main() {
 		log.Println("CPU profiling written to: ", *cpuprofile)
 	}
 	sdl.Init(sdl.INIT_VIDEO)
-	run(*romPath, *fastBoot)
+	run(*romPath, *fastBoot, *waitKey)
 }
