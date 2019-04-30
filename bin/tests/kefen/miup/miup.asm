@@ -1,6 +1,6 @@
 ; Small test to display and scroll sprites, then do the same with a window,
-; then question life choices. Still, a good way to test currently missing
-; features of the emulator.
+; then question life choices. Still, a good way to test features currently
+; missing from the emulator.
 
 INCLUDE "header.asm"
 
@@ -10,6 +10,14 @@ NEXT_STATE_ADDR EQU $D001	; $D001-$D002
 WORK_OAM_ADDR EQU $C000
 
 FADE_DELAY EQU $20
+
+; Utility routine to emulate CALL HL. The idea is to use RST $00 with HL
+; containing the address to call. This transparently handles pushing the
+; proper return address to the stack.
+SECTION "call_hl", ROM0[$0000]
+	JP HL
+	; The next RET instruction will return right after the RST call.
+
 
 SECTION "default", ROM0
 main:
@@ -96,10 +104,7 @@ game_loop:
 ; Call game state defined in HL
 vblank:
 	; Emulating a CALL HL of sorts. I'm probably doing this wrong.
-	LD BC, .end
-	PUSH BC	; Store return address in stack
-	JP HL
-.end
+	RST $00
 	RETI
 
 ;
