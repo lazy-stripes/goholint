@@ -29,8 +29,9 @@ var testPalette = [4]color.NRGBA{
 	color.NRGBA{0xff, 0x00, 0x00, 0xff},
 }
 
-// NewSDL returns an SDL2 display with a greyish palette.
-func NewSDL() *SDL {
+// NewSDL returns an SDL2 display with a greyish palette and takes a zoom
+// factor to size the window (current default is 2x).
+func NewSDL(zoomFactor uint8) *SDL {
 	/*
 		if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 			fmt.Fprintf(os.Stderr, "SDL Init failed: %s\n", err)
@@ -39,7 +40,8 @@ func NewSDL() *SDL {
 	*/
 	window, err := sdl.CreateWindow("gb.go",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		ScreenWidth*2, ScreenHeight*2, sdl.WINDOW_SHOWN)
+		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
+		sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
 		return nil // TODO: result, err

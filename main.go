@@ -22,13 +22,14 @@ import (
 	"go.tigris.fr/gameboy/timer"
 )
 
-func run(romPath string, fastBoot bool, waitKey bool) int {
+// TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
+func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 
 	// Pre-instantiate CPU and interrupts so other components can access them too.
 	cpu := cpu.New(nil)
 	ints := interrupts.New(&cpu.IF, &cpu.IE)
 
-	lcd := lcd.NewSDL()
+	lcd := lcd.NewSDL(zoomFactor)
 	ppu := ppu.New(lcd)
 	ppu.Interrupts = ints
 
@@ -125,6 +126,7 @@ func main() {
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	var romPath = flag.String("rom", "", "ROM file to load")
 	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
+	var zoomFactor = flag.Int("zoom", 2, "Zoom factor (default is 2x)")
 	var debugModules module
 	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
@@ -146,5 +148,5 @@ func main() {
 		log.Println("CPU profiling written to: ", *cpuprofile)
 	}
 	sdl.Init(sdl.INIT_VIDEO)
-	run(*romPath, *fastBoot, *waitKey)
+	run(*romPath, *fastBoot, *waitKey, uint8(*zoomFactor))
 }
