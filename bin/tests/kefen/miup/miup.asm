@@ -83,6 +83,7 @@ start:
 	EI
 
 game_loop:
+	HALT	; Just wait for interrupt
 	JR game_loop
 
 
