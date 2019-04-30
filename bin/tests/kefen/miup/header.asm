@@ -2,16 +2,15 @@
 ; Common GameBoy header compatible with rgbds.
 ; Courtesy of: https://assemblydigest.tumblr.com/post/77198211186/tutorial-making-an-empty-game-boy-rom-in-rgbds
 
-; Useful constants. 
+; Useful constants.
 INCLUDE "../include/const.asm"
 
 ; Interrupt jumps
 INCLUDE "../include/interrupts.asm"
 
-
 SECTION "header", ROM0[$0100]
     ; Main entry point
-    NOP 
+    NOP
     JP main
 
     ; $0104 - $0133: The Nintendo Logo.

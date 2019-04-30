@@ -5,8 +5,6 @@
 INCLUDE "header.asm"
 
 ; Constants.
-DELAY_ADDR EQU $D000
-NEXT_STATE_ADDR EQU $D001	; $D001-$D002
 WORK_OAM_ADDR EQU $C000
 
 FADE_DELAY EQU $20
@@ -34,11 +32,6 @@ init_oam:
 	JR NZ, .copy_loop
 
 init_fade:
-	; Set delay between each color change (in frame number).
-	LD A, FADE_DELAY
-	LD HL, DELAY_ADDR
-	LD [HL], A
-
 	; Logo doesn't care about the palette's high nibble, but we do: we want
 	; to simply substract 4 to the palette byte until it's zero.
 	LD A, $0C
@@ -63,7 +56,7 @@ init_tiles:
 	INC DE
 	LD [HLI], A
 	DEC BC	; Does not set zero flag so we need to check
-	LD A, 0
+	XOR A
 	CP B
 	JR NZ, .copy_loop
 	CP C
@@ -80,15 +73,11 @@ start:
 	; Start our state machine of sorts: alternate wait with fade, then scroll
 	; sprite in.
 
-	; TODO: this begs for a macro.
-	LD A, LOW(state_fade_logo)
-	LD [NEXT_STATE_ADDR], A
-	LD A, HIGH(state_fade_logo)
-	LD [NEXT_STATE_ADDR+1], A
-	LD A, FADE_DELAY
-	LD [DELAY_ADDR], A
+	LD HL, state_wait_frames	; State to execute at vblank.
+	LD C, FADE_DELAY			; Number of frames to wait.
+	LD DE, state_fade_logo		; State to execute when delay is elapsed.
 
-	LD HL, state_wait_frames
+	; Enable vblank interrupt, we'll do it all from there.
 	LD A, $01
 	LD [$FF00+$FF], A
 	EI
@@ -121,21 +110,16 @@ joypad:
 ;
 
 ; Wait a given number of screen frames.
-; Initialize $D000 (DELAY_ADDR) with the number of vblanks to wait.
-; Initialize $D001-$D002 (NEXT_STATE_LADDR-NEXT_STATE_HADDR) with the address of 
-; the next state to execute.
+; Initialize C with the number of vblanks to wait.
+; Initialize DE with the address of the next state to execute.
 state_wait_frames:
-	PUSH HL
-	LD HL, DELAY_ADDR
-	DEC [HL]
-	POP HL	; State address
+	DEC C
 	JR NZ, .end
 
 	; Delay's elapsed, load HL with next state to execute.
-	LD A, [NEXT_STATE_ADDR]
-	LD L, A
-	LD A, [NEXT_STATE_ADDR+1]
-	LD H, A
+	PUSH DE
+	POP HL
+
 .end:
 	RET
 
@@ -145,8 +129,7 @@ state_wait_frames:
 ; BIOS palette is $FC, but we only care about bits 2-3. They'll go from 3 to 0.
 state_fade_logo:
 	; Reset delay.
-	LD A, FADE_DELAY
-	LD [DELAY_ADDR], A
+	LD C, FADE_DELAY
 	LD HL, state_wait_frames
 
 	; Decrease palette entry.
@@ -156,10 +139,7 @@ state_fade_logo:
 	JR NZ, .end
 
 	; Zero reached. Update next state to load after the next delay.
-	LD A, LOW(state_update_sprites)
-	LD [NEXT_STATE_ADDR], A
-	LD A, HIGH(state_update_sprites)
-	LD [NEXT_STATE_ADDR+1], A
+	LD DE, state_update_sprites
 
 .end
 	RET
@@ -177,7 +157,7 @@ state_update_sprites:
 	JR NZ, .update_loop
 
 	CALL $FF80	; DMA
-	
+
 	; We're done when the last tile's X position is 'not quite visible'
 	LD A, 157
 	CP A, [HL]
@@ -189,8 +169,7 @@ state_update_sprites:
 
 .end
 	; Reset delay.
-	LD A, LEAN_IN_DELAY
-	LD [DELAY_ADDR], A
+	LD C, LEAN_IN_DELAY
 	LD HL, state_wait_frames
 	RET
 
