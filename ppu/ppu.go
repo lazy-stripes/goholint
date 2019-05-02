@@ -111,6 +111,14 @@ func New(display lcd.Display) *PPU {
 	return &p
 }
 
+// Requests the LY=LYC interrupt as needed when changing LY.
+func (p *PPU) setLY(value uint8) {
+	p.LY = value
+	if p.LY == p.LYC {
+		p.RequestLCDInterrupt(interrupts.STATLYCLY)
+	}
+}
+
 // Write override that handles read-only registers and bits.
 func (p *PPU) Write(addr uint16, value uint8) {
 	switch addr {
@@ -155,8 +163,9 @@ func (p *PPU) Tick() {
 			}
 		} else {
 			p.OAM.Start()
-			p.state = states.OAMSearch
 			p.LCD.Enable()
+			p.state = states.OAMSearch
+			p.RequestLCDInterrupt(interrupts.STATMode2)
 		}
 	} else {
 		if p.LCDC&LCDCDisplayEnable == 0 {
@@ -229,6 +238,7 @@ func (p *PPU) Tick() {
 		if p.x == 160 {
 			p.LCD.HBlank()
 			p.state = states.HBlank
+			p.RequestLCDInterrupt(interrupts.STATMode0)
 		}
 
 	case states.HBlank:
@@ -236,26 +246,25 @@ func (p *PPU) Tick() {
 		if p.ticks >= 456 {
 			// Done, either move to new line, or VBlank.
 			p.ticks = 0
-			p.LY++
+			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.LCD.VBlank()
-				p.Interrupts.Request(interrupts.VBlank)
-
 				p.state = states.VBlank
+				p.RequestLCDInterrupt(interrupts.STATMode1)
+
+				p.Interrupts.Request(interrupts.VBlank)
 			} else {
 				// Prepare to go back to OAM search state.
 				p.OAM.Start()
 				p.state = states.OAMSearch
+				p.RequestLCDInterrupt(interrupts.STATMode2)
 			}
-		}
-		if p.LY == p.LYC {
-			p.RequestLCDInterrupt(interrupts.STATLYCLY)
 		}
 
 	case states.VBlank:
 		// Simply wait the proper number of clock cycles. Special case for last line.
 		if p.ticks == 4 && p.LY == 153 {
-			p.LY = 0
+			p.setLY(0)
 		}
 
 		if p.ticks >= 456 {
@@ -263,13 +272,10 @@ func (p *PPU) Tick() {
 			if p.LY == 0 { // We wrapped back to 0 about 452 ticks ago. Start rendering from top of screen again.
 				p.OAM.Start()
 				p.state = states.OAMSearch
-				// TODO: interrupts
+				p.RequestLCDInterrupt(interrupts.STATMode2)
 			} else {
-				p.LY++
+				p.setLY(p.LY + 1)
 			}
-		}
-		if p.LY == p.LYC {
-			p.RequestLCDInterrupt(interrupts.STATLYCLY)
 		}
 	}
 }

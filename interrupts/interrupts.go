@@ -17,10 +17,10 @@ const (
 
 // LCDC STAT specific bits for PPU-related interrupts
 const (
-	STATMode0 = 1 << (iota + 3) // Bit 3
-	STATMode1                   // Bit 4
-	STATMode2                   // Bit 5
-	STATLYCLY                   // Bit 6
+	STATMode0 = 1 << (iota + 3) // Bit 3 (HBlank)
+	STATMode1                   // Bit 4 (VBlank)
+	STATMode2                   // Bit 5 (OAM search)
+	STATLYCLY                   // Bit 6 (LYC=LY)
 
 )
 
@@ -80,6 +80,7 @@ func (i *Interrupts) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrIF:
 		*i.regIF = value & 0x1f
+		logger.Printf("interrupts", " !!! IF=%#x", value)
 	case AddrIE:
 		*i.regIE = value
 		logger.Printf("interrupts", " !!! IE=%#x", value)
