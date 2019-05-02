@@ -44,7 +44,7 @@ init_tiles:
 
 	; Default palette: 3210
 	LD A, $E4
-	LD [$FF00+$48], A	; FIXME: handle OBJ palettes in gb.go
+	LD [$FF00+$48], A
 
 	; Copy tile data to VRAM.
 	LD DE, tiles_data
@@ -252,7 +252,7 @@ sprites_data:
 .end
 
 ; Tile data generated with:
-; rgbgfx -o tiles.bin ~/Pictures/tilesets/miup/tiles-lean-in.png
+; rgbgfx -o tiles.bin tiles.png
 tiles_data:
 	INCBIN "tiles.bin"
 .end
