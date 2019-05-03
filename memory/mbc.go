@@ -46,7 +46,7 @@ func (m *MBC1) Read(addr uint16) uint8 {
 	case addr >= 0x4000 && addr <= 0x7fff:
 		logger.Printf("mbc/read", "Read ROM at %x.", uint(m.ROMBank)*0x4000+uint(addr-0x4000))
 		return m.ROM.read(uint(m.ROMBank)*0x4000 + uint(addr-0x4000))
-	case addr >= 0xa000 && addr <= 0xbfff:
+	case m.RAMEnabled && addr >= 0xa000 && addr <= 0xbfff:
 		return m.RAM.Read(uint16(m.RAMBank)*0x2000 + uint16(addr-0xa000))
 	default:
 		return 0xff
@@ -62,7 +62,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 		if value&0x1f == 0 { // Bank 0 (or over 0x1f) is not selectable.
 			value = 1
 		}
-		m.ROMBank = m.ROMBank&0x60 | value
+		m.ROMBank = m.ROMBank&0x60 | value&0x1f
 		logger.Printf("mbc/write", "ROM Bank 0x%02x selected", m.ROMBank)
 	case addr >= 0x4000 && addr <= 0x5fff:
 		if m.ROMBankingMode {
