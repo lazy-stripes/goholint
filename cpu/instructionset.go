@@ -1,4 +1,4 @@
-// Auto-generated on 2019-04-22T17:03:05+02:00. See instructions.go
+// Auto-generated on 2019-05-09T20:01:43+02:00. See instructions.go
 
 package cpu
 
@@ -4435,6 +4435,7 @@ type opF3 struct {
 }
 
 func (op *opF3) Execute(c *CPU) (done bool) {
+	c.IMEScheduled = false
 	c.IME = false
     return true
 }
@@ -4562,7 +4563,8 @@ type opFb struct {
 }
 
 func (op *opFb) Execute(c *CPU) (done bool) {
-	c.IME = true
+	c.IMEScheduled = true
+	c.IMEPending = true
     return true
 }
 

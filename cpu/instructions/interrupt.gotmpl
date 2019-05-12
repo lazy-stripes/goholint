@@ -4,7 +4,13 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
-	c.IME = {{if eq .Instruction "EI"}}true{{else}}false{{end}}
+{{- if eq .Instruction "EI"}}
+	c.IMEScheduled = true
+	c.IMEPending = true
+{{- else}}
+	c.IMEScheduled = false
+	c.IME = false
+{{- end}}
     return true
 }
 

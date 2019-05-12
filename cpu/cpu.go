@@ -11,6 +11,8 @@ import (
 	"go.tigris.fr/gameboy/memory"
 )
 
+// [GEKKIO] https://gekkio.fi/files/gb-docs/gbctr.pdf
+
 // Flag bitfield enum
 const (
 	FlagC uint8 = 1 << (iota + 4)
@@ -35,9 +37,14 @@ type CPU struct {
 	instruction Instruction
 	ticks       uint
 	state       int
-	interrupt   uint8  // Currently requested interrupt
-	temp8       uint8  // Internal work register storing 8-bit micro-operation results
-	temp16      uint16 // Internal work register storing 16-bit micro-operation results
+
+	// [GEKKIO] says EI takes one instruction to actually set IME.
+	IMEScheduled bool
+	IMEPending   bool
+
+	interrupt uint8  // Currently requested interrupt
+	temp8     uint8  // Internal work register storing 8-bit micro-operation results
+	temp16    uint16 // Internal work register storing 16-bit micro-operation results
 
 	debug     bool
 	startFrom uint16
@@ -111,6 +118,15 @@ func (c *CPU) Tick() {
 
 	case states.Execute:
 		if c.instruction.Tick() {
+			// Handle one-instruction delay when enabling IME [GEKKIO]
+			if c.IMEScheduled {
+				if c.IMEPending {
+					c.IMEPending = false
+				} else {
+					c.IME = true
+					c.IMEScheduled = false
+				}
+			}
 			c.state = states.FetchOpCode
 		}
 
