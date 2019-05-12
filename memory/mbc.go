@@ -16,14 +16,28 @@ type MBC1 struct {
 	// True in ROM Banking Mode (up to 8KByte RAM, 2MByte ROM) (default).
 	// False in RAM Banking Mode (up to 32KByte RAM, 512KByte ROM).
 	ROMBankingMode bool
+
+	// If true, save RAM values. (TODO: when?)
+	battery bool
+
+	// Max number of ROM/RAM banks.
+	romBanks uint16
+	ramBanks uint8
 }
 
 // NewMBC1 creates an address space emulating a cartridge with an MBC1 chip.
 // Takes an instance of ROM because to know which kind of chip it uses, we need
 // to read it beforehand anyway.
 // TODO: load RAM state from external file too.
-func NewMBC1(rom *ROM) *MBC1 {
-	return &MBC1{ROM: rom, RAM: NewRAM(0, 0x8000), ROMBank: 1}
+func NewMBC1(rom *ROM, romBanks uint16, ramBanks uint8, battery bool) *MBC1 {
+	return &MBC1{
+		ROM:      rom,
+		RAM:      NewRAM(0, uint16(ramBanks)*0x2000),
+		ROMBank:  1,
+		romBanks: romBanks,
+		ramBanks: ramBanks,
+		battery:  battery,
+	}
 }
 
 // Contains returns true if the requested address is anywhere in ROM or RAM.
@@ -42,7 +56,11 @@ func (m *MBC1) Contains(addr uint16) bool {
 func (m *MBC1) Read(addr uint16) uint8 {
 	switch {
 	case addr >= 0x0000 && addr <= 0x3fff:
-		return m.ROM.Read(addr)
+		// [GEEKIO] 7.2. says BANK2 is used if RAM banking mode is 1.
+		if m.ROMBankingMode {
+			return m.ROM.Read(addr)
+		}
+		return m.ROM.read(uint(m.ROMBank&0x60)*0x4000 + uint(addr))
 	case addr >= 0x4000 && addr <= 0x7fff:
 		logger.Printf("mbc/read", "Read ROM at %x.", uint(m.ROMBank)*0x4000+uint(addr-0x4000))
 		return m.ROM.read(uint(m.ROMBank)*0x4000 + uint(addr-0x4000))
