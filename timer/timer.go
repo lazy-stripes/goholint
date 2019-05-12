@@ -32,6 +32,8 @@ type Timer struct {
 
 	prevEdge bool // Falling edge detector of sorts
 	ticks    int  // Only counted to measure overflow delay
+
+	reloadDelay uint8 // Delay countdown for TIMA interrupt and TMA load
 }
 
 // New Timer instance.
@@ -89,11 +91,17 @@ func (t *Timer) Tick() {
 	if !edge && t.prevEdge {
 		t.TIMA++
 		if t.TIMA == 0 {
-			// [TIMER2] TMA loading and interrupt are delayed 4 cycles. (TODO)
+			// [TIMER2] TMA loading and interrupt are delayed 4 clocks.
+			t.reloadDelay = 4
+		}
+	}
+	t.prevEdge = edge
+
+	if t.reloadDelay > 0 {
+		t.reloadDelay--
+		if t.reloadDelay == 0 {
 			t.TIMA = t.TMA
 			t.Interrupts.Request(interrupts.Timer)
 		}
 	}
-
-	t.prevEdge = edge
 }
