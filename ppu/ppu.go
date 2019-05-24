@@ -72,6 +72,7 @@ type PPU struct {
 
 	toDrop uint8 // Pixels to drop for SCX
 	x      uint8
+	window bool // True if window fetch in progress
 
 	// Quick and dirty mapping of PixelPalette index to palette register
 	// for quick access when pushing pixels to LCD.
@@ -211,7 +212,21 @@ func (p *PPU) Tick() {
 			return
 		}
 
-		// TODO: Windows
+		// Check whether we should start fetching window tiles.
+		if !p.window && p.LCDC&LCDCWindowDisplayEnable > 0 &&
+			p.LY >= p.WY && p.WX-7 == p.x {
+			p.window = true
+			p.toDrop = 0 // Windows don't scroll
+
+			// Reinitialize fetcher for window.
+			y := p.LY - p.WY
+			tileLine := y % 8
+			tileOffset := (p.x - p.WX + 7) / 8
+			tileMapRowAddr := p.WindowMap() + (uint16(y/8) * 32)
+			tileDataAddr, signedID := p.TileData()
+			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
+			return
+		}
 
 		// Find out if a sprite (that hasn't yet been fetched) should be
 		// displayed at the current X position.
@@ -236,6 +251,7 @@ func (p *PPU) Tick() {
 
 		p.x += p.Pop()
 		if p.x == 160 {
+			p.window = false
 			p.LCD.HBlank()
 			p.state = states.HBlank
 			p.RequestLCDInterrupt(interrupts.STATMode0)
@@ -280,12 +296,22 @@ func (p *PPU) Tick() {
 	}
 }
 
-// BGMap returns the base address of the background map in VRAM.
-func (p *PPU) BGMap() uint16 {
-	if (p.LCDC & LCDCBGTileMapDisplayeSelect) > 0 {
+// mapAddress returns the base address for BG or Window map according to LCDC.
+func (p *PPU) mapAddress(bit uint8) uint16 {
+	if p.LCDC&bit > 0 {
 		return 0x9c00
 	}
 	return 0x9800
+}
+
+// BGMap returns the base address of the background map in VRAM.
+func (p *PPU) BGMap() uint16 {
+	return p.mapAddress(LCDCBGTileMapDisplayeSelect)
+}
+
+// WindowMap returns the base address of the window map in VRAM.
+func (p *PPU) WindowMap() uint16 {
+	return p.mapAddress(LCDCWindowTileMapDisplayeSelect)
 }
 
 // TileData returns the base address of the background or window tile data in VRAM.
