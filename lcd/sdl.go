@@ -46,12 +46,15 @@ func NewSDL(zoomFactor uint8) *SDL {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
 		return nil // TODO: result, err
 	}
-
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
 		window.Destroy()
 		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
 		return nil // TODO: result, err
+	}
+
+	if err = sdl.GLSetSwapInterval(-1); err != nil {
+		logger.Printf("lcd", "Couldn't sync to vblank: %s\n", sdl.GetError())
 	}
 	if info, err := renderer.GetInfo(); err == nil {
 		logger.Println("lcd", "Renderer info:")

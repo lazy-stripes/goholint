@@ -39,8 +39,19 @@ func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 
 	var boot memory.Addressable
 	if fastBoot {
-		// TODO: set vram and other registers
+		// TODO: set RAM
 		boot = memory.NewRAM(memory.BootAddr, 1)
+		boot.Write(memory.BootAddr, 0x01)
+
+		// Values below are what the CPU contains when we boot the DMG ROM.
+		cpu.A = 0x01
+		cpu.F = 0xb0
+		cpu.B = 0x00
+		cpu.C = 0x13
+		cpu.D = 0x00
+		cpu.E = 0xd8
+		cpu.H = 0x01
+		cpu.L = 0x4d
 		cpu.PC = 0x0100
 	} else {
 		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
