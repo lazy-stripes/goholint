@@ -12,7 +12,7 @@ import (
 
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
-	Palette  Palette
+	Palette  color.Palette
 	enabled  bool
 	window   *sdl.Window
 	renderer *sdl.Renderer
@@ -128,10 +128,10 @@ func (s *SDL) Disable() {
 // Write adds a new pixel (a mere index into our screen palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		s.buffer[s.offset] = s.Palette[colorIndex].R
-		s.buffer[s.offset+1] = s.Palette[colorIndex].G
-		s.buffer[s.offset+2] = s.Palette[colorIndex].B
-		s.buffer[s.offset+3] = s.Palette[colorIndex].A
+		s.buffer[s.offset] = s.Palette[colorIndex].(color.NRGBA).R
+		s.buffer[s.offset+1] = s.Palette[colorIndex].(color.NRGBA).G
+		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.NRGBA).B
+		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.NRGBA).A
 		s.offset += 4
 	}
 }
@@ -144,7 +144,6 @@ func (s *SDL) HBlank() {
 func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
-		//s.renderer.Clear()
 		s.renderer.Copy(s.texture, nil, nil)
 		s.renderer.Present()
 

@@ -51,7 +51,7 @@ const (
 )
 
 // DefaultPalette represents the selectable colors in the DMG.
-var DefaultPalette = [4]color.NRGBA{
+var DefaultPalette = []color.Color{
 	color.NRGBA{ColorWhiteR, ColorWhiteG, ColorWhiteB, 0xff},
 	color.NRGBA{ColorLightGrayR, ColorLightGrayG, ColorLightGrayB, 0xff},
 	color.NRGBA{ColorDarkGrayR, ColorDarkGrayG, ColorDarkGrayB, 0xff},

@@ -23,14 +23,19 @@ import (
 )
 
 // TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
-func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
+func run(options *Options) int {
 
 	// Pre-instantiate CPU and interrupts so other components can access them too.
 	cpu := cpu.New(nil)
 	ints := interrupts.New(&cpu.IF, &cpu.IE)
 
-	lcd := lcd.NewSDL(zoomFactor)
-	ppu := ppu.New(lcd)
+	var display lcd.Display
+	if options.GIFPath != "" {
+		display = lcd.NewGIF(options.GIFPath, options.ZoomFactor)
+	} else {
+		display = lcd.NewSDL(options.ZoomFactor)
+	}
+	ppu := ppu.New(display)
 	ppu.Interrupts = ints
 
 	serial := serial.New()
@@ -38,7 +43,7 @@ func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 	timer.Interrupts = ints
 
 	var boot memory.Addressable
-	if fastBoot {
+	if options.FastBoot {
 		// TODO: set RAM
 		boot = memory.NewRAM(memory.BootAddr, 1)
 		boot.Write(memory.BootAddr, 0x01)
@@ -57,7 +62,7 @@ func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
 	}
 
-	cartridge := memory.NewCartridge(romPath)
+	cartridge := memory.NewCartridge(options.ROMPath)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
 	dma := &memory.DMA{}
@@ -70,11 +75,11 @@ func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 
 	// Handle interrupt, store pointer to CPU for debug info.
 	c := make(chan os.Signal, 1)
-	go handleInterrupt(c, cpu)
+	go handleInterrupt(c, cpu, display)
 	signal.Notify(c, os.Interrupt)
 
 	// Wait for keypress if requested, so obs has time to capture window.
-	if waitKey {
+	if options.WaitKey {
 		fmt.Print("Press 'Enter' to start...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
@@ -83,19 +88,22 @@ func run(romPath string, fastBoot bool, waitKey bool, zoomFactor uint8) int {
 	tick := 0
 	for {
 		//t := time.Now()
-		timer.Tick()
 		cpu.Tick()
 		dma.Tick()
 		ppu.Tick()
+		timer.Tick()
 		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
 		tick++
-		if tick == 229976-96 {
-			//			fmt.Println("STOP")
-		}
-		//for time.Now().Sub(t) < time.Nanosecond*100 {
+		//if tick == 229976-96 {
+		//			fmt.Println("STOP")
 		//}
+
+		if options.Duration > 0 && cpu.Cycle >= options.Duration {
+			break
+		}
 	}
 
+	display.Close()
 	return 0
 }
 
@@ -115,10 +123,12 @@ func (m *module) Set(value string) error {
 	return nil
 }
 
-func handleInterrupt(c chan os.Signal, cpu *cpu.CPU) {
+func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, lcd lcd.Display) {
 	// Wait for signal, quit cleanly with potential extra debug info if needed.
 	<-c
 	fmt.Println("\nTerminated...")
+
+	lcd.Close()
 
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
 	fmt.Print(cpu)
@@ -130,16 +140,29 @@ func handleInterrupt(c chan os.Signal, cpu *cpu.CPU) {
 	os.Exit(-1)
 }
 
+// Options structure grouping command line flags values.
+type Options struct {
+	FastBoot   bool
+	ROMPath    string
+	GIFPath    string
+	WaitKey    bool
+	ZoomFactor uint8
+	Duration   uint
+}
+
 func main() {
 	runtime.LockOSThread()
 
-	var fastBoot = flag.Bool("fastboot", false, "bypass boot ROM execution")
-	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	// TODO: This is a lot, we could definitely use an Options struct by now.
+	var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
+	var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
+	var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
+	var debugModules module
+	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module")
+	var gifPath = flag.String("gif", "", "Record gif file")
 	var romPath = flag.String("rom", "", "ROM file to load")
 	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
 	var zoomFactor = flag.Int("zoom", 2, "Zoom factor (default is 2x)")
-	var debugModules module
-	flag.Var(&debugModules, "debug", "turn on debug mode for the given module")
 	flag.Parse()
 
 	for _, m := range debugModules {
@@ -159,5 +182,14 @@ func main() {
 		log.Println("CPU profiling written to: ", *cpuprofile)
 	}
 	sdl.Init(sdl.INIT_VIDEO)
-	run(*romPath, *fastBoot, *waitKey, uint8(*zoomFactor))
+
+	opt := Options{FastBoot: *fastBoot,
+		ROMPath:    *romPath,
+		GIFPath:    *gifPath,
+		WaitKey:    *waitKey,
+		ZoomFactor: uint8(*zoomFactor),
+		Duration:   *duration,
+	}
+
+	run(&opt)
 }
