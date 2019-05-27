@@ -1,8 +1,8 @@
 package lcd
 
 import (
+	"bytes"
 	"fmt"
-	"hash/crc32"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -12,6 +12,8 @@ import (
 // FrameDelay is the time each GIF frame lasts, given that the Gameboy's screen
 // is refreshed at 59.7Hz. In 100ths of a second (which is about 1.7 but we
 // might add that up before we round it to integer).
+// In any event, browsers seem to ignore any value of 0 or 1 (or more depending
+// on sources) so delay will be initialized at 2 for new frames.
 const FrameDelay = (1 / 59.7) * 100
 
 // FrameBounds holds fixed bounds for each frame.
@@ -25,52 +27,54 @@ type GIF struct {
 
 	File string
 
-	frame *image.Paletted // Current frame
-	delay float32         // Current frame's delay
+	frame     *image.Paletted // Current frame
+	lastFrame *image.Paletted // Previous frame
+	delay     float32         // Current frame's delay
 
-	disabled    *image.Paletted // Disabled screen frame
-	disabledCRC uint32          // CRC of disabled frame
-
-	lastCRC uint32 // Previous frame's CRC.
+	disabled *image.Paletted // Disabled screen frame
 }
 
 // NewGIF returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x). This will also
 // buffer frames to put in a GIF.
 func NewGIF(filename string, zoomFactor uint8) *GIF {
-	// TODO: check file access, pre-create it.
+	// TODO: check file access, (pre-create it?)
 
-	// Pre-instanciate diabled screen frame.
+	// Pre-instanciate disabled screen frame.
 	disabled := image.NewPaletted(FrameBounds, DefaultPalette)
 	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.ZP, draw.Src)
 	middle := disabled.Bounds()
 	middle.Min.Y /= 2
 	middle.Max.Y = (middle.Max.Y / 2) + 1
 	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.ZP, draw.Src)
-	disabledCRC := crc32.ChecksumIEEE(disabled.Pix)
 
-	config := image.Config{ColorModel: disabled.ColorModel(),
-		Width: ScreenWidth, Height: ScreenHeight}
-	gif := GIF{SDL: *NewSDL(zoomFactor),
-		disabled:    disabled,
-		disabledCRC: disabledCRC,
-		GIF:         gif.GIF{Config: config},
-		frame:       image.NewPaletted(FrameBounds, DefaultPalette),
-		File:        filename}
-	return &gif
+	config := image.Config{
+		ColorModel: disabled.ColorModel(),
+		Width:      ScreenWidth,
+		Height:     ScreenHeight,
+	}
+
+	return &GIF{
+		SDL:       *NewSDL(zoomFactor),
+		disabled:  disabled,
+		GIF:       gif.GIF{Config: config},
+		frame:     image.NewPaletted(FrameBounds, DefaultPalette),
+		lastFrame: disabled, // Acceptable zero value to avoid a nil check later
+		File:      filename,
+	}
 }
 
 // Clear draws a disabled GB screen. This is a fixed frame.
 func (g *GIF) Clear() {
 	g.SDL.Clear()
-	if g.lastCRC == g.disabledCRC {
+	if g.lastFrame == g.disabled {
 		g.delay += FrameDelay
 		g.GIF.Delay[len(g.GIF.Delay)] = int(g.delay)
 	} else {
 		g.delay = FrameDelay
-		g.lastCRC = g.disabledCRC
+		g.lastFrame = g.disabled
 		g.GIF.Image = append(g.GIF.Image, g.disabled)
-		g.GIF.Delay = append(g.GIF.Delay, int(g.delay))
+		g.GIF.Delay = append(g.GIF.Delay, 2)
 	}
 }
 
@@ -78,7 +82,7 @@ func (g *GIF) Clear() {
 func (g *GIF) Write(colorIndex uint8) {
 	g.SDL.Write(colorIndex)
 	if g.SDL.enabled {
-		//g.frame.Pix = append(g.frame.Pix, colorIndex)
+		// SDL.Write already advanced its internal offset by 4.
 		g.frame.Pix[(g.SDL.offset/4)-1] = colorIndex
 	}
 }
@@ -92,27 +96,15 @@ func (g *GIF) VBlank() {
 	g.SDL.VBlank()
 	if g.SDL.enabled {
 		// If current frame is the same as the previous one, only update delay.
-		frameCRC := crc32.ChecksumIEEE(g.frame.Pix)
-		if g.lastCRC == frameCRC {
+		if bytes.Equal(g.frame.Pix, g.lastFrame.Pix) {
 			g.delay += FrameDelay
 			g.GIF.Delay[len(g.GIF.Delay)-1] = int(g.delay)
 		} else {
-			//fmt.Printf("Storing new frame at address %p (pix=%p)\n", g.frame, g.frame.Pix)
-			g.delay = 2 // GIF players poorly handle 10ms frames delay
-			g.lastCRC = frameCRC
+			g.delay = FrameDelay
+			g.lastFrame = g.frame
 			g.GIF.Image = append(g.GIF.Image, g.frame)
-			//fmt.Printf("g.GIF.Image: len=%d, last=%p\n", len(g.GIF.Image), g.GIF.Image[len(g.GIF.Image)-1])
-			//if f, err := os.Create(fmt.Sprintf("%02d-%s", len(g.GIF.Image), g.File)); err == nil {
-			//		defer func() {
-			//			f.Close()
-			//		}()
-			//		gif.Encode(f, g.frame, &gif.Options{NumColors: 4})
-			//		fmt.Println("Frame dumped.")
-			//	}
-			g.GIF.Delay = append(g.GIF.Delay, int(g.delay))
+			g.GIF.Delay = append(g.GIF.Delay, 2) // GIF players poorly handle 10ms frames delay
 			g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
-			//fmt.Printf("New frame. Delay=%d\n", int(g.delay))
-			g.lastCRC = frameCRC
 		}
 	} else {
 		g.Clear()
