@@ -79,6 +79,7 @@ func run(options *Options) int {
 	signal.Notify(c, os.Interrupt)
 
 	// Wait for keypress if requested, so obs has time to capture window.
+	// Less useful now we have -gif flag.
 	if options.WaitKey {
 		fmt.Print("Press 'Enter' to start...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -86,8 +87,23 @@ func run(options *Options) int {
 
 	// Main loop TODO: Gameboy.Run()
 	tick := 0
-	for {
+	quit := false
+	for !quit {
 		//t := time.Now()
+		// FIXME: Ideally, we should plug into Blank/VBlank display methods.
+		if ppu.Cycle%(456*153) == 0 {
+			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+				switch event.GetType() {
+				case sdl.KEYDOWN:
+					// TODO
+				case sdl.KEYUP:
+					// TODO
+				case sdl.QUIT:
+					quit = true
+				}
+			}
+		}
+
 		cpu.Tick()
 		dma.Tick()
 		ppu.Tick()
