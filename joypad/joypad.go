@@ -1,5 +1,10 @@
 package joypad
 
+import (
+	"github.com/veandco/go-sdl2/sdl"
+	"go.tigris.fr/gameboy/logger"
+)
+
 // Source: [JOYPAD] http://gbdev.gg8.se/wiki/articles/Joypad_Input
 
 // Register addresses
@@ -20,12 +25,17 @@ const (
 // Joypad register and event manager for game inputs.
 type Joypad struct {
 	JOYP   uint8
-	Keymap map[uint]Input
+	Keymap Keymap
 }
 
 // New instantiates a Joypad addressable mapping to FF00 that will wait for
 // events from the main loop.
-func New(keymap map[uint]Input) *Joypad {
+func New(keymap Keymap) *Joypad {
+	if err := keymap.Validate(); err != nil {
+		logger.Printf("joypad", "Invalid keymap %v. Using default instead.",
+			keymap)
+		keymap = DefaultMapping
+	}
 	return &Joypad{Keymap: keymap}
 }
 
@@ -36,16 +46,36 @@ func (j *Joypad) Contains(addr uint16) bool {
 
 // Read returns the state of selected inputs (inverted logic).
 func (j *Joypad) Read(addr uint16) (value uint8) {
-	value = j.JOYP & 0x30
-	// Set bits for inactive/unselected inputs. Easier to read, I thought.
+	selected := j.JOYP & 0x30
+	// Set bits for inactive/unselected inputs, then NOT it all.
 	for _, input := range j.Keymap {
-		if j.JOYP&input.Selector == 0 || !input.State {
+		if selected&input.Selector == 0 && input.State {
 			value |= input.Bit
 		}
 	}
+	value = (^value)&0x0f | selected
+	logger.Printf("joypad/read", "JOYP=0x%02x", value)
 	return value
 }
 
 func (j *Joypad) Write(addr uint16, value uint8) {
 	j.JOYP = value & 0x30
+}
+
+// Helper method setting or resetting an input's state.
+func (j *Joypad) setInput(code sdl.Keycode, state bool) {
+	if input := j.Keymap[code]; input != nil {
+		logger.Printf("joypad/input", "%v=%t", input, state)
+		input.State = state
+	}
+}
+
+// KeyDown updates button states (if needed) when a key was pressed.
+func (j *Joypad) KeyDown(code sdl.Keycode) {
+	j.setInput(code, true)
+}
+
+// KeyUp updates button states (if needed) when a key was released.
+func (j *Joypad) KeyUp(code sdl.Keycode) {
+	j.setInput(code, false)
 }

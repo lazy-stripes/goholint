@@ -14,6 +14,7 @@ import (
 
 	"go.tigris.fr/gameboy/cpu"
 	"go.tigris.fr/gameboy/interrupts"
+	"go.tigris.fr/gameboy/joypad"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/logger"
 	"go.tigris.fr/gameboy/memory"
@@ -64,9 +65,10 @@ func run(options *Options) int {
 
 	cartridge := memory.NewCartridge(options.ROMPath)
 	wram := memory.NewRAM(0xc000, 0x2000)
-	hram := memory.NewRAM(0xff00, 0x100) // I/O ports, HRAM, IE FIXME: remove overlaps
+	hram := memory.NewRAM(0xff80, 0x7e)
+	jpad := joypad.New(joypad.DefaultMapping) // TODO: interrupts
 	dma := &memory.DMA{}
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, serial, timer, dma, hram, cartridge})
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, jpad, serial, timer, dma, hram, cartridge})
 	dma.MMU = mmu
 	cpu.MMU = mmu
 
@@ -95,9 +97,11 @@ func run(options *Options) int {
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 				switch event.GetType() {
 				case sdl.KEYDOWN:
-					// TODO
+					keyEvent := event.(*sdl.KeyboardEvent)
+					jpad.KeyDown(keyEvent.Keysym.Sym)
 				case sdl.KEYUP:
-					// TODO
+					keyEvent := event.(*sdl.KeyboardEvent)
+					jpad.KeyUp(keyEvent.Keysym.Sym)
 				case sdl.QUIT:
 					quit = true
 				}
