@@ -7,12 +7,12 @@ import (
 
 // Source: [JOYPAD] http://gbdev.gg8.se/wiki/articles/Joypad_Input
 
-// Register addresses
+// Register address.
 const (
 	AddrJOYP = 0xff00
 )
 
-// Bit values
+// Bit values to select/update button states.
 const (
 	P10 = 1 << iota // Bit 0 - Input Right or Button A (0=Pressed) (Read Only)
 	P11             // Bit 1 - Input Left  or Button B (0=Pressed) (Read Only)
@@ -58,6 +58,7 @@ func (j *Joypad) Read(addr uint16) (value uint8) {
 	return value
 }
 
+// Write updates the writeable bits of the JOYP register.
 func (j *Joypad) Write(addr uint16, value uint8) {
 	j.JOYP = value & 0x30
 }
