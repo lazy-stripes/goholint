@@ -7,6 +7,15 @@ import (
 
 // Source: [JOYPAD] http://gbdev.gg8.se/wiki/articles/Joypad_Input
 
+// Package-wide logger.
+var log = logger.New("joypad", "user inputs manager")
+
+// Package initialization function setting up logger.
+func init() {
+	log.Add("read", "register reads (Desperate level only)")
+	log.Add("input", "input changes (Debug level or lower)")
+}
+
 // Register address.
 const (
 	AddrJOYP = 0xff00
@@ -32,8 +41,7 @@ type Joypad struct {
 // events from the main loop.
 func New(keymap Keymap) *Joypad {
 	if err := keymap.Validate(); err != nil {
-		logger.Printf("joypad", "Invalid keymap %v. Using default instead.",
-			keymap)
+		log.Warningf("Invalid keymap %v. Using default instead.", keymap)
 		keymap = DefaultMapping
 	}
 	return &Joypad{Keymap: keymap}
@@ -54,7 +62,7 @@ func (j *Joypad) Read(addr uint16) (value uint8) {
 		}
 	}
 	value = (^value)&0x0f | selected
-	logger.Printf("joypad/read", "JOYP=0x%02x", value)
+	log.Sub("read").Desperatef("JOYP=0x%02x", value)
 	return value
 }
 
@@ -66,7 +74,7 @@ func (j *Joypad) Write(addr uint16, value uint8) {
 // Helper method setting or resetting an input's state.
 func (j *Joypad) setInput(code sdl.Keycode, state bool) {
 	if input := j.Keymap[code]; input != nil {
-		logger.Printf("joypad/input", "%v=%t", input, state)
+		log.Sub("input").Debugf("%v=%t", input, state)
 		input.State = state
 	}
 }

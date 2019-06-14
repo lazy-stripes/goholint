@@ -10,6 +10,9 @@ import (
 	"go.tigris.fr/gameboy/ppu/states"
 )
 
+// Package-wide logger.
+var log = logger.New("ppu", "pixel processing unit operations")
+
 // ClockFactor representing the number of ticks taken by each step (base is 4).
 // Used in Fetcher's Tick() method.
 var ClockFactor = 2
@@ -124,12 +127,12 @@ func (p *PPU) setLY(value uint8) {
 func (p *PPU) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrSTAT:
-		logger.Printf("ppu", "PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
+		log.Debugf("PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
 		p.STAT = value & 0xf8
 	case AddrLY:
 		// [PANDOCS] says writing to it "resets counter"?
-		logger.Printf("ppu", "PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
-		logger.Printf("ppu", "Write to LY. What do?")
+		log.Debugf("PPU.Write(0x%04x[LY], 0x%02x)", addr, value)
+		log.Warning("Write to LY. What do?")
 	default:
 		p.MMU.Write(addr, value)
 	}
@@ -144,13 +147,14 @@ func (p *PPU) Read(addr uint16) uint8 {
 		if p.LY == p.LYC {
 			stat |= 4
 		}
-		logger.Printf("ppu", "PPU.Read(0x%04x[STAT]) = 0x%02x", addr, stat)
+		log.Debugf("PPU.Read(0x%04x[STAT]) = 0x%02x", addr, stat)
 		return stat
 	}
 	return p.MMU.Read(addr)
 }
 
-// Tick advances the CPU state one step.
+// Tick advances the CPU state one step. Return whether we reached VBlank so
+// that event polling can happen then.
 func (p *PPU) Tick() {
 	p.Cycle++
 	p.ticks++

@@ -233,7 +233,8 @@ func (c *CPU) String() string {
 	fmt.Fprintf(&b, "H: %#02x - L: %#02x - HL: %#04x\n", c.H, c.L, c.HL())
 	fmt.Fprintf(&b, "                    SP: %#04x\n", c.SP)
 	fmt.Fprintf(&b, "                    PC: %#04x\n", c.PC)
-	fmt.Fprintf(&b, "Flags:\nZ: %d - N: %d - H: %d - C: %d\n\n", c.F&FlagZ>>7, c.F&FlagN>>6, c.F&FlagH>>5, c.F&FlagC>>4)
+	fmt.Fprintf(&b, "Flags:\nZ: %d - N: %d - H: %d - C: %d\n\n", c.F&FlagZ>>7,
+		c.F&FlagN>>6, c.F&FlagH>>5, c.F&FlagC>>4)
 	fmt.Fprintf(&b, "Cycle: %d\n", c.Cycle)
 	return b.String()
 }
@@ -250,7 +251,8 @@ func (c *CPU) NextWord() uint16 {
 	return uint16(c.NextByte()) | uint16(c.NextByte())<<8
 }
 
-// Context returns a printable context to prepend to log messages.
+// Context returns a printable context to prepend to log messages. Currently,
+// it only shows the current value of PC.
 func (c *CPU) Context() string {
 	return fmt.Sprintf("[PC=%04x] ", c.PC)
 }
@@ -274,9 +276,11 @@ func (c *CPU) DumpRAM() {
 func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
 		if extended {
-			fmt.Printf("Execute error at extended instruction %#04x (0xCB %#02x) (%v)\n", c.PC-2, c.MMU.Read(c.PC-1), r)
+			fmt.Printf("Execute error at instruction %#04x (0xCB %#02x) (%v)\n",
+				c.PC-2, c.MMU.Read(c.PC-1), r)
 		} else {
-			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n", c.PC-1, c.MMU.Read(c.PC-1), r)
+			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n",
+				c.PC-1, c.MMU.Read(c.PC-1), r)
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
 		// Dump memory

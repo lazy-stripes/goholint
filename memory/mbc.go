@@ -1,7 +1,5 @@
 package memory
 
-import "go.tigris.fr/gameboy/logger"
-
 // Memory Bank Controllers. Source:
 // [PANMBC] http://bgb.bircd.org/pandocs.htm#memorybankcontrollers
 
@@ -62,7 +60,8 @@ func (m *MBC1) Read(addr uint16) uint8 {
 		}
 		return m.ROM.read(uint(m.ROMBank&0x60)*0x4000 + uint(addr))
 	case addr >= 0x4000 && addr <= 0x7fff:
-		logger.Printf("mbc/read", "Read ROM at %x.", uint(m.ROMBank)*0x4000+uint(addr-0x4000))
+		log.Sub("mbc/read").Desperatef("Read ROM at %x.",
+			uint(m.ROMBank)*0x4000+uint(addr-0x4000))
 		return m.ROM.read(uint(m.ROMBank)*0x4000 + uint(addr-0x4000))
 	case m.RAMEnabled && addr >= 0xa000 && addr <= 0xbfff:
 		return m.RAM.Read(uint16(m.RAMBank)*0x2000 + uint16(addr-0xa000))
@@ -81,11 +80,11 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 			value = 1
 		}
 		m.ROMBank = m.ROMBank&0x60 | value&0x1f
-		logger.Printf("mbc/write", "ROM Bank 0x%02x selected", m.ROMBank)
+		log.Sub("mbc/write").Debugf("ROM Bank 0x%02x selected", m.ROMBank)
 	case addr >= 0x4000 && addr <= 0x5fff:
 		if m.ROMBankingMode {
 			m.ROMBank = m.ROMBank&0x1f | (value&3)<<5
-			logger.Printf("mbc/write", "ROM Bank 0x%02x selected", m.ROMBank)
+			log.Sub("mbc/write").Debugf("ROM Bank 0x%02x selected", m.ROMBank)
 		} else {
 			m.RAMBank = value & 3
 		}
@@ -93,7 +92,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 		m.ROMBankingMode = (value == 0)
 	case addr >= 0xa000 && addr <= 0xbfff:
 		if !m.RAMEnabled {
-			logger.Printf("mbc", "RAM not enabled, write to 0x%04x ignored.",
+			log.Sub("mbc/write").Desperatef("RAM not enabled, write to 0x%04x ignored.",
 				addr)
 			return
 		}

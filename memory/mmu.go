@@ -1,7 +1,5 @@
 package memory
 
-import "go.tigris.fr/gameboy/logger"
-
 // MMU manages an arbitrary number of ordered address spaces. It also satisfies
 // the AddressSpace interface.
 type MMU struct {
@@ -53,7 +51,7 @@ func (m *MMU) Read(addr uint16) uint8 {
 	if space := m.space(addr); space != nil {
 		return space.Read(addr)
 	}
-	logger.Printf("mmu/read", "MMU.Read: Unmapped address 0x%04x", addr)
+	log.Sub("mmu/read").Debugf("MMU.Read: Unmapped address 0x%04x", addr)
 	return 0xff
 }
 
@@ -63,6 +61,6 @@ func (m *MMU) Write(addr uint16, value uint8) {
 	if space := m.space(addr); space != nil {
 		space.Write(addr, value)
 	} else {
-		logger.Printf("mmu/write", "MMU.Write: Unmapped address 0x%04x", addr)
+		log.Sub("mmu/write").Debugf("MMU.Write: Unmapped address 0x%04x", addr)
 	}
 }

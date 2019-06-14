@@ -47,47 +47,64 @@ var Context = func() string { return "" }
 // of all possible logger package/modules that can be used with the -debug
 // flag.
 type Logger struct {
-	pkg string // Package to which this logger applies.
+	Name string // Package or module name for this logger
+	Help string // Help text to be displayed when calling with -debug help
 
-	pkgFull string            // Cached '<pkg name>/*' for quick lookup.
-	modules map[string]string // Cached '<pkg name>/<module name>'.
+	wildcard string             // Cached '<pkg name>/*' for quick lookup.
+	modules  map[string]*Logger // Submodules (nil if Logger is already one)
 }
 
 // New returns a Logger instance specific to the given package, after
 // registering it with our base logger package so this logger and its modules
 // can be listed from the command-line.
-// TODO: add a mandatory description parameter. And for modules too.
-func New(pkg string, modules []string) (*Logger, error) {
-	if Loggers[pkg] != nil {
-		return nil, fmt.Errorf("package %s already has a logger", pkg)
+// Will panic if a logger with the same name is already defined.
+func New(name, help string) *Logger {
+	if Loggers[name] != nil {
+		panic(fmt.Sprintf("logger '%s' already exists", name))
 	}
-
-	l := Logger{pkg, fmt.Sprintf("%s/*", pkg), make(map[string]string)}
-	for _, m := range modules {
-		l.modules[m] = fmt.Sprintf("%s/%s", pkg, m)
-	}
-
+	l := &Logger{name, help, fmt.Sprintf("%s/*", name), make(map[string]*Logger)}
 	// Record this so we have exactly one logger per package.
-	Loggers[pkg] = &l
+	Loggers[name] = l
+	return l
+}
 
-	return &l, nil
+// Add a sub-module to a package logger, which can then be enabled by using
+// -debug <pkg>/<module> or -debug <pkg>/* on the command line.
+func (l *Logger) Add(name, help string) {
+	modName := fmt.Sprintf("%s/%s", l.Name, name)
+	if l.modules[name] != nil {
+		panic(fmt.Sprintf("logger '%s' already exists", modName))
+	}
+	l.modules[name] = &Logger{modName, help, l.wildcard, nil}
+}
+
+// Sub returns a sub-module with the given name. If called with a module name
+// that hasn't been registered with Add() first, returns the main logger.
+// Otherwise, returns a Logger instance to allow chain call to print methods.
+func (l *Logger) Sub(name string) *Logger {
+	sub := l.modules[name]
+	if sub == nil {
+		fmt.Printf(" !!! sub-logger %s/%s not found\n", l.Name, name)
+		return l
+	}
+	return sub
 }
 
 // Output log message if the given package/subpackage is enabled and if the
 // global log level permits it.
-func (l *Logger) log(level LogLevel, module, format string, a ...interface{}) {
+func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
 	// "Do we need to log this?"
 	if level > Level {
 		return
 	}
-	moduleFull := fmt.Sprintf("%s/%s", l.pkg, module)
+
 	enabled := false
 	switch {
 	case Enabled["all"]:
 		enabled = true
-	case module == "" && Enabled[l.pkg]:
+	case Enabled[l.Name]:
 		enabled = true
-	case Enabled[moduleFull] || Enabled[l.pkgFull]:
+	case Enabled[l.wildcard]:
 		enabled = true
 	}
 
@@ -95,8 +112,8 @@ func (l *Logger) log(level LogLevel, module, format string, a ...interface{}) {
 		return
 	}
 
-	fmt.Printf("%s%s: ", Context(), moduleFull)
-	msg := fmt.Sprintf(format, a...)
+	fmt.Print(Context())
+	msg := fmt.Sprintf("%s: %s", l.Name, fmt.Sprintf(format, a...))
 	if msg == lastMessage {
 		lastMessageCount++
 		fmt.Printf(" ... repeated %d times\r", lastMessageCount)
@@ -110,140 +127,64 @@ func (l *Logger) log(level LogLevel, module, format string, a ...interface{}) {
 	}
 }
 
-//
-// Package-only logging functions.
-//
-
 // Fatal prints a message (then panics regardless of debug level).
 func (l *Logger) Fatal(msg string) {
-	l.log(Fatal, "", "%s", msg)
+	l.log(Fatal, "%s", msg)
 	panic(msg)
 }
 
 // Warning prints a message if the global log level is Warning or more.
 func (l *Logger) Warning(msg string) {
-	l.log(Warning, "", "%s", msg)
+	l.log(Warning, "%s", msg)
 }
 
 // Info prints a message if the global log level is Info (the default) or more.
 func (l *Logger) Info(msg string) {
-	l.log(Info, "", "%s", msg)
+	l.log(Info, "%s", msg)
 }
 
 // Log is an alias for Info.
 func (l *Logger) Log(msg string) {
-	l.log(Info, "", "%s", msg)
+	l.log(Info, "%s", msg)
 }
 
 // Debug prints a message if the global log level is Debug or more.
 func (l *Logger) Debug(msg string) {
-	l.log(Debug, "", "%s", msg)
+	l.log(Debug, "%s", msg)
 }
 
 // Desperate prints a message if the global log level is the maximum.
 func (l *Logger) Desperate(msg string) {
-	l.log(Desperate, "", "%s", msg)
+	l.log(Desperate, "%s", msg)
 }
 
 // Fatalf format-prints a message (then panics regardless of debug level).
 func (l *Logger) Fatalf(format string, a ...interface{}) {
-	l.log(Fatal, "", format, a...)
+	l.log(Fatal, format, a...)
 	panic(fmt.Sprintf(format, a...))
 }
 
 // Warningf format-prints a message if the global log level is Warning or more.
 func (l *Logger) Warningf(format string, a ...interface{}) {
-	l.log(Warning, "", format, a...)
+	l.log(Warning, format, a...)
 }
 
 // Infof format-prints a message if the global log level is Info (the default) or more.
 func (l *Logger) Infof(format string, a ...interface{}) {
-	l.log(Info, "", format, a...)
+	l.log(Info, format, a...)
 }
 
 // Logf is an alias for Infof.
 func (l *Logger) Logf(format string, a ...interface{}) {
-	l.log(Info, "", format, a...)
+	l.log(Info, format, a...)
 }
 
 // Debugf format-prints a message if the global log level is Debug or more.
 func (l *Logger) Debugf(format string, a ...interface{}) {
-	l.log(Debug, "", format, a...)
+	l.log(Debug, format, a...)
 }
 
 // Desperatef format-prints a message if the global log level is the maximum.
 func (l *Logger) Desperatef(format string, a ...interface{}) {
-	l.log(Desperate, "", format, a...)
-}
-
-//
-// Sub-module logging functions.
-//
-
-// FatalMod prints a message for the given module (then panics regardless of
-// debug level).
-func (l *Logger) FatalMod(module, msg string) {
-	l.log(Fatal, module, "%s", msg)
-	panic(msg)
-}
-
-// WarningMod prints a message for the given module if the global log level is
-// Warning or more.
-func (l *Logger) WarningMod(module, msg string) {
-	l.log(Warning, module, "%s", msg)
-}
-
-// InfoMod prints a message for the given module if the global log level is Info
-// (the default) or more.
-func (l *Logger) InfoMod(module, msg string) {
-	l.log(Info, module, "%s", msg)
-}
-
-// LogMod is an alias for InfoMod.
-func (l *Logger) LogMod(module, msg string) {
-	l.log(Info, module, "%s", msg)
-}
-
-// DebugMod prints a message for the given module if the global log level is
-// Debug or more.
-func (l *Logger) DebugMod(module, msg string) {
-	l.log(Debug, module, "%s", msg)
-}
-
-// DesperateMod prints a message for the given module if the global log level is
-// the maximum.
-func (l *Logger) DesperateMod(module, msg string) {
-	l.log(Desperate, module, "%s", msg)
-}
-
-// FatalfMod format-prints a message for the given module (then panics
-// regardless of debug level).
-func (l *Logger) FatalfMod(module, format string, a ...interface{}) {
-	l.log(Fatal, module, format, a...)
-	panic(fmt.Sprintf(format, a...))
-}
-
-// WarningfMod format-prints a message if the global log level is Warning or more.
-func (l *Logger) WarningfMod(module, format string, a ...interface{}) {
-	l.log(Warning, module, format, a...)
-}
-
-// InfofMod format-prints a message if the global log level is Info (the default) or more.
-func (l *Logger) InfofMod(module, format string, a ...interface{}) {
-	l.log(Info, module, format, a...)
-}
-
-// LogfMod is an alias for InfofMod.
-func (l *Logger) LogfMod(module, format string, a ...interface{}) {
-	l.log(Info, module, format, a...)
-}
-
-// DebugfMod format-prints a message if the global log level is Debug or more.
-func (l *Logger) DebugfMod(module, format string, a ...interface{}) {
-	l.log(Debug, module, format, a...)
-}
-
-// DesperatefMod format-prints a message if the global log level is the maximum.
-func (l *Logger) DesperatefMod(module, format string, a ...interface{}) {
-	l.log(Desperate, module, format, a...)
+	l.log(Desperate, format, a...)
 }

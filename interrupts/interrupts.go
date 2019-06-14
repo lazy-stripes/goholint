@@ -6,6 +6,9 @@ import (
 	"go.tigris.fr/gameboy/logger"
 )
 
+// Package-wide logger.
+var log = logger.New("interrupts", "interrupt manager")
+
 // Namespaced const flags because still procrastinating.
 const (
 	VBlank  = 1 << iota // Bit 0 (INT 40h)
@@ -80,10 +83,10 @@ func (i *Interrupts) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrIF:
 		*i.regIF = value & 0x1f
-		logger.Printf("interrupts", " !!! IF=%#x", value)
+		log.Debugf(" !!! IF=%#x", value)
 	case AddrIE:
 		*i.regIE = value
-		logger.Printf("interrupts", " !!! IE=%#x", value)
+		log.Debugf(" !!! IE=%#x", value)
 	}
 }
 

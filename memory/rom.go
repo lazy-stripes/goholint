@@ -3,8 +3,6 @@ package memory
 import (
 	"fmt"
 	"io/ioutil"
-
-	"go.tigris.fr/gameboy/logger"
 )
 
 // ROM is a read-only special case of RAM, initialized from a binary file.
@@ -23,7 +21,7 @@ func NewROM(filename string, start uint16) *ROM {
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
 func (r *ROM) Write(addr uint16, value uint8) {
-	logger.Printf("rom", "Attempt to write %x to read-only address space at %#x",
+	log.Sub("rom").Warningf("Attempt to write %x to read-only address space at %#x",
 		value, addr)
 }
 
@@ -32,7 +30,7 @@ func (r *ROM) Write(addr uint16, value uint8) {
 func (r *ROM) read(addr uint) uint8 {
 	offset := addr - uint(r.Start)
 	if offset > uint(len(r.Bytes)) {
-		logger.Printf("rom", "Read overflow at %#x", addr)
+		log.Sub("rom").Warningf("Read overflow at %#x", addr)
 		return 0xff
 	}
 	return r.Bytes[offset]

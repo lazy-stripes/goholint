@@ -9,6 +9,9 @@ import (
 	"go.tigris.fr/gameboy/memory"
 )
 
+// Package-wide logger.
+var log = logger.New("timer", "timer registers read/writes (Desperate level only)")
+
 // Register addresses
 const (
 	AddrDIV  = 0xff04
@@ -60,13 +63,13 @@ func (t *Timer) Read(addr uint16) (value uint8) {
 	default:
 		panic("Broken MMU")
 	}
-	logger.Printf("timer", "Timer.Read(0x%04x): 0x%02x", addr, value)
+	log.Desperatef("Timer.Read(0x%04x): 0x%02x", addr, value)
 	return value
 }
 
 // Write a byte to one of the registers, accounting for DIV.
 func (t *Timer) Write(addr uint16, value uint8) {
-	logger.Printf("timer", "Timer.Write(0x%04x, 0x%02x)", addr, value)
+	log.Desperatef("Timer.Write(0x%04x, 0x%02x)", addr, value)
 	switch addr {
 	case AddrDIV:
 		t.DIV = 0

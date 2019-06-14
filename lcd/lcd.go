@@ -3,7 +3,16 @@ package lcd
 import (
 	"fmt"
 	"image/color"
+
+	"go.tigris.fr/gameboy/logger"
 )
+
+// Package-wide logger.
+var log = logger.New("lcd", "actual pixel display operations")
+
+func init() {
+	log.Add("gif", "GIF generator operations")
+}
 
 // ColorIndex into a display-defined 4-color palette.
 type ColorIndex uint8

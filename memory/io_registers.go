@@ -1,7 +1,5 @@
 package memory
 
-import "go.tigris.fr/gameboy/logger"
-
 // IORegister represents a register value with optional hooks to call on read or
 // write as well as an optional mask for registers not exploiting all 8 bits.
 type IORegister struct {
@@ -49,7 +47,7 @@ func (r IORegisters) Write(addr uint16, value uint8) {
 // restricted write...)
 
 func readOnly(io *IORegister, value uint8) {
-	logger.Printf("memory", "Read-only register, value 0x%02x not written.", value)
+	log.Debugf("Read-only register, value 0x%02x not written.", value)
 }
 
 // NewRWRegister creates an IORegister pointing to a given byte with full R/W

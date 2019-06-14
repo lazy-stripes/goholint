@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
-	"go.tigris.fr/gameboy/logger"
 )
 
 // SDL display shifting pixels out to a single texture.
@@ -54,17 +53,17 @@ func NewSDL(zoomFactor uint8) *SDL {
 	}
 
 	if err = sdl.GLSetSwapInterval(-1); err != nil {
-		logger.Printf("lcd", "Can't set adaptive vsync: %s", sdl.GetError())
+		log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 		// Try 'just' syncing to vblank then.
 		if err = sdl.GLSetSwapInterval(1); err != nil {
-			logger.Printf("lcd", "Can't sync to vblank: %s", sdl.GetError())
+			log.Warningf("Can't sync to vblank: %s", sdl.GetError())
 		}
 	}
 	if info, err := renderer.GetInfo(); err == nil {
-		logger.Println("lcd", "Renderer info:")
-		logger.Printf("lcd", "SDL_RENDERER_SOFTWARE: %t", info.Flags&sdl.RENDERER_SOFTWARE != 0)
-		logger.Printf("lcd", "SDL_RENDERER_ACCELERATED: %t", info.Flags&sdl.RENDERER_ACCELERATED != 0)
-		logger.Printf("lcd", "SDL_RENDERER_PRESENTVSYNC: %t", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
+		log.Info("Renderer info:")
+		log.Infof("SDL_RENDERER_SOFTWARE: %t", info.Flags&sdl.RENDERER_SOFTWARE != 0)
+		log.Infof("SDL_RENDERER_ACCELERATED: %t", info.Flags&sdl.RENDERER_ACCELERATED != 0)
+		log.Infof("SDL_RENDERER_PRESENTVSYNC: %t", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 
 	// The way SDL textures handle endianness is unclear, but it seems ABGR format works with our RGBA buffer.
@@ -152,7 +151,7 @@ func (s *SDL) VBlank() {
 		s.renderer.Present()
 
 		if s.offset != ScreenWidth*ScreenHeight*4 {
-			fmt.Println("MISSING PIXELS!")
+			log.Warning("MISSING PIXELS!")
 		}
 		s.offset = 0
 	} else {

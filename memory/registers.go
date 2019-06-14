@@ -1,7 +1,5 @@
 package memory
 
-import "fmt"
-
 // Registers represented as an address space.
 type Registers map[uint16]*uint8
 
@@ -15,7 +13,7 @@ func (r Registers) Read(addr uint16) uint8 {
 	if regPtr := r[addr]; regPtr != nil {
 		return *regPtr
 	}
-	fmt.Printf("Reading unknown register address %#4x\n", addr)
+	log.Warningf("Reading unknown register address %#4x", addr)
 	return 0xff
 }
 
@@ -25,6 +23,6 @@ func (r Registers) Write(addr uint16, value uint8) {
 	if regPtr := r[addr]; regPtr != nil {
 		*regPtr = value
 	} else {
-		fmt.Printf("Writing to unknown register address %#4x\n", addr)
+		log.Warningf("Writing to unknown register address %#4x", addr)
 	}
 }

@@ -2,7 +2,6 @@ package lcd
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -118,6 +117,6 @@ func (g *GIF) Close() {
 			f.Close()
 		}()
 		gif.EncodeAll(f, &g.GIF)
-		fmt.Printf("%d frames dumped to %s\n", len(g.GIF.Image), g.File)
+		log.Sub("gif").Infof("%d frames dumped to %s", len(g.GIF.Image), g.File)
 	}
 }
