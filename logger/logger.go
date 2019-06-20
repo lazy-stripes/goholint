@@ -2,7 +2,9 @@
 package logger
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 )
 
 // Copy of the last string displayed to gracefully handle repeated text.
@@ -82,12 +84,11 @@ func (l *Logger) Add(name, help string) {
 // that hasn't been registered with Add() first, returns the main logger.
 // Otherwise, returns a Logger instance to allow chain call to print methods.
 func (l *Logger) Sub(name string) *Logger {
-	sub := l.modules[name]
-	if sub == nil {
-		fmt.Printf(" !!! sub-logger %s/%s not found\n", l.Name, name)
-		return l
+	if sub := l.modules[name]; sub != nil {
+		return sub
 	}
-	return sub
+	fmt.Printf(" !!! sub-logger %s/%s not found\n", l.Name, name)
+	return l
 }
 
 // Output log message if the given package/subpackage is enabled and if the
@@ -98,17 +99,7 @@ func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
 		return
 	}
 
-	enabled := false
-	switch {
-	case Enabled["all"]:
-		enabled = true
-	case Enabled[l.Name]:
-		enabled = true
-	case Enabled[l.wildcard]:
-		enabled = true
-	}
-
-	if !enabled {
+	if !(Enabled["all"] || Enabled[l.Name] || Enabled[l.wildcard]) {
 		return
 	}
 
@@ -187,4 +178,37 @@ func (l *Logger) Debugf(format string, a ...interface{}) {
 // Desperatef format-prints a message if the global log level is the maximum.
 func (l *Logger) Desperatef(format string, a ...interface{}) {
 	l.log(Desperate, format, a...)
+}
+
+// String returns the description of a logger and all its sub-loggers if any.
+func (l *Logger) String() string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "%s: %s\n", l.Name, l.Help)
+	if l.modules != nil {
+		names := make([]string, 0, len(l.modules))
+		for n := range l.modules {
+			names = append(names, n)
+		}
+		sort.Strings(names)
+		for _, n := range names {
+			fmt.Fprint(&b, l.modules[n])
+		}
+	}
+	return b.String()
+}
+
+// Help prints all registered loggers and sub-loggers so the user knows what
+// can be enabled.
+func Help() {
+	// Sort loggers by package name.
+	names := make([]string, 0, len(Loggers))
+	for n := range Loggers {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	// Display all loggers and their submodules (if any, also sorted).
+	for _, n := range names {
+		fmt.Println(Loggers[n])
+	}
 }

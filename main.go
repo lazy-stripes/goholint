@@ -173,12 +173,11 @@ type Options struct {
 func main() {
 	runtime.LockOSThread()
 
-	// TODO: This is a lot, we could definitely use an Options struct by now.
 	var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
 	var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 	var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 	var debugModules module
-	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module")
+	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module (-debug help for the full list)")
 	var gifPath = flag.String("gif", "", "Record gif file")
 	var romPath = flag.String("rom", "", "ROM file to load")
 	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
@@ -186,6 +185,11 @@ func main() {
 	flag.Parse()
 
 	for _, m := range debugModules {
+		// List available modules if requested.
+		if m == "help" {
+			logger.Help()
+			os.Exit(0)
+		}
 		logger.Enabled[m] = true
 	}
 
