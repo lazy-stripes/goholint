@@ -37,7 +37,7 @@ func (o *OAM) Tick() (done bool) {
 		// Sprite table must have room left, and current sprite tile must
 		// contain current scanline.
 		if len(o.Sprites) == 10 {
-			break
+			return true
 		}
 
 		height := uint8(8)
