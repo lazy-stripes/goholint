@@ -207,8 +207,13 @@ func Help() {
 	}
 	sort.Strings(names)
 
+	fmt.Println("The following debug modules can be specified with -debug.")
+	fmt.Println("To debug a full package and submodules, use -debug <mod>/*")
+	fmt.Println("(might have to be quoted depending on your shell).")
+	fmt.Println()
+
 	// Display all loggers and their submodules (if any, also sorted).
 	for _, n := range names {
-		fmt.Println(Loggers[n])
+		fmt.Print(Loggers[n])
 	}
 }
