@@ -234,16 +234,18 @@ func (p *PPU) Tick() {
 
 		// Find out if a sprite (that hasn't yet been fetched) should be
 		// displayed at the current X position.
-		for i, sprite := range p.OAM.Sprites {
-			if sprite.Fetched {
-				continue
-			}
+		if p.LCDC&LCDCSpriteDisplayEnable != 0 {
+			for i, sprite := range p.OAM.Sprites {
+				if sprite.Fetched {
+					continue
+				}
 
-			// TODO: sprite.X < 8 when we have a ROM to test it.
-			if sprite.X > 0 && sprite.X-8 == p.x {
-				p.Fetcher.FetchSprite(sprite, 0, p.LY+16-sprite.Y) // TODO: 16px height
-				p.OAM.Sprites[i].Fetched = true
-				return
+				// TODO: sprite.X < 8 when we have a ROM to test it.
+				if sprite.X > 0 && sprite.X-8 == p.x {
+					p.Fetcher.FetchSprite(sprite, 0, p.LY+16-sprite.Y) // TODO: 16px height
+					p.OAM.Sprites[i].Fetched = true
+					return
+				}
 			}
 		}
 
