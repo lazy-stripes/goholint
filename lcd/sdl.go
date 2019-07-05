@@ -37,7 +37,7 @@ func NewSDL(zoomFactor uint8, noSync bool) *SDL {
 			return nil // TODO: result, err
 		}
 	*/
-	window, err := sdl.CreateWindow("gb.go",
+	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
 		sdl.WINDOW_SHOWN)
