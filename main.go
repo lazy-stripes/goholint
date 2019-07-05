@@ -32,9 +32,9 @@ func run(options *Options) int {
 
 	var display lcd.Display
 	if options.GIFPath != "" {
-		display = lcd.NewGIF(options.GIFPath, options.ZoomFactor)
+		display = lcd.NewGIF(options.GIFPath, options.ZoomFactor, options.NoSync)
 	} else {
-		display = lcd.NewSDL(options.ZoomFactor)
+		display = lcd.NewSDL(options.ZoomFactor, options.NoSync)
 	}
 	ppu := ppu.New(display)
 	ppu.Interrupts = ints
@@ -162,12 +162,13 @@ func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, lcd lcd.Display) {
 
 // Options structure grouping command line flags values.
 type Options struct {
+	Duration   uint
 	FastBoot   bool
-	ROMPath    string
 	GIFPath    string
+	NoSync     bool
+	ROMPath    string
 	WaitKey    bool
 	ZoomFactor uint8
-	Duration   uint
 }
 
 func main() {
@@ -178,6 +179,7 @@ func main() {
 	var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 	var debugModules module
 	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module (-debug help for the full list)")
+	var noSync = flag.Bool("nosync", false, "Do not sync to VBlank ever")
 	var gifPath = flag.String("gif", "", "Record gif file")
 	var romPath = flag.String("rom", "", "ROM file to load")
 	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
@@ -213,6 +215,7 @@ func main() {
 		WaitKey:    *waitKey,
 		ZoomFactor: uint8(*zoomFactor),
 		Duration:   *duration,
+		NoSync:     *noSync,
 	}
 
 	run(&opt)

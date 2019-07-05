@@ -36,7 +36,7 @@ type GIF struct {
 // NewGIF returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x). This will also
 // buffer frames to put in a GIF.
-func NewGIF(filename string, zoomFactor uint8) *GIF {
+func NewGIF(filename string, zoomFactor uint8, noSync bool) *GIF {
 	// TODO: check file access, (pre-create it?)
 
 	// Pre-instanciate disabled screen frame.
@@ -54,7 +54,7 @@ func NewGIF(filename string, zoomFactor uint8) *GIF {
 	}
 
 	return &GIF{
-		SDL:       *NewSDL(zoomFactor),
+		SDL:       *NewSDL(zoomFactor, noSync),
 		disabled:  disabled,
 		GIF:       gif.GIF{Config: config},
 		frame:     image.NewPaletted(FrameBounds, DefaultPalette),

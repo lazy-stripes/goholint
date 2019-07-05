@@ -30,7 +30,7 @@ var testPalette = [4]color.NRGBA{
 
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
-func NewSDL(zoomFactor uint8) *SDL {
+func NewSDL(zoomFactor uint8, noSync bool) *SDL {
 	/*
 		if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 			fmt.Fprintf(os.Stderr, "SDL Init failed: %s\n", err)
@@ -52,13 +52,16 @@ func NewSDL(zoomFactor uint8) *SDL {
 		return nil // TODO: result, err
 	}
 
-	if err = sdl.GLSetSwapInterval(-1); err != nil {
-		log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
-		// Try 'just' syncing to vblank then.
-		if err = sdl.GLSetSwapInterval(1); err != nil {
-			log.Warningf("Can't sync to vblank: %s", sdl.GetError())
+	if !noSync {
+		if err = sdl.GLSetSwapInterval(-1); err != nil {
+			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
+			// Try 'just' syncing to vblank then.
+			if err = sdl.GLSetSwapInterval(1); err != nil {
+				log.Warningf("Can't sync to vblank: %s", sdl.GetError())
+			}
 		}
 	}
+
 	if info, err := renderer.GetInfo(); err == nil {
 		log.Info("Renderer info:")
 		log.Infof("SDL_RENDERER_SOFTWARE: %t", info.Flags&sdl.RENDERER_SOFTWARE != 0)
