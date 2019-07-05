@@ -142,11 +142,13 @@ func (s *SDL) Write(colorIndex uint8) {
 	}
 }
 
-// HBlank is only there as part of the Display interface and has no use in this context (yet?).
+// HBlank is only there as part of the Display interface and has no use in this
+// context (yet?).
 func (s *SDL) HBlank() {
 }
 
-// VBlank is called when the PPU reaches VBlank state. At this point, our SDL buffer should be ready to display.
+// VBlank is called when the PPU reaches VBlank state. At this point, our SDL
+// buffer should be ready to display.
 func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
@@ -162,7 +164,8 @@ func (s *SDL) VBlank() {
 	}
 }
 
-// Blank is called on each PPU step when the display is disabled, drawing the disabled GB screen.
+// Blank is called on each PPU step when the display is disabled, drawing the
+// disabled GB screen.
 func (s *SDL) Blank() {
 	s.Clear()
 }

@@ -148,7 +148,7 @@ func (c *CPU) Tick() {
 			c.interrupt = interrupts.Timer
 			// TODO: all other interrupts
 		default:
-			fmt.Printf(" !!! Unimplemented interrupt requested: %02x\n", requested)
+			fmt.Printf(" !!! Unimplemented interrupt requested: 0x%02x\n", requested)
 		}
 
 		c.state = states.InterruptPushPCHigh
