@@ -78,7 +78,7 @@ func run(options *Options) int {
 
 	// Handle interrupt, store pointer to CPU for debug info.
 	c := make(chan os.Signal, 1)
-	go handleInterrupt(c, cpu, display)
+	go handleInterrupt(c, cpu, ppu, display) // TODO: pass a *Gameboy param.
 	signal.Notify(c, os.Interrupt)
 
 	// Wait for keypress if requested, so obs has time to capture window.
@@ -144,7 +144,7 @@ func (m *module) Set(value string) error {
 	return nil
 }
 
-func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, lcd lcd.Display) {
+func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, ppu *ppu.PPU, lcd lcd.Display) {
 	// Wait for signal, quit cleanly with potential extra debug info if needed.
 	<-c
 	fmt.Println("\nTerminated...")
@@ -153,6 +153,7 @@ func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, lcd lcd.Display) {
 
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
 	fmt.Print(cpu)
+	fmt.Print(ppu)
 	cpu.DumpRAM()
 
 	// Force stopping CPU profiling.

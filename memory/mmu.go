@@ -59,8 +59,10 @@ func (m *MMU) Read(addr uint16) uint8 {
 // attempts writing the given value to that address.
 func (m *MMU) Write(addr uint16, value uint8) {
 	if space := m.space(addr); space != nil {
+		log.Sub("mmu/write").Desperatef("MMU.Write: 0x%04x=0x%02x", addr, value)
 		space.Write(addr, value)
 	} else {
-		log.Sub("mmu/write").Debugf("MMU.Write: Unmapped address 0x%04x", addr)
+		log.Sub("mmu/write").Debugf("MMU.Write: Unmapped address 0x%04x=0x%02x",
+			addr, value)
 	}
 }

@@ -3,6 +3,9 @@ package ppu
 // Source: [TUGBT] https://www.youtube.com/watch?v=HyzD8pNlpwI&t=2747s
 
 import (
+	"bytes"
+	"fmt"
+
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/logger"
@@ -113,6 +116,23 @@ func New(display lcd.Display) *PPU {
 	p.state = states.OAMSearch
 
 	return &p
+}
+
+// String returns a human-readable representation of the PPU's current state.
+func (p *PPU) String() string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "LCDC: %#02x\n", p.LCDC)
+	fmt.Fprintf(&b, "STAT: %#02x\n", p.STAT)
+	fmt.Fprintf(&b, "SCY:  %#02x\n", p.SCY)
+	fmt.Fprintf(&b, "SCX:  %#02x\n", p.SCX)
+	fmt.Fprintf(&b, "LY:   %#02x\n", p.LY)
+	fmt.Fprintf(&b, "LYC:  %#02x\n", p.LYC)
+	fmt.Fprintf(&b, "BGP:  %#02x\n", p.BGP)
+	fmt.Fprintf(&b, "OBP0: %#02x\n", p.OBP0)
+	fmt.Fprintf(&b, "OBP1: %#02x\n", p.OBP1)
+	fmt.Fprintf(&b, "WY:   %#02x\n", p.WY)
+	fmt.Fprintf(&b, "WX:   %#02x\n", p.WX)
+	return b.String()
 }
 
 // Requests the LY=LYC interrupt as needed when changing LY.
