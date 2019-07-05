@@ -90,8 +90,6 @@ func NewSDL(zoomFactor uint8, noSync bool) *SDL {
 	renderer.SetRenderTarget(blank)
 	renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
 	renderer.Clear()
-	renderer.SetDrawColor(ColorBlackR, ColorBlackG, ColorBlackB, sdl.ALPHA_OPAQUE)
-	renderer.DrawLine(0, ScreenHeight/2, ScreenWidth, ScreenHeight/2)
 	renderer.SetRenderTarget(nil)
 
 	screenLen := ScreenWidth * ScreenHeight * 4 // Go bindings use byte slices but SDL thinks in terms of uint32
@@ -109,7 +107,7 @@ func (s *SDL) Close() {
 	s.window.Destroy()
 }
 
-// Clear draws a disabled GB screen (white background with a black line through the middle).
+// Clear draws a disabled GB screen (white background).
 func (s *SDL) Clear() {
 	s.renderer.Copy(s.blank, nil, nil)
 	s.renderer.Present()
@@ -131,7 +129,7 @@ func (s *SDL) Disable() {
 	s.enabled = false
 }
 
-// Write adds a new pixel (a mere index into our screen palette) to the texture buffer.
+// Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
 		s.buffer[s.offset] = s.Palette[colorIndex].(color.NRGBA).R
@@ -144,8 +142,7 @@ func (s *SDL) Write(colorIndex uint8) {
 
 // HBlank is only there as part of the Display interface and has no use in this
 // context (yet?).
-func (s *SDL) HBlank() {
-}
+func (s *SDL) HBlank() {}
 
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
@@ -164,8 +161,7 @@ func (s *SDL) VBlank() {
 	}
 }
 
-// Blank is called on each PPU step when the display is disabled, drawing the
-// disabled GB screen.
+// Blank draws an empty GB screen when the display is disabled.
 func (s *SDL) Blank() {
 	s.Clear()
 }
