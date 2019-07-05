@@ -46,11 +46,15 @@ func run(options *Options) int {
 
 	var boot memory.Addressable
 	if options.FastBoot {
-		// TODO: set RAM
+		// XXX: What the BootROM does RAM-wise:
+		// - Zero out/write logo tiles to 0x8000->0x9fff
+		// - Write to audio registers
+		// - Write to PPU registers
+		// - Write to stack
 		boot = memory.NewRAM(memory.BootAddr, 1)
 		boot.Write(memory.BootAddr, 0x01)
 
-		// Values below are what the CPU contains when we boot the DMG ROM.
+		// Values below are what the CPU contains after booting the DMG ROM.
 		cpu.A = 0x01
 		cpu.F = 0xb0
 		cpu.B = 0x00
@@ -60,6 +64,15 @@ func run(options *Options) int {
 		cpu.H = 0x01
 		cpu.L = 0x4d
 		cpu.PC = 0x0100
+		cpu.SP = 0xfffe
+
+		ppu.LCDC = 0x91
+		ppu.LY = 0x96
+		ppu.BGP = 0xfc
+
+		for addr := 0x8000; addr <= 0x9fff; addr++ {
+			// TODO: set RAM/VRAM
+		}
 	} else {
 		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
 	}
@@ -76,13 +89,13 @@ func run(options *Options) int {
 	// Add CPU-specific context to debug output.
 	logger.Context = cpu.Context
 
-	// Handle interrupt, store pointer to CPU for debug info.
+	// Handle SIGINT, store pointers to CPU and PPU for debug info.
 	c := make(chan os.Signal, 1)
 	go handleInterrupt(c, cpu, ppu, display) // TODO: pass a *Gameboy param.
 	signal.Notify(c, os.Interrupt)
 
 	// Wait for keypress if requested, so obs has time to capture window.
-	// Less useful now we have -gif flag.
+	// Less useful now that we have -gif flag.
 	if options.WaitKey {
 		fmt.Print("Press 'Enter' to start...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -138,7 +151,8 @@ func (m *module) String() string {
 }
 
 // Set is the method to set the flag value, part of the flag.Value interface.
-// Set's argument is a string to be parsed to set the flag. Flag can be specified multiple times.
+// Set's argument is a string to be parsed to set the flag.
+// Flag can be specified multiple times.
 func (m *module) Set(value string) error {
 	*m = append(*m, value)
 	return nil
