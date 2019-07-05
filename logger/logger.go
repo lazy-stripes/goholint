@@ -28,6 +28,15 @@ const (
 	Desperate // The kind of level used in a Pixel FIFO, for instance...
 )
 
+// Levels that can be specified on the command line.
+var Levels = map[string]LogLevel{
+	"fatal":     Fatal,
+	"warning":   Warning,
+	"info":      Info,
+	"debug":     Debug,
+	"desperate": Desperate,
+}
+
 // Level is the global log level above which nothing will be displayed.
 var Level = Info // Sensible default
 
@@ -216,4 +225,21 @@ func Help() {
 	for _, n := range names {
 		fmt.Print(Loggers[n])
 	}
+}
+
+// HelpLevels lists the available log levels. Hardcoded in there because the
+// order in which we put them in the Levels mapping is not guaranteed anyway.
+// TODO: sort levels by enum value, auto-detect default based on Level value.
+func HelpLevels() {
+	fmt.Println("The following debug levels can be specified with -level")
+	fmt.Println("(by decreasing order of importance):")
+	fmt.Println()
+	fmt.Println("fatal")
+	fmt.Println("warning")
+	fmt.Println("info (default)")
+	fmt.Println("debug")
+	fmt.Println("desperate")
+	fmt.Println()
+	fmt.Println("Debug modules must be enabled for anything to be displayed")
+	fmt.Println("(see -debug help).")
 }

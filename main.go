@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 
@@ -179,6 +180,7 @@ func main() {
 	var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 	var debugModules module
 	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module (-debug help for the full list)")
+	var debugLevel = flag.String("level", "warning", "Debug level (-level help for full list)")
 	var noSync = flag.Bool("nosync", false, "Do not sync to VBlank ever")
 	var gifPath = flag.String("gif", "", "Record gif file")
 	var romPath = flag.String("rom", "", "ROM file to load")
@@ -186,12 +188,26 @@ func main() {
 	var zoomFactor = flag.Int("zoom", 2, "Zoom factor (default is 2x)")
 	flag.Parse()
 
+	if *debugLevel == "help" {
+		logger.HelpLevels()
+		os.Exit(0)
+	}
+
+	level, ok := logger.Levels[strings.ToLower(*debugLevel)]
+	if ok {
+		logger.Level = level
+	} else {
+		log.Fatal("unknown log level ", level)
+	}
+
 	for _, m := range debugModules {
 		// List available modules if requested.
 		if m == "help" {
 			logger.Help()
 			os.Exit(0)
 		}
+
+		// TODO: error if module OR submodule is not registered.
 		logger.Enabled[m] = true
 	}
 
