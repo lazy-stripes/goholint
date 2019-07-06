@@ -66,9 +66,10 @@ func run(options *Options) int {
 		cpu.PC = 0x0100
 		cpu.SP = 0xfffe
 
-		ppu.LCDC = 0x91
-		ppu.LY = 0x96
-		ppu.BGP = 0xfc
+		// FIXME: properly pre-initialize PPU.
+		//ppu.LCDC = 0x91
+		//ppu.LY = 0x96
+		//ppu.BGP = 0xfc
 
 		for addr := 0x8000; addr <= 0x9fff; addr++ {
 			// TODO: set RAM/VRAM
