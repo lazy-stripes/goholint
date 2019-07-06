@@ -108,7 +108,7 @@ func New(display lcd.Display) *PPU {
 	p.Add(videoRAM)
 	p.Add(oamRAM)
 
-	p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU}
+	p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU, lcdc: &p.LCDC}
 	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
 		lcdc: &p.LCDC}
 

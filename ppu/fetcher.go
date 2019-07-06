@@ -12,6 +12,7 @@ type Fetcher struct {
 	vRAM            memory.Addressable
 	ticks           int
 	state, oldState states.State
+	lcdc            *uint8 // Reference to LCDC for sprites height bit
 	mapAddr         uint16 // Start address of BG/Windows map row
 	dataAddr        uint16 // Start address of Sprite/BG tile data
 	tileOffset      uint8  // X offset in the tile map row (will wrap around)
@@ -93,7 +94,6 @@ func (f *Fetcher) Tick() {
 		f.state = states.ReadSpriteData0
 
 	case states.ReadSpriteData0:
-		// TODO: 16px high sprites
 		f.ReadTileLine(0, 0x8000, f.spriteID, false, f.spriteLine, f.spriteFlags, &f.spriteData)
 		f.state = states.ReadSpriteData1
 
@@ -125,7 +125,6 @@ func (f *Fetcher) Tick() {
 // ReadTileLine updates internal pixel buffer with LSB or MSB tile line
 // depending on current state.
 func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint16, tileID uint8, signedID bool, tileLine uint8, flags uint8, data *[8]uint8) {
-	// TODO: attributes, 16-pixel height
 	var offset uint16
 	if signedID {
 		offset = uint16(int16(tileDataAddr) + int16(int8(tileID))*16)
@@ -133,7 +132,9 @@ func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint16, tileID uint8
 		offset = tileDataAddr + (uint16(tileID) * 16)
 	}
 	if flags&SpriteFlipY != 0 {
-		tileLine = 7 - tileLine // TODO: 16px height
+		// If flipping, get line at (spriteSize-1-line)
+		height := uint8(8<<((*f.lcdc&LCDCSpriteSize)>>2) - 1)
+		tileLine = height - tileLine
 	}
 	addr := offset + (uint16(tileLine) * 2)
 
