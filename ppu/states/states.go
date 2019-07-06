@@ -3,7 +3,8 @@ package states
 // State of a PPU at a given step.
 type State int
 
-// Mere collection of constants because I was procrastinating when I did that for package cpu.
+// Mere collection of constants because I was procrastinating when I did that
+// for the cpu package as well.
 
 // PPU states, ordered so the enum corresponds to its STAT mode number.
 const (

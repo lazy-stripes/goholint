@@ -252,6 +252,12 @@ func (p *PPU) Tick() {
 			return
 		}
 
+		// Drop pixels according to SCX
+		if p.toDrop > 0 {
+			p.toDrop -= p.Drop()
+			return
+		}
+
 		// Find out if a sprite (that hasn't yet been fetched) should be
 		// displayed at the current X position.
 		if p.LCDC&LCDCSpriteDisplayEnable != 0 {
@@ -260,19 +266,26 @@ func (p *PPU) Tick() {
 					continue
 				}
 
-				// TODO: sprite.X < 8 when we have a ROM to test it.
-				if sprite.X > 0 && sprite.X-8 == p.x {
-					p.Fetcher.FetchSprite(sprite, 0, p.LY+16-sprite.Y) // TODO: 16px height
+				// Fetch sprite if its X position matches the current pixel.
+				// OAM search guarantees that all 10 potential sprites' X
+				// position is non-zero.
+				fetch := false
+				offset := uint8(0)
+				switch {
+				case sprite.X < 8 && p.x == 0:
+					// Special case for sprites scrolling in from the left.
+					fetch = true
+					offset = 8 - sprite.X
+				case sprite.X-8 == p.x:
+					fetch = true
+				}
+
+				if fetch {
+					p.Fetcher.FetchSprite(sprite, offset, p.LY+16-sprite.Y)
 					p.OAM.Sprites[i].Fetched = true
 					return
 				}
 			}
-		}
-
-		// Drop pixels according to SCX
-		if p.toDrop > 0 {
-			p.toDrop -= p.Drop()
-			return
 		}
 
 		p.x += p.Pop()
@@ -324,7 +337,7 @@ func (p *PPU) Tick() {
 
 // mapAddress returns the base address for BG or Window map according to LCDC.
 func (p *PPU) mapAddress(bit uint8) uint16 {
-	if p.LCDC&bit > 0 {
+	if p.LCDC&bit != 0 {
 		return 0x9c00
 	}
 	return 0x9800
@@ -342,14 +355,14 @@ func (p *PPU) WindowMap() uint16 {
 
 // TileData returns the base address of the background or window tile data in VRAM.
 func (p *PPU) TileData() (addr uint16, signedID bool) {
-	if (p.LCDC & LCDCBGWindowTileDataSelect) > 0 {
+	if (p.LCDC & LCDCBGWindowTileDataSelect) != 0 {
 		return 0x8000, false
 	}
 	return 0x9000, true
 }
 
 // Pop tries shifting a pixel out of the FIFO to the LCD and returns the
-// number of shifted dropped pixels (0 or 1).
+// number of shifted pixels (0 or 1).
 func (p *PPU) Pop() uint8 {
 	return p.pop(false)
 }

@@ -79,7 +79,7 @@ func (f *Fetcher) Tick() {
 
 	case states.PushToFIFO:
 		if f.fifo.Size() <= 8 {
-			for i := 0; i < 8; i++ { // TODO: PixelFIFO directly handling [8]uint8
+			for i := 0; i < 8; i++ {
 				f.fifo.Push(Pixel{f.tileData[i], PixelBGP})
 			}
 			f.tileOffset = (f.tileOffset + 1) % 32
@@ -108,15 +108,14 @@ func (f *Fetcher) Tick() {
 
 		// Mix sprite pixels with FIFO, taking into account offset if sprite
 		// is only partially displayed (i.e. entering screen from the left).
-		// TODO: use f.spriteOffset
 		var palette uint8
 		if f.spriteFlags&0x10 == 0 {
 			palette = PixelOBP0
 		} else {
 			palette = PixelOBP1
 		}
-		for i := 0; i < 8; i++ {
-			f.fifo.Mix(i, Pixel{f.spriteData[i], palette})
+		for i := int(f.spriteOffset); i < 8; i++ {
+			f.fifo.Mix(i-int(f.spriteOffset), Pixel{f.spriteData[i], palette})
 		}
 		f.state = f.oldState
 	}
