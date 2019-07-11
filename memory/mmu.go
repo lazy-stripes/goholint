@@ -1,7 +1,7 @@
 package memory
 
 // MMU manages an arbitrary number of ordered address spaces. It also satisfies
-// the AddressSpace interface.
+// the Addressable interface.
 type MMU struct {
 	Spaces []Addressable
 }
@@ -26,12 +26,7 @@ func (m *MMU) Add(space Addressable) {
 // the given address. The first address space in the internal list containing a
 // given address will shadow any other that may contain it.
 func (m *MMU) Contains(addr uint16) bool {
-	for _, space := range m.Spaces {
-		if space.Contains(addr) {
-			return true
-		}
-	}
-	return false
+	return m.space(addr) != nil
 }
 
 // Returns the first space for which the address is handled.
