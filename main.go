@@ -78,14 +78,17 @@ func run(options *Options) int {
 		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
 	}
 
-	cartridge := memory.NewCartridge(options.ROMPath)
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff80, 0x7e)
 	jpad := joypad.New(joypad.DefaultMapping) // TODO: interrupts
 	dma := &memory.DMA{}
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, jpad, serial, timer, dma, hram, cartridge})
+	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, jpad, serial, timer, dma, hram})
 	dma.MMU = mmu
 	cpu.MMU = mmu
+
+	if options.ROMPath != "" {
+		mmu.Add(memory.NewCartridge(options.ROMPath))
+	}
 
 	// Add CPU-specific context to debug output.
 	logger.Context = cpu.Context

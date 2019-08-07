@@ -11,7 +11,7 @@ func NewCartridge(romPath string) (cart Addressable) {
 	log := log.Sub("cartridge") // Override default logger
 	if romPath == "" {
 		log.Warning("No cartridge loaded.")
-		return NewRAM(0, 0)
+		return nil
 	}
 
 	rom := NewROM(romPath, 0) // XXX: do we actually ever need to specify start > 0?
