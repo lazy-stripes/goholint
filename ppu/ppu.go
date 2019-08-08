@@ -238,9 +238,9 @@ func (p *PPU) Tick() {
 
 		// Check whether we should start fetching window tiles.
 		if !p.window && p.LCDC&LCDCWindowDisplayEnable > 0 &&
-			p.LY >= p.WY && p.WX-7 == p.x {
+			p.LY >= p.WY && p.x+7 >= p.WX {
 			p.window = true
-			p.toDrop = 0 // Windows don't scroll
+			p.toDrop = 0 // Window doesn't scroll
 
 			// Reinitialize fetcher for window.
 			y := p.LY - p.WY
