@@ -112,6 +112,7 @@ func (g *GIF) VBlank() {
 
 // Close writes the actual GIF file to disk.
 func (g *GIF) Close() {
+	g.VBlank()
 	if f, err := os.Create(g.File); err == nil {
 		defer func() {
 			f.Close()
