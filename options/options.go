@@ -7,7 +7,10 @@ import (
 
 // Options structure grouping command line flags values.
 type Options struct {
+	BootROM      string // -boot <path>
 	CPUProfile   string // -cpuprofile <path>
+	DebugLevel   string // -level <debug level>
+	DebugModules module // -debug <module>
 	Duration     uint   // -cycles <amount>
 	FastBoot     bool   // -fastboot
 	GIFPath      string // -gif <path>
@@ -15,8 +18,6 @@ type Options struct {
 	ROMPath      string // -rom <path>
 	WaitKey      bool   // -waitkey
 	ZoomFactor   uint8  // -zoom <factor>
-	DebugLevel   string // -level <debug level>
-	DebugModules module // -debug <module>
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -37,6 +38,7 @@ func (m *module) Set(value string) error {
 }
 
 // Supported command-line options for the emulator.
+var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 var debugModules module
@@ -59,6 +61,7 @@ func Parse() *Options {
 	flag.Parse()
 
 	opt := Options{
+		BootROM:      *bootROM,
 		CPUProfile:   *cpuprofile,
 		Duration:     *duration,
 		DebugModules: debugModules,

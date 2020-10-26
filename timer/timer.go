@@ -4,9 +4,9 @@
 package timer
 
 import (
-	"go.tigris.fr/gameboy/interrupts"
-	"go.tigris.fr/gameboy/logger"
-	"go.tigris.fr/gameboy/memory"
+	"github.com/lazy-stripes/goholint/interrupts"
+	"github.com/lazy-stripes/goholint/logger"
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // Package-wide logger.

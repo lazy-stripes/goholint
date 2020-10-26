@@ -1,8 +1,8 @@
 package ppu
 
 import (
-	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/ppu/states"
+	"github.com/lazy-stripes/goholint/memory"
+	"github.com/lazy-stripes/goholint/ppu/states"
 )
 
 // Fetcher reads tile data from VRAM and pushes pixels to PPU FIFO.

@@ -2,7 +2,7 @@
 
 package cpu
 
-import "go.tigris.fr/gameboy/cpu/states"
+import "github.com/lazy-stripes/goholint/cpu/states"
 
 // LR35902InstructionSet is an array of instrutions for the DMG CPU.
 var LR35902InstructionSet = [...]Instruction{

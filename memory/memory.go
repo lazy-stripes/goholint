@@ -1,6 +1,6 @@
 package memory
 
-import "go.tigris.fr/gameboy/logger"
+import "github.com/lazy-stripes/goholint/logger"
 
 // Addressable interface provides functions to read/write bytes in a given
 // 16-bit address space.

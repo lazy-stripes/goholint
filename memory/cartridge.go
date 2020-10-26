@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"go.tigris.fr/gameboy/memory/chips"
+	"github.com/lazy-stripes/goholint/memory/chips"
 )
 
 // NewCartridge instantiates the proper kind of adress space depending on the

@@ -2,7 +2,7 @@ package joypad
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
-	"go.tigris.fr/gameboy/logger"
+	"github.com/lazy-stripes/goholint/logger"
 )
 
 // Source: [JOYPAD] http://gbdev.gg8.se/wiki/articles/Joypad_Input

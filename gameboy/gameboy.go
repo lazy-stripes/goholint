@@ -6,17 +6,17 @@ import (
 	"os"
 
 	"github.com/faiface/mainthread"
+	"github.com/lazy-stripes/goholint/apu"
+	"github.com/lazy-stripes/goholint/cpu"
+	"github.com/lazy-stripes/goholint/interrupts"
+	"github.com/lazy-stripes/goholint/joypad"
+	"github.com/lazy-stripes/goholint/lcd"
+	"github.com/lazy-stripes/goholint/memory"
+	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ppu"
+	"github.com/lazy-stripes/goholint/serial"
+	"github.com/lazy-stripes/goholint/timer"
 	"github.com/veandco/go-sdl2/sdl"
-	"go.tigris.fr/gameboy/apu"
-	"go.tigris.fr/gameboy/cpu"
-	"go.tigris.fr/gameboy/interrupts"
-	"go.tigris.fr/gameboy/joypad"
-	"go.tigris.fr/gameboy/lcd"
-	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/options"
-	"go.tigris.fr/gameboy/ppu"
-	"go.tigris.fr/gameboy/serial"
-	"go.tigris.fr/gameboy/timer"
 )
 
 // TickResult type to group return values from Tick.
@@ -50,6 +50,7 @@ func New(args *options.Options) *GameBoy {
 	g.APU = apu.New()
 
 	if args.GIFPath != "" {
+		fmt.Printf("Saving GIF to %s\n", args.GIFPath)
 		g.Display = lcd.NewGIF(args.GIFPath, args.ZoomFactor, args.NoSync)
 	} else {
 		g.Display = lcd.NewSDL(args.ZoomFactor, args.NoSync)
@@ -92,7 +93,7 @@ func New(args *options.Options) *GameBoy {
 			// TODO: set RAM/VRAM
 		}
 	} else {
-		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
+		boot = memory.NewBoot(args.BootROM)
 	}
 
 	wram := memory.NewRAM(0xc000, 0x2000)
@@ -155,9 +156,9 @@ func (g *GameBoy) Run() {
 	tick := 0
 	quit := false
 	for !quit {
-		//t := time.Now()
 		// FIXME: Ideally, we should plug into Blank/VBlank display methods.
-		if g.PPU.Cycle%(456*153) == 0 {
+		// Actually try polling for events at a little more than 60Hz.
+		if g.PPU.Cycle%((456*153)/2) == 0 {
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 				switch event.GetType() {
 				case sdl.KEYDOWN:
@@ -176,16 +177,20 @@ func (g *GameBoy) Run() {
 		g.DMA.Tick()
 		g.PPU.Tick()
 		g.Timer.Tick()
-		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
+
 		tick++
-		//if tick == 229976-96 {
-		//			fmt.Println("STOP")
-		//}
 
 		if g.args.Duration > 0 && g.CPU.Cycle >= g.args.Duration {
 			break
 		}
 	}
 
+	g.Display.Close()
+}
+
+// Stop should be called before quitting the program and will close all needed
+// resources.
+func (g *GameBoy) Stop() {
+	// Make sure GIF file is written to disk.
 	g.Display.Close()
 }

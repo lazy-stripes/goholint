@@ -8,11 +8,11 @@ import (
 
 	"github.com/faiface/mainthread"
 
-	"go.tigris.fr/gameboy/interrupts"
-	"go.tigris.fr/gameboy/lcd"
-	"go.tigris.fr/gameboy/logger"
-	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/ppu/states"
+	"github.com/lazy-stripes/goholint/interrupts"
+	"github.com/lazy-stripes/goholint/lcd"
+	"github.com/lazy-stripes/goholint/logger"
+	"github.com/lazy-stripes/goholint/memory"
+	"github.com/lazy-stripes/goholint/ppu/states"
 )
 
 // Package-wide logger.

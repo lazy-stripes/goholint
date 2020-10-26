@@ -9,7 +9,7 @@ package main
 // and our callback function usable as if they were part of a "C" package.
 
 // typedef unsigned char Uint8;
-// void squareWaveCallback(void *userdata, Uint8 *stream, int len);
+// void mainLoopCallback(void *userdata, Uint8 *stream, int len);
 import "C"
 
 import (
@@ -26,10 +26,10 @@ import (
 	"github.com/faiface/mainthread"
 	"github.com/veandco/go-sdl2/sdl"
 
-	"go.tigris.fr/gameboy/apu"
-	"go.tigris.fr/gameboy/gameboy"
-	"go.tigris.fr/gameboy/logger"
-	"go.tigris.fr/gameboy/options"
+	"github.com/lazy-stripes/goholint/apu"
+	"github.com/lazy-stripes/goholint/gameboy"
+	"github.com/lazy-stripes/goholint/logger"
+	"github.com/lazy-stripes/goholint/options"
 )
 
 // TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
@@ -46,17 +46,9 @@ var gb *gameboy.GameBoy
 
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
-// Here SDL expects you to copy audio data from your program into the requesting
-// audio buffer (buf), exactly as much as the requested length (len) which
-// we know is <channels> × <sample frames per buffer>.
-// Instead of copying WAV samples from an existing file, we generate WAV data
-// on the fly as a simple square wave.
 //
-// The comment line below is part of cgo and binds C and Go code. Do not
-// modify it, not even to add a leading space. Trust me, I tried.
-//
-//export squareWaveCallback
-func squareWaveCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
+//export mainLoopCallback
+func mainLoopCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
 	// We've reached the limits of the Go bindings. In order to access the
 	// audio buffer, we have to jump through rather ugly conversion hoops
 	// between C and Go. Note that the three lines of code below were in the
@@ -75,7 +67,7 @@ func squareWaveCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
 
 		if res.Play {
 			buffer[i] = C.Uint8(res.Left)
-			buffer[i+1] = C.Uint8(res.Right) << 4
+			buffer[i+1] = C.Uint8(res.Right)
 			i += 2
 		}
 	}
@@ -173,7 +165,7 @@ func run() {
 			Format:   sdl.AUDIO_U8,
 			Channels: 2,
 			Samples:  apu.FramesPerBuffer,
-			Callback: sdl.AudioCallback(C.squareWaveCallback),
+			Callback: sdl.AudioCallback(C.mainLoopCallback),
 		}
 
 		// We're asking SDL to honor our parameters exactly, or fail.
@@ -184,6 +176,8 @@ func run() {
 		// Start playing sound. Not sure why we un-pause it instead of starting it.
 		sdl.PauseAudio(false)
 	})
+
+	defer gb.Stop()
 
 	<-quit // Wait for the callback to signal us.
 

@@ -1,7 +1,10 @@
-# gb.go
+# Goholint
+
+![](header.gif)
 
 An incomplete, buggy and suboptimal GameBoy emulator written in Go purely for
-fun.
+fun. It displays pixels, makes noises and can export GIFs. Hopefully it can
+prove informative somewhat!
 
 
 # Disclaimer
@@ -13,55 +16,44 @@ It might contain blatant errors, awkward workarounds and the occasional
 profanity in comments or commit messages. Golang at least guarantees that
 the formatting is somewhat consistent.
 
-Those are the main reasons why this is self-hosted and not available from a
-serious platform like GitHub yet.
+Those are the main reasons why this this code has been self-hosted for so long
+until now.
 
 
-# Installation
+# Getting Goholint
 
-## Using `go get`
-
-This is the easiest method and should (hopefully) work out of the box.
-
-```shell
-go get go.tigris.fr/gameboy
-```
-
-## Using `git.tigris.fr`
-
-Alternatively, directly using `git` (which is pretty much what `go get` does)
-should work too. As of this writing, `tigris.fr` only offers read-only access to
-public repositories.
+I started this project before Go modules were a thing so the easiest way to run
+Goholint for now is still probably `go get`.
 
 ```shell
-cd $GOPATH/src
-mkdir -p go.tigris.fr
-cd go.tigris.fr
-git clone https://git.tigris.fr/public/gameboy.git
+go get github.com/lazy-stripes/goholint
+$GOPATH/bin/goholint -help
 ```
-
 
 # Usage
 
 The emulator ships without any kind of ROM for hopefully obvious reasons. If
 you want a scrolling logo, the emulator needs a boot ROM it will attempt to
-read from `bin/boot/dmg_rom.bin`.
+read from `bin/boot/dmg_rom.bin` or whatever path you specify with `-boot`.
 
 (Note: if you don't want to hunt down the GameBoy's boot ROM, simply start the
-emulator with the `‑fastboot` parameter to bypass it entirely.)
+emulator with the `‑fastboot` parameter to bypass it entirely. It doesn't work
+as well as using the boot ROM yet, alas.)
 
 With that taken care of, `go run main.go ‑rom <path>` should be enough to see
 an SDL window potentially displaying some interesting things, or more likely a
 blank screen, if it doesn't crash first.
+
+(As of 2020, Tetris and Dr. Mario are somewhat playable!)
 
 
 # Acknowledgements
 
 The present project only exists thanks to Tomek Rękawek and his fascinating
 blog article about [how relatively easy it was to start implementing a GB
-emulator](https://blog.rekawek.eu/2017/02/09/coffee-gb/).
-As such, large chunks of the present source code are heavily inspired by
-[coffee-gb's source code](https://github.com/trekawek/coffee-gb).
+emulator](https://blog.rekawek.eu/2017/02/09/coffee-gb/). His own emulator,
+[coffee-gb](https://github.com/trekawek/coffee-gb), was a great help and
+inspiration in the making of this.
 
 I otherwise officially blame @dmuth for retweeting the aforementioned blog post.
 

@@ -1,8 +1,8 @@
 package ppu
 
 import (
-	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/ppu/states"
+	"github.com/lazy-stripes/goholint/memory"
+	"github.com/lazy-stripes/goholint/ppu/states"
 )
 
 // AddrOAM represents the base address of OAM RAM.

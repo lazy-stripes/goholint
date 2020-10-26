@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image/color"
 
-	"go.tigris.fr/gameboy/logger"
+	"github.com/lazy-stripes/goholint/logger"
 )
 
 // Package-wide logger.

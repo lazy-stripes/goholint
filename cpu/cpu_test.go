@@ -3,7 +3,7 @@ package cpu
 import (
 	"testing"
 
-	"go.tigris.fr/gameboy/memory"
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 func TestCPU(t *testing.T) {

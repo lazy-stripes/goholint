@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"go.tigris.fr/gameboy/cpu/states"
-	"go.tigris.fr/gameboy/interrupts"
-	"go.tigris.fr/gameboy/memory"
+	"github.com/lazy-stripes/goholint/cpu/states"
+	"github.com/lazy-stripes/goholint/interrupts"
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // [GEKKIO] https://gekkio.fi/files/gb-docs/gbctr.pdf

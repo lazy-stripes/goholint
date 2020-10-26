@@ -1,6 +1,6 @@
 package apu
 
-import "go.tigris.fr/gameboy/memory"
+import "github.com/lazy-stripes/goholint/memory"
 
 // WaveTable structure implementing sound sample generation for the third
 // signal generator (A.k.a Sound3).

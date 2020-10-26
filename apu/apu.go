@@ -4,8 +4,8 @@ package apu
 //         [SOUND2] https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 
 import (
-	"go.tigris.fr/gameboy/logger"
-	"go.tigris.fr/gameboy/memory"
+	"github.com/lazy-stripes/goholint/logger"
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // Package-wide logger.
@@ -136,11 +136,9 @@ func (a *APU) Tick() (left, right uint8, play bool) {
 	// if we were to implement all four, we'd actually mix all their outputs
 	// together here (with various per-generator parameters to account for).
 
-	// Here we also cheat a bit and force generator1 output to the left channel
-	// and generator2 to the right.
-	noise := a.Noise.Tick()
-	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + noise
-	right = noise
+	// TODO: mix signals here according to the relevant registers.
+	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()
+	right = left
 
 	// We're ticking as fast as the Game Boy CPU goes, but our sound sample rate
 	// is much lower than that so we only need to yield an actual sample every

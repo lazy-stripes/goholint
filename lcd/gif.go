@@ -2,6 +2,7 @@ package lcd
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -113,11 +114,14 @@ func (g *GIF) VBlank() {
 // Close writes the actual GIF file to disk.
 func (g *GIF) Close() {
 	g.VBlank()
-	if f, err := os.Create(g.File); err == nil {
+	f, err := os.Create(g.File)
+	if err == nil {
 		defer func() {
 			f.Close()
 		}()
 		gif.EncodeAll(f, &g.GIF)
 		log.Sub("gif").Infof("%d frames dumped to %s", len(g.GIF.Image), g.File)
+	} else {
+		fmt.Println(err)
 	}
 }

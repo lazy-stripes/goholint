@@ -3,7 +3,7 @@ package serial
 import (
 	"fmt"
 
-	"go.tigris.fr/gameboy/logger"
+	"github.com/lazy-stripes/goholint/logger"
 )
 
 // Register addresses
