@@ -1,5 +1,7 @@
 package lcd
 
+// TODO: Rename this into 'screen' package. Picking this up after a year or so and I have trouble finding my way.
+
 import (
 	"fmt"
 	"image/color"
