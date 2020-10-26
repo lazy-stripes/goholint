@@ -1,178 +1,98 @@
 package main
 
+// The comments below are used by Golang's C pseudo-package, which is used to
+// interface with external C code. As we're doing low-level data transfers
+// between Go pointers and C, we have to use this special syntax. This is way
+// out of scope, but if you're curious, see: https://golang.org/cmd/cgo/
+//
+// The point is that the C-like comments below will make the Uint8 SDL type
+// and our callback function usable as if they were part of a "C" package.
+
+// typedef unsigned char Uint8;
+// void squareWaveCallback(void *userdata, Uint8 *stream, int len);
+import "C"
+
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
+	"reflect"
 	"runtime/pprof"
 	"strings"
+	"unsafe"
 
+	"github.com/faiface/mainthread"
 	"github.com/veandco/go-sdl2/sdl"
 
-	"go.tigris.fr/gameboy/cpu"
-	"go.tigris.fr/gameboy/interrupts"
-	"go.tigris.fr/gameboy/joypad"
-	"go.tigris.fr/gameboy/lcd"
+	"go.tigris.fr/gameboy/apu"
+	"go.tigris.fr/gameboy/gameboy"
 	"go.tigris.fr/gameboy/logger"
-	"go.tigris.fr/gameboy/memory"
-	"go.tigris.fr/gameboy/ppu"
-	"go.tigris.fr/gameboy/serial"
-	"go.tigris.fr/gameboy/timer"
+	"go.tigris.fr/gameboy/options"
 )
 
 // TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
-func run(options *Options) int {
 
-	// Pre-instantiate CPU and interrupts so other components can access them too.
-	cpu := cpu.New(nil)
-	ints := interrupts.New(&cpu.IF, &cpu.IE)
+var quit chan bool // Used by the callback to tell the main function to quit.
 
-	var display lcd.Display
-	if options.GIFPath != "" {
-		display = lcd.NewGIF(options.GIFPath, options.ZoomFactor, options.NoSync)
-	} else {
-		display = lcd.NewSDL(options.ZoomFactor, options.NoSync)
-	}
-	ppu := ppu.New(display)
-	ppu.Interrupts = ints
-
-	serial := serial.New()
-	timer := timer.New()
-	timer.Interrupts = ints
-
-	var boot memory.Addressable
-	if options.FastBoot {
-		// XXX: What the BootROM does RAM-wise:
-		// - Zero out/write logo tiles to 0x8000->0x9fff
-		// - Write to audio registers
-		// - Write to PPU registers
-		// - Write to stack
-		boot = memory.NewRAM(memory.BootAddr, 1)
-		boot.Write(memory.BootAddr, 0x01)
-
-		// Values below are what the CPU contains after booting the DMG ROM.
-		cpu.A = 0x01
-		cpu.F = 0xb0
-		cpu.B = 0x00
-		cpu.C = 0x13
-		cpu.D = 0x00
-		cpu.E = 0xd8
-		cpu.H = 0x01
-		cpu.L = 0x4d
-		cpu.PC = 0x0100
-		cpu.SP = 0xfffe
-
-		// FIXME: properly pre-initialize PPU.
-		//ppu.LCDC = 0x91
-		//ppu.LY = 0x96
-		//ppu.BGP = 0xfc
-
-		for addr := 0x8000; addr <= 0x9fff; addr++ {
-			// TODO: set RAM/VRAM
-		}
-	} else {
-		boot = memory.NewBoot("bin/boot/dmg_rom.bin")
-	}
-
-	wram := memory.NewRAM(0xc000, 0x2000)
-	hram := memory.NewRAM(0xff80, 0x7e)
-	jpad := joypad.New(joypad.DefaultMapping) // TODO: interrupts
-	dma := &memory.DMA{}
-	mmu := memory.NewMMU([]memory.Addressable{boot, ppu, wram, ints, jpad, serial, timer, dma, hram})
-	dma.MMU = mmu
-	cpu.MMU = mmu
-
-	if options.ROMPath != "" {
-		mmu.Add(memory.NewCartridge(options.ROMPath))
-	}
-
-	// Add CPU-specific context to debug output.
-	logger.Context = cpu.Context
-
-	// Handle SIGINT, store pointers to CPU and PPU for debug info.
-	c := make(chan os.Signal, 1)
-	go handleInterrupt(c, cpu, ppu, display) // TODO: pass a *Gameboy param.
-	signal.Notify(c, os.Interrupt)
-
-	// Wait for keypress if requested, so obs has time to capture window.
-	// Less useful now that we have -gif flag.
-	if options.WaitKey {
-		fmt.Print("Press 'Enter' to start...")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
-	}
-
-	// Main loop TODO: Gameboy.Run()
-	tick := 0
-	quit := false
-	for !quit {
-		//t := time.Now()
-		// FIXME: Ideally, we should plug into Blank/VBlank display methods.
-		if ppu.Cycle%(456*153) == 0 {
-			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				switch event.GetType() {
-				case sdl.KEYDOWN:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					jpad.KeyDown(keyEvent.Keysym.Sym)
-				case sdl.KEYUP:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					jpad.KeyUp(keyEvent.Keysym.Sym)
-				case sdl.QUIT:
-					quit = true
-				}
-			}
-		}
-
-		cpu.Tick()
-		dma.Tick()
-		ppu.Tick()
-		timer.Tick()
-		//fmt.Printf("Tick=%10d, cpu.PC=%02x   \r", tick, cpu.PC)
-		tick++
-		//if tick == 229976-96 {
-		//			fmt.Println("STOP")
-		//}
-
-		if options.Duration > 0 && cpu.Cycle >= options.Duration {
-			break
-		}
-	}
-
-	display.Close()
-	return 0
+func init() {
+	quit = make(chan bool)
 }
 
-// User-defined type to parse a list of module names for which debug output must be enabled.
-type module []string
+// Not sure how I'm supposed to pass this to SDL. Go doesn't allow Go pointers
+// use in C code but we're calling a Go callback... I'm working on this.
+var gb *gameboy.GameBoy
 
-// String is the method to format the flag's value, part of the flag.Value interface.
-// The String method's output will be used in diagnostics.
-func (m *module) String() string {
-	return fmt.Sprint(*m)
+// Audio callback function that SDL will call at a regular interval that
+// should be roughly <sampling rate> / (<audio buffer size> / <channels>).
+// Here SDL expects you to copy audio data from your program into the requesting
+// audio buffer (buf), exactly as much as the requested length (len) which
+// we know is <channels> × <sample frames per buffer>.
+// Instead of copying WAV samples from an existing file, we generate WAV data
+// on the fly as a simple square wave.
+//
+// The comment line below is part of cgo and binds C and Go code. Do not
+// modify it, not even to add a leading space. Trust me, I tried.
+//
+//export squareWaveCallback
+func squareWaveCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
+	// We've reached the limits of the Go bindings. In order to access the
+	// audio buffer, we have to jump through rather ugly conversion hoops
+	// between C and Go. Note that the three lines of code below were in the
+	// SDL example program. I couldn't have come up with that myself.
+	n := int(len)
+	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
+	buffer := *(*[]C.Uint8)(unsafe.Pointer(&hdr))
+
+	// Tick the emulator as many times as needed to fill the audio buffer.
+	for i := 0; i < n; {
+		res := gb.Tick()
+
+		if res.Quit {
+			quit <- true
+		}
+
+		if res.Play {
+			buffer[i] = C.Uint8(res.Left)
+			buffer[i+1] = C.Uint8(res.Right) << 4
+			i += 2
+		}
+	}
 }
 
-// Set is the method to set the flag value, part of the flag.Value interface.
-// Set's argument is a string to be parsed to set the flag.
-// Flag can be specified multiple times.
-func (m *module) Set(value string) error {
-	*m = append(*m, value)
-	return nil
-}
-
-func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, ppu *ppu.PPU, lcd lcd.Display) {
+// Print debug data on CTRL+C.
+func handleSIGINT(c chan os.Signal, gb *gameboy.GameBoy) {
 	// Wait for signal, quit cleanly with potential extra debug info if needed.
 	<-c
 	fmt.Println("\nTerminated...")
 
-	lcd.Close()
+	gb.Display.Close()
 
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
-	fmt.Print(cpu)
-	fmt.Print(ppu)
-	cpu.DumpRAM()
+	fmt.Print(gb.CPU)
+	fmt.Print(gb.PPU)
+	gb.CPU.DumpRAM()
 
 	// Force stopping CPU profiling.
 	pprof.StopCPUProfile()
@@ -180,46 +100,25 @@ func handleInterrupt(c chan os.Signal, cpu *cpu.CPU, ppu *ppu.PPU, lcd lcd.Displ
 	os.Exit(-1)
 }
 
-// Options structure grouping command line flags values.
-type Options struct {
-	Duration   uint
-	FastBoot   bool
-	GIFPath    string
-	NoSync     bool
-	ROMPath    string
-	WaitKey    bool
-	ZoomFactor uint8
-}
+// Separate function to forcefully run in the main thread.
+func run() {
+	//runtime.LockOSThread()
 
-func main() {
-	runtime.LockOSThread()
+	args := options.Parse()
 
-	var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
-	var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
-	var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
-	var debugModules module
-	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module (-debug help for the full list)")
-	var debugLevel = flag.String("level", "warning", "Debug level (-level help for full list)")
-	var noSync = flag.Bool("nosync", false, "Do not sync to VBlank ever")
-	var gifPath = flag.String("gif", "", "Record gif file")
-	var romPath = flag.String("rom", "", "ROM file to load")
-	var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
-	var zoomFactor = flag.Int("zoom", 2, "Zoom factor (default is 2x)")
-	flag.Parse()
-
-	if *debugLevel == "help" {
+	if args.DebugLevel == "help" {
 		logger.HelpLevels()
 		os.Exit(0)
 	}
 
-	level, ok := logger.Levels[strings.ToLower(*debugLevel)]
+	level, ok := logger.Levels[strings.ToLower(args.DebugLevel)]
 	if ok {
 		logger.Level = level
 	} else {
-		log.Fatal("unknown log level ", level)
+		log.Fatal("unknown log level ", args.DebugLevel)
 	}
 
-	for _, m := range debugModules {
+	for _, m := range args.DebugModules {
 		// List available modules if requested.
 		if m == "help" {
 			logger.Help()
@@ -230,8 +129,8 @@ func main() {
 		logger.Enabled[m] = true
 	}
 
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+	if args.CPUProfile != "" {
+		f, err := os.Create(args.CPUProfile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -240,18 +139,57 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 
-		log.Println("CPU profiling written to: ", *cpuprofile)
-	}
-	sdl.Init(sdl.INIT_VIDEO)
-
-	opt := Options{FastBoot: *fastBoot,
-		ROMPath:    *romPath,
-		GIFPath:    *gifPath,
-		WaitKey:    *waitKey,
-		ZoomFactor: uint8(*zoomFactor),
-		Duration:   *duration,
-		NoSync:     *noSync,
+		log.Println("CPU profiling written to: ", args.CPUProfile)
 	}
 
-	run(&opt)
+	// Execute all SDL operations in the main thread.
+	mainthread.Call(func() {
+		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
+
+		// Instantiate emulator and use it with signal interrupts.
+		gb = gameboy.New(args)
+
+		// Wait for keypress if requested, so obs has time to capture window.
+		// Less useful now that we have -gif flag.
+		if args.WaitKey {
+			fmt.Print("Press 'Enter' to start...")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+		}
+
+		// Handle SIGINT, store pointers to CPU and PPU for debug info.
+		c := make(chan os.Signal, 1)
+		go handleSIGINT(c, gb)
+		signal.Notify(c, os.Interrupt)
+
+		// Add CPU-specific context to debug output.
+		logger.Context = gb.CPU.Context
+		//logger.Context = func() string { return fmt.Sprintf("%s\n%s\n> ", gb.CPU, gb.PPU) } // TEMPORARY
+
+		// An AudioSpec structure containing our parameters. After calling
+		// OpenAudio, it will also contain some values initialized by SDL itself,
+		// such as the audio buffer size.
+		spec := sdl.AudioSpec{
+			Freq:     apu.SamplingRate,
+			Format:   sdl.AUDIO_U8,
+			Channels: 2,
+			Samples:  apu.FramesPerBuffer,
+			Callback: sdl.AudioCallback(C.squareWaveCallback),
+		}
+
+		// We're asking SDL to honor our parameters exactly, or fail.
+		if err := sdl.OpenAudio(&spec, nil); err != nil {
+			panic(err)
+		}
+
+		// Start playing sound. Not sure why we un-pause it instead of starting it.
+		sdl.PauseAudio(false)
+	})
+
+	<-quit // Wait for the callback to signal us.
+
+	sdl.CloseAudio()
+}
+
+func main() {
+	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }

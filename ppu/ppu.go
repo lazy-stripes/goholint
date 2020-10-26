@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/faiface/mainthread"
+
 	"go.tigris.fr/gameboy/interrupts"
 	"go.tigris.fr/gameboy/lcd"
 	"go.tigris.fr/gameboy/logger"
@@ -313,12 +315,13 @@ func (p *PPU) Tick() {
 		// Simply wait the proper number of clock cycles.
 		if p.ticks >= 456 {
 			log.Sub("ticks").Desperatef("HBlank: %d ticks", p.ticks)
+
 			// Done, either move to new line, or VBlank.
 			p.ticks = 0
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				p.LCD.VBlank()
+				mainthread.Call(p.LCD.VBlank) // Keep GPU stuff in OS thread.
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 
