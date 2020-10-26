@@ -16,6 +16,11 @@ import (
 // Package-wide logger.
 var log = logger.New("ppu", "pixel processing unit operations")
 
+// Package initialization function setting up logger submodules.
+func init() {
+	log.Add("ticks", "ticks taken per PPU phase (Desperate only)")
+}
+
 // ClockFactor representing the number of ticks taken by each step (base is 4).
 // Used in Fetcher's Tick() method.
 var ClockFactor = 2
@@ -83,6 +88,8 @@ type PPU struct {
 	// Quick and dirty mapping of PixelPalette index to palette register
 	// for quick access when pushing pixels to LCD.
 	palettes [3]*uint8
+
+	frames uint // DEBUG for counting
 }
 
 // New PPU instance.
@@ -132,6 +139,7 @@ func (p *PPU) String() string {
 	fmt.Fprintf(&b, "OBP1: %#02x\n", p.OBP1)
 	fmt.Fprintf(&b, "WY:   %#02x\n", p.WY)
 	fmt.Fprintf(&b, "WX:   %#02x\n", p.WX)
+	fmt.Fprintf(&b, "\nFrames: %d (%#04x)\n", p.frames, p.frames)
 	return b.String()
 }
 
@@ -184,6 +192,7 @@ func (p *PPU) Tick() {
 			// Refresh window with "disabled screen" texture at about the same
 			// rate we'd display the current texture upon VBlank.
 			if p.ticks%(456*153) == 0 {
+				log.Sub("ticks").Desperatef("Disabled: %d ticks", 456*153)
 				p.LCD.Blank()
 			}
 		} else {
@@ -222,6 +231,8 @@ func (p *PPU) Tick() {
 			p.x = 0
 			p.toDrop = p.SCX % 8
 			p.state = states.PixelTransfer
+
+			log.Sub("ticks").Desperatef("OAM Search: %d ticks", p.ticks)
 		}
 
 	case states.PixelTransfer:
@@ -294,15 +305,19 @@ func (p *PPU) Tick() {
 			p.LCD.HBlank()
 			p.state = states.HBlank
 			p.RequestLCDInterrupt(interrupts.STATMode0)
+
+			log.Sub("ticks").Desperatef("Pixel Transfer: %d ticks", p.ticks)
 		}
 
 	case states.HBlank:
 		// Simply wait the proper number of clock cycles.
 		if p.ticks >= 456 {
+			log.Sub("ticks").Desperatef("HBlank: %d ticks", p.ticks)
 			// Done, either move to new line, or VBlank.
 			p.ticks = 0
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
+				p.frames++
 				p.LCD.VBlank()
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
@@ -323,6 +338,8 @@ func (p *PPU) Tick() {
 		}
 
 		if p.ticks >= 456 {
+			log.Sub("ticks").Desperatef("VBlank: %d ticks (LY=%d)", p.ticks, p.LY)
+
 			p.ticks = 0
 			if p.LY == 0 { // We wrapped back to 0 about 452 ticks ago. Start rendering from top of screen again.
 				p.OAM.Start()
