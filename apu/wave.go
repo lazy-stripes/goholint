@@ -2,6 +2,15 @@ package apu
 
 import "github.com/lazy-stripes/goholint/memory"
 
+// OutputShift maps the output level code in NR32 with the amount of right
+// shifts to apply to the generated sample.
+var OutputShift = [4]int{
+	4, // 0: Mute (no sound)
+	0, // 1: 100% Volume (Produce Wave Pattern RAM Data as it is)
+	1, // 2:  50% Volume (Produce Wave Pattern RAM data shifted once to the right)
+	2, // 3: 25% Volume (Produce Wave Pattern RAM data shifted twice to the right)
+}
+
 // WaveTable structure implementing sound sample generation for the third
 // signal generator (A.k.a Sound3).
 type WaveTable struct {
@@ -67,6 +76,9 @@ func (w *WaveTable) Tick() (sample uint8) {
 		sampleByte := w.sampleOffset / 2
 		sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
 		w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
+
+		// Adjust for volume.
+		w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
 	}
 
 	return w.sample
