@@ -141,7 +141,7 @@ func (a *APU) Tick() (left, right uint8, play bool) {
 	// together here (with various per-generator parameters to account for).
 
 	// TODO: mix signals here according to the relevant registers.
-	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()
+	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() //+ a.Noise.Tick()
 	right = left
 
 	// We're ticking as fast as the Game Boy CPU goes, but our sound sample rate
