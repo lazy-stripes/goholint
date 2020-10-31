@@ -49,6 +49,10 @@ func (w *WaveTable) Tick() (sample uint8) {
 		return
 	}
 
+	if w.NRx0&NR30SoundOn == 0 {
+		return
+	}
+
 	// With `x` the 11-bit value in NR33/NR34, frequency is 65536/(2048-x) Hz.
 	rawFreq := ((uint(w.NRx4) & 7) << 8) | uint(w.NRx3)
 	freq := 65536 / (2048 - rawFreq)

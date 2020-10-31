@@ -60,6 +60,9 @@ const (
 	// NRx2 - Bit 3 - Envelope Direction (0=Decrease, 1=Increase)
 	NRx2EnvelopeDirection uint8 = 1 << 3
 
+	// NR30 - Bit 7 - Sound Channel 3 Off  (0=Stop, 1=Playback)
+	NR30SoundOn uint8 = 1 << 7
+
 	// NRx4 - Bit 7 - Initial (1=Restart Sound)
 	NRx4RestartSound uint8 = 1 << 7
 
@@ -96,6 +99,7 @@ func New() *APU {
 		AddrNR22: &a.Square2.NRx2,
 		AddrNR23: &a.Square2.NRx3,
 		AddrNR24: &a.Square2.NRx4,
+		AddrNR30: &a.Wave.NRx0,
 		AddrNR31: &a.Wave.NRx1,
 		AddrNR32: &a.Wave.NRx2,
 		AddrNR33: &a.Wave.NRx3,
