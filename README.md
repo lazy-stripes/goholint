@@ -53,12 +53,13 @@ blank screen, if it doesn't crash first.
 I plan on making controls configurable, but in the mean time the following keys
 are hardcoded into the emulator:
 
-Button     | Key
----        | ---
-**A**      | S
-**B**      | D
-**Select** | Backspace
-**Start**  | Return
+Button          | Key
+---             | ---
+**A**           | S
+**B**           | D
+**Select**      | Backspace
+**Start**       | Return
+**Directions**  | Arrow Keys
 
 
 (It's sort of okay on QWERTY and AZERTY keyboards alike but *does* make Metroid

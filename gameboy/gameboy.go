@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/faiface/mainthread"
 	"github.com/lazy-stripes/goholint/apu"
@@ -69,7 +70,7 @@ func New(args *options.Options) *GameBoy {
 		// - Write to audio registers
 		// - Write to PPU registers
 		// - Write to stack
-		boot = memory.NewRAM(memory.BootAddr, 1)
+		boot = memory.NewEmptyRAM(memory.BootAddr, 1)
 		boot.Write(memory.BootAddr, 0x01)
 
 		// Values below are what the CPU contains after booting the DMG ROM.
@@ -96,16 +97,41 @@ func New(args *options.Options) *GameBoy {
 		boot = memory.NewBoot(args.BootROM)
 	}
 
-	wram := memory.NewRAM(0xc000, 0x2000)
-	hram := memory.NewRAM(0xff80, 0x7e)
+	wram := memory.NewEmptyRAM(0xc000, 0x2000)
+	hram := memory.NewEmptyRAM(0xff80, 0x7e)
 	g.JPad = joypad.New(joypad.DefaultMapping) // TODO: interrupts
 	g.DMA = &memory.DMA{}
-	mmu := memory.NewMMU([]memory.Addressable{boot, g.APU, g.APU.Wave.Pattern, g.PPU, wram, ints, g.JPad, g.Serial, g.Timer, g.DMA, hram})
+	mmu := memory.NewMMU([]memory.Addressable{
+		boot,
+		g.APU,
+		g.APU.Wave.Pattern,
+		g.PPU,
+		wram,
+		ints,
+		g.JPad,
+		g.Serial,
+		g.Timer,
+		g.DMA,
+		hram,
+	})
 	g.DMA.MMU = mmu
 	g.CPU.MMU = mmu
 
 	if args.ROMPath != "" {
-		mmu.Add(memory.NewCartridge(args.ROMPath))
+		// Build save path in case the cartridge uses one. Or use one
+		// specified by the user.
+		savePath := args.SavePath
+		if savePath == "" {
+			// The user could also just specify a path to a save folder.
+			prefix := args.SaveDir
+			if prefix == "" {
+				prefix = filepath.Dir(args.ROMPath)
+			}
+			suffix := filepath.Base(args.ROMPath)
+			savePath = prefix + "/" + suffix + ".sav"
+		}
+		// TODO: save-related error management.
+		mmu.Add(memory.NewCartridge(args.ROMPath, savePath))
 	}
 
 	return &g

@@ -16,6 +16,8 @@ type Options struct {
 	GIFPath      string // -gif <path>
 	NoSync       bool   // -nosync
 	ROMPath      string // -rom <path>
+	SaveDir      string // -savedir <path>
+	SavePath     string // -save <full path>
 	WaitKey      bool   // -waitkey
 	ZoomFactor   uint8  // -zoom <factor>
 }

@@ -21,6 +21,7 @@ func init() {
 	log.Add("boot", "boot ROM disable register")
 	log.Add("cartridge", "cartridge address space details")
 	log.Add("dma", "DMA register and transfers")
+	log.Add("mbc", "MBC chip details")
 	log.Add("mbc/read", "MBC ROM chip reads (Desperate level only)")
 	log.Add("mbc/write", "MBC ROM chip writes (Desperate level only)")
 	log.Add("mmu/read", "unmapped memory reads (Debug level only)")

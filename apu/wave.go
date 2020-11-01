@@ -34,7 +34,7 @@ type WaveTable struct {
 // the MMU.
 func NewWave() *WaveTable {
 	// Create RAM Addressable to store samples.
-	w := &WaveTable{Pattern: memory.NewRAM(0xff30, 16)}
+	w := &WaveTable{Pattern: memory.NewEmptyRAM(0xff30, 16)}
 	return w
 }
 

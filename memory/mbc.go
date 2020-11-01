@@ -27,10 +27,19 @@ type MBC1 struct {
 // Takes an instance of ROM because to know which kind of chip it uses, we need
 // to read it beforehand anyway.
 // TODO: load RAM state from external file too.
-func NewMBC1(rom *ROM, romBanks uint16, ramBanks uint8, battery bool) *MBC1 {
+func NewMBC1(rom *ROM, romBanks uint16, ramBanks uint8, battery bool, savePath string) *MBC1 {
+	// If the cartridge has a battery-backed RAM, restore it here.
+	ramSize := uint16(ramBanks) * 0x2000
+	var ram *RAM
+	if battery {
+		ram = NewRAM(0, ramSize, savePath)
+	} else {
+		ram = NewEmptyRAM(0, ramSize)
+	}
+
 	return &MBC1{
 		ROM:      rom,
-		RAM:      NewRAM(0, uint16(ramBanks)*0x2000),
+		RAM:      ram,
 		ROMBank:  1,
 		romBanks: romBanks,
 		ramBanks: ramBanks,
@@ -75,6 +84,13 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 	switch {
 	case addr >= 0x0000 && addr <= 0x1fff:
 		m.RAMEnabled = (value&0x0a == 0x0a)
+
+		// Write save file on enable. FIXME: it does that continuously. Buffer it.
+		if m.RAMEnabled {
+			if err := m.RAM.Save(); err != nil {
+				log.Sub("mbc").Warningf("save RAM failed (%s)", err)
+			}
+		}
 	case addr >= 0x2000 && addr <= 0x3fff:
 		if value&0x1f == 0 { // Bank 0 (or over 0x1f) is not selectable.
 			value = 1
@@ -96,6 +112,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 				addr)
 			return
 		}
+		// FIXME: this looks messy, shouldn't banking be handled in RAM itself?
 		m.RAM.Write(uint16(m.RAMBank)*0x2000+uint16(addr-0xa000), value)
 	}
 }
