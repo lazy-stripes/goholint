@@ -217,6 +217,31 @@ func (g *GameBoy) Run() {
 // Stop should be called before quitting the program and will close all needed
 // resources.
 func (g *GameBoy) Stop() {
+	fmt.Println("End of execution.")
+
 	// Make sure GIF file is written to disk.
 	g.Display.Close()
+
+	// If debugging at all, dump debug info.
+	if len(g.args.DebugModules) > 0 {
+		fmt.Println(g.CPU)
+		fmt.Println(g.PPU)
+
+		// Dump memory
+		//g.CPU.DumpRAM()
+	}
+}
+
+// Recover should be called at the end of each Tick. If the program panics, it
+// should then display some useful debug info before crashing.
+func (g *GameBoy) Recover() {
+	if r := recover(); r != nil {
+		fmt.Printf("Goholint seems to have crashed (%v). I'm sorry.\n\n", r)
+
+		fmt.Println(g.CPU)
+		fmt.Println(g.PPU)
+
+		// Dump memory
+		g.CPU.DumpRAM()
+	}
 }

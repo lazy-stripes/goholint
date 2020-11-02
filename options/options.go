@@ -44,7 +44,7 @@ var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 var debugModules module
-var debugLevel = flag.String("level", "warning", "Debug level (-level help for full list)")
+var debugLevel = flag.String("level", "info", "Debug level (-level help for full list)")
 var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
 var gifPath = flag.String("gif", "", "Record gif file")
 var noSync = flag.Bool("nosync", false, "Do not sync to VBlank ever")

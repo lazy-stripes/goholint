@@ -57,6 +57,8 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
 	buffer := *(*[]C.Uint8)(unsafe.Pointer(&hdr))
 
+	defer gb.Recover()
+
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
 		res := gb.Tick()
