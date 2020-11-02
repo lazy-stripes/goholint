@@ -26,11 +26,11 @@ func NewCartridge(romPath, savePath string) (cart Addressable) {
 	case chips.ROMOnly:
 		cart = rom
 	case chips.MBC1:
-		cart = NewMBC1(rom, romBanks, 0, false, "")
+		cart = NewMBC1(rom, uint8(romBanks), 0, false, "")
 	case chips.MBC1RAM:
-		cart = NewMBC1(rom, romBanks, ramBanks, false, "")
+		cart = NewMBC1(rom, uint8(romBanks), ramBanks, false, "")
 	case chips.MBC1RAMBattery:
-		cart = NewMBC1(rom, romBanks, ramBanks, true, savePath)
+		cart = NewMBC1(rom, uint8(romBanks), ramBanks, true, savePath)
 	default:
 		log.Warningf("Unknown cartridge type 0x%02x", chip)
 		cart = rom
