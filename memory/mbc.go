@@ -35,13 +35,14 @@ type MBC1 struct {
 // Takes an instance of ROM because to know which kind of chip it uses, we need
 // to read it beforehand anyway.
 func NewMBC1(rom *ROM, romBanks uint8, ramBanks uint8, battery bool, savePath string) *MBC1 {
-	// If the cartridge has a battery-backed RAM, restore it here.
 	ramSize := uint16(ramBanks) * 0x2000
-	var ram *RAM
+	ram := NewRAM(0, ramSize) // FIXME: base address and banks
+
+	// If the cartridge has a battery-backed RAM, restore it here.
 	if battery {
-		ram = NewRAM(0, ramSize, savePath)
-	} else {
-		ram = NewEmptyRAM(0, ramSize)
+		if err := ram.Load(savePath); err != nil {
+			log.Warning(err.Error())
+		}
 	}
 
 	return &MBC1{

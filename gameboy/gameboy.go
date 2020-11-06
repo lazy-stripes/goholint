@@ -70,7 +70,7 @@ func New(args *options.Options) *GameBoy {
 		// - Write to audio registers
 		// - Write to PPU registers
 		// - Write to stack
-		boot = memory.NewEmptyRAM(memory.BootAddr, 1)
+		boot = memory.NewRAM(memory.BootAddr, 1)
 		boot.Write(memory.BootAddr, 0x01)
 
 		// Values below are what the CPU contains after booting the DMG ROM.
@@ -97,8 +97,8 @@ func New(args *options.Options) *GameBoy {
 		boot = memory.NewBoot(args.BootROM)
 	}
 
-	wram := memory.NewEmptyRAM(0xc000, 0x2000)
-	hram := memory.NewEmptyRAM(0xff80, 0x7e)
+	wram := memory.NewRAM(0xc000, 0x2000)
+	hram := memory.NewRAM(0xff80, 0x7e)
 	g.JPad = joypad.New(joypad.DefaultMapping) // TODO: interrupts
 	g.DMA = &memory.DMA{}
 	mmu := memory.NewMMU([]memory.Addressable{
