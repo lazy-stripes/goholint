@@ -47,22 +47,29 @@ blank screen, if it doesn't crash first.
 (As of 2020, Tetris and Dr. Mario are kind of playable!)
 
 
-## Keys
+## Controls
 
-I plan on making controls configurable, but in the mean time the following keys
-are hardcoded into the emulator:
+The following controls are set by default:
 
-Button          | Key
----             | ---
-**A**           | S
-**B**           | D
-**Select**      | Backspace
-**Start**       | Return
-**Directions**  | Arrow Keys
-
+Action            | Key
+---               | ---
+**A Button**      | S
+**B Button**      | D
+**Select Button** | Backspace
+**Start Button**  | Return
+**Joypad Up**     | Arrow Up
+**Joypad Down**   | Arrow Down
+**Joypad Left**   | Arrow Left
+**Joypad Right**  | Arrow Right
+**Screenshot**    | F12
 
 (It's sort of okay on QWERTY and AZERTY keyboards alike but *does* make Metroid
-II hard to play.)
+II awkward to play.)
+
+You can customize controls using a configuration file, either via the `-config`
+flag or by creating a `.goholint.ini` file in your home folder.
+
+See `options/config.ini` for details.
 
 
 ## Acknowledgements
