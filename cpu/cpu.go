@@ -60,7 +60,7 @@ func New(code memory.Addressable) *CPU {
 func (c *CPU) Tick() {
 	c.Cycle++
 	c.ticks++
-	if c.ticks < 4 { // FIXME: c.ClockFactor
+	if c.ticks < 4 {
 		return
 	}
 
@@ -88,7 +88,7 @@ func (c *CPU) Tick() {
 			c.debug = true
 		}
 		if c.debug && c.PC != c.oldPC {
-			fmt.Printf("PC=%04X (%02X)\n", c.PC, c.MMU.Read(c.PC))
+			//fmt.Printf("PC=%04X (%02X)\n", c.PC, c.MMU.Read(c.PC))
 		}
 		opcode := c.NextByte()
 

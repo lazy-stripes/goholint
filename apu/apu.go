@@ -42,7 +42,6 @@ const (
 
 // Audio settings for SDL.
 
-// Constant values you can tweak to see their effect on the produced sound.
 const (
 	SamplingRate    = 22050 // How many sample frames to send per second.
 	FramesPerBuffer = 1024  // Number of sample frames fitting the audio buffer.

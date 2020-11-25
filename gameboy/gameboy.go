@@ -98,6 +98,8 @@ func New(args *options.Options) *GameBoy {
 
 	var boot memory.Addressable
 	if args.FastBoot {
+		// TODO: just implement save states, at this point.
+
 		// XXX: What the BootROM does RAM-wise:
 		// - Zero out/write logo tiles to 0x8000->0x9fff
 		// - Write to audio registers
@@ -209,57 +211,9 @@ func (g *GameBoy) Tick() (res TickResult) {
 	return
 }
 
-// Run starts the emulator's main loop. This is used right now but we'll move to
-// Tick() soon.
-func (g *GameBoy) Run() {
-	// Wait for keypress if requested, so obs has time to capture window.
-	// Less useful now that we have -gif flag.
-	if g.args.WaitKey {
-		fmt.Print("Press 'Enter' to start...")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
-	}
-
-	// Main loop.
-	tick := 0
-	quit := false
-	for !quit {
-		// FIXME: Ideally, we should plug into Blank/VBlank display methods.
-		// Actually try polling for events at a little more than 60Hz.
-		if g.PPU.Cycle%((456*153)/2) == 0 {
-			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				switch event.GetType() {
-				case sdl.KEYDOWN:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					g.JPad.KeyDown(keyEvent.Keysym.Sym)
-				case sdl.KEYUP:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					g.JPad.KeyUp(keyEvent.Keysym.Sym)
-				case sdl.QUIT:
-					quit = true
-				}
-			}
-		}
-
-		g.CPU.Tick()
-		g.DMA.Tick()
-		g.PPU.Tick()
-		g.Timer.Tick()
-
-		tick++
-
-		if g.args.Duration > 0 && g.CPU.Cycle >= g.args.Duration {
-			break
-		}
-	}
-
-	g.Display.Close()
-}
-
 // Stop should be called before quitting the program and will close all needed
 // resources.
 func (g *GameBoy) Stop() {
-	fmt.Println("End of execution.")
-
 	// Make sure GIF file is written to disk.
 	g.Display.Close()
 

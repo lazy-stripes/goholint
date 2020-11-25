@@ -103,12 +103,10 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	keySection := cfg.Section("keymap")
 	o.Keymap = DefaultKeymap
 	for key := range o.Keymap {
-		// Key() will return empty string if it doesn't exist, it's fine.
+		// Key() will return the empty string if it doesn't exist, it's fine.
 		keyName := keySection.Key(key).String()
 		keySym := sdl.GetKeyFromName(keyName)
-		fmt.Printf("%s=%s (%v)\n", key, keyName, keySym)
 		if keySym != sdl.K_UNKNOWN {
-			fmt.Printf("Setting %s to %s\n", key, keyName)
 			o.Keymap[key] = keySym
 		}
 	}

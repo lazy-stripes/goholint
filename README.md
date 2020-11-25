@@ -1,6 +1,6 @@
-# Goholint
+# ![](assets/icon.png) Goholint
 
-![](header.gif)
+![](assets/header.gif)
 
 An incomplete, buggy and suboptimal GameBoy emulator written in Go purely for
 fun. It displays pixels, makes noises and can export GIFs. Hopefully it can
@@ -16,8 +16,7 @@ It might contain blatant errors, awkward workarounds and the occasional
 profanity in comments or commit messages. Golang at least guarantees that
 the formatting is somewhat consistent.
 
-Those are the main reasons why this this code has been self-hosted for so long
-until now.
+Those are the main reasons why this code used to be self-hosted for so long.
 
 
 ## Getting Goholint
