@@ -14,6 +14,7 @@ type Options struct {
 	Duration     uint   // -cycles <amount>
 	FastBoot     bool   // -fastboot
 	GIFPath      string // -gif <path>
+	Keymap       Keymap // From config.
 	NoSync       bool   // -nosync
 	ROMPath      string // -rom <path>
 	SaveDir      string // -savedir <path>
@@ -41,6 +42,7 @@ func (m *module) Set(value string) error {
 
 // Supported command-line options for the emulator.
 var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
+var configPath = flag.String("config", "~/.goholint.ini", "Path to custom config file")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 var debugModules module
@@ -60,9 +62,14 @@ func init() {
 // Parse commend-line arguments and return their value in a struct the caller
 // can easily pass around.
 func Parse() *Options {
+	// I like having config files that you can override with command-line
+	// parameters.
 	flag.Parse()
 
-	opt := Options{
+	// Parse will populate all our variables with either the given or default
+	// value, and then we load parameters from the config but avoid overwriting
+	// any variable that's been explicitly set by a flag.
+	options := Options{
 		BootROM:      *bootROM,
 		CPUProfile:   *cpuprofile,
 		Duration:     *duration,
@@ -76,5 +83,14 @@ func Parse() *Options {
 		ZoomFactor:   *zoomFactor,
 	}
 
-	return &opt
+	flagsSet := make(map[string]bool)
+	flag.Visit(func(f *flag.Flag) {
+		flagsSet[f.Name] = true
+	})
+
+	// Load everything else from config, and don't touch values that were set on
+	// the command-line.
+	options.Update(*configPath, flagsSet)
+
+	return &options
 }
