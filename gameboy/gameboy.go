@@ -1,9 +1,7 @@
 package gameboy
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/faiface/mainthread"
@@ -12,6 +10,7 @@ import (
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/joypad"
 	"github.com/lazy-stripes/goholint/lcd"
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu"
@@ -19,6 +18,12 @@ import (
 	"github.com/lazy-stripes/goholint/timer"
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+// Package-wide logger.
+var log = logger.New("gameboy", "interface-related logs")
+
+// DateFormat layout for generated file names.
+const DateFormat = "2006-01-02-15-04-05"
 
 // TickResult type to group return values from Tick.
 type TickResult struct {
@@ -38,11 +43,39 @@ type GameBoy struct {
 	Serial  *serial.Serial
 	Timer   *timer.Timer
 	JPad    *joypad.Joypad
+
+	Controls map[sdl.Keycode]Action
+}
+
+// SetControls validates and sets the given control map for the emulator.
+func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
+	// Intermediate mapping between labels and actual actions. This feels
+	// unnecessarily complicated, but should make sense when I start translating
+	// these from a config file. I hope.
+	actions := map[string]Action{
+		"up":         g.JoypadUp,
+		"down":       g.JoypadDown,
+		"left":       g.JoypadLeft,
+		"right":      g.JoypadRight,
+		"a":          g.JoypadA,
+		"b":          g.JoypadB,
+		"select":     g.JoypadSelect,
+		"start":      g.JoypadStart,
+		"screenshot": g.Screenshot,
+	}
+
+	g.Controls = make(map[sdl.Keycode]Action)
+	for label, keyCode := range keymap {
+		g.Controls[keyCode] = actions[label]
+	}
+	return nil
 }
 
 // New just instantiates most of the emulator. No biggie.
 func New(args *options.Options) *GameBoy {
 	g := GameBoy{args: args}
+
+	g.SetControls(args.Keymap)
 
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
@@ -99,7 +132,7 @@ func New(args *options.Options) *GameBoy {
 
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff80, 0x7e)
-	g.JPad = joypad.New(joypad.DefaultMapping) // TODO: interrupts
+	g.JPad = joypad.New() // TODO: interrupts
 	g.DMA = &memory.DMA{}
 	mmu := memory.NewMMU([]memory.Addressable{
 		boot,
@@ -146,13 +179,21 @@ func (g *GameBoy) Tick() (res TickResult) {
 	if g.PPU.Cycle%(456*153) == 0 {
 		mainthread.Call(func() {
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				switch event.GetType() {
-				case sdl.KEYDOWN:
+				eventType := event.GetType()
+				switch eventType {
+
+				// Button presses and UI keys
+				case sdl.KEYDOWN, sdl.KEYUP:
 					keyEvent := event.(*sdl.KeyboardEvent)
-					g.JPad.KeyDown(keyEvent.Keysym.Sym)
-				case sdl.KEYUP:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					g.JPad.KeyUp(keyEvent.Keysym.Sym)
+					keyCode := keyEvent.Keysym.Sym
+
+					if action := g.Controls[keyCode]; action != nil {
+						action(eventType)
+					} else {
+						log.Infof("unknown key code %v", keyCode)
+					}
+
+				// Window-closing event
 				case sdl.QUIT:
 					res.Quit = true
 				}

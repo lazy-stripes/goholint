@@ -37,7 +37,7 @@ type GIF struct {
 // NewGIF returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x). This will also
 // buffer frames to put in a GIF.
-func NewGIF(filename string, zoomFactor uint8, noSync bool) *GIF {
+func NewGIF(filename string, zoomFactor uint, noSync bool) *GIF {
 	// TODO: check file access, (pre-create it?)
 
 	// Pre-instanciate disabled screen frame.

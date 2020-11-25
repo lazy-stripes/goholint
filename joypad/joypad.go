@@ -1,7 +1,6 @@
 package joypad
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
 	"github.com/lazy-stripes/goholint/logger"
 )
 
@@ -31,20 +30,56 @@ const (
 	P15             // Bit 5 - Select Button Keys      (0=Select)
 )
 
+// Input storing needed bits for a button or a direction.
+type Input struct {
+	Selector uint8 // P14 or P15
+	Bit      uint8 // Bit position in JOYP register
+	State    bool  // Button state (proper logic here: true is on, false is off)
+}
+
 // Joypad register and event manager for game inputs.
 type Joypad struct {
-	JOYP   uint8
-	Keymap Keymap
+	JOYP uint8
+
+	Up     Input
+	Down   Input
+	Left   Input
+	Right  Input
+	A      Input
+	B      Input
+	Select Input
+	Start  Input
+
+	inputs []*Input // To iterate on all inputs at once
 }
 
 // New instantiates a Joypad addressable mapping to FF00 that will wait for
 // events from the main loop.
-func New(keymap Keymap) *Joypad {
-	if err := keymap.Validate(); err != nil {
-		log.Warningf("Invalid keymap %v. Using default instead.", keymap)
-		keymap = DefaultMapping
+func New() *Joypad {
+	j := Joypad{}
+
+	j.Right = Input{P14, P10, false}
+	j.Left = Input{P14, P11, false}
+	j.Up = Input{P14, P12, false}
+	j.Down = Input{P14, P13, false}
+
+	j.A = Input{P15, P10, false}
+	j.B = Input{P15, P11, false}
+	j.Select = Input{P15, P12, false}
+	j.Start = Input{P15, P13, false}
+
+	j.inputs = []*Input{
+		&j.Up,
+		&j.Down,
+		&j.Left,
+		&j.Right,
+		&j.A,
+		&j.B,
+		&j.Select,
+		&j.Start,
 	}
-	return &Joypad{Keymap: keymap}
+
+	return &j
 }
 
 // Contains returns true if the requested address is the JOYP register.
@@ -56,7 +91,7 @@ func (j *Joypad) Contains(addr uint16) bool {
 func (j *Joypad) Read(addr uint16) (value uint8) {
 	selected := j.JOYP & 0x30
 	// Set bits for inactive/unselected inputs, then NOT it all.
-	for _, input := range j.Keymap {
+	for _, input := range j.inputs {
 		if selected&input.Selector == 0 && input.State {
 			value |= input.Bit
 		}
@@ -71,20 +106,12 @@ func (j *Joypad) Write(addr uint16, value uint8) {
 	j.JOYP = value & 0x30
 }
 
-// Helper method setting or resetting an input's state.
-func (j *Joypad) setInput(code sdl.Keycode, state bool) {
-	if input := j.Keymap[code]; input != nil {
-		log.Sub("input").Debugf("%v=%t", input, state)
-		input.State = state
-	}
-}
-
 // KeyDown updates button states (if needed) when a key was pressed.
-func (j *Joypad) KeyDown(code sdl.Keycode) {
-	j.setInput(code, true)
+func (j *Joypad) KeyDown(input *Input) {
+	input.State = true
 }
 
 // KeyUp updates button states (if needed) when a key was released.
-func (j *Joypad) KeyUp(code sdl.Keycode) {
-	j.setInput(code, false)
+func (j *Joypad) KeyUp(input *Input) {
+	input.State = false
 }

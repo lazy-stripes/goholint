@@ -32,6 +32,8 @@ type Display interface {
 	HBlank()
 	VBlank()
 	Blank()
+
+	Screenshot(filename string)
 }
 
 // Screen dimensions.

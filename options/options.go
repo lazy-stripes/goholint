@@ -19,7 +19,7 @@ type Options struct {
 	SaveDir      string // -savedir <path>
 	SavePath     string // -save <full path>
 	WaitKey      bool   // -waitkey
-	ZoomFactor   uint8  // -zoom <factor>
+	ZoomFactor   uint   // -zoom <factor>
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -50,7 +50,7 @@ var gifPath = flag.String("gif", "", "Record gif file")
 var noSync = flag.Bool("nosync", false, "Do not sync to VBlank ever")
 var romPath = flag.String("rom", "", "ROM file to load")
 var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
-var zoomFactor = flag.Int("zoom", 2, "Zoom factor (default is 2x)")
+var zoomFactor = flag.Uint("zoom", 2, "Zoom factor (default is 2x)")
 
 // Initialize dynamic options.
 func init() {
@@ -73,7 +73,7 @@ func Parse() *Options {
 		NoSync:       *noSync,
 		ROMPath:      *romPath,
 		WaitKey:      *waitKey,
-		ZoomFactor:   uint8(*zoomFactor),
+		ZoomFactor:   *zoomFactor,
 	}
 
 	return &opt
