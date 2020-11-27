@@ -88,6 +88,9 @@ func Parse() *Options {
 		flagsSet[f.Name] = true
 	})
 
+	// Keep default keymap in case there is no config file.
+	options.Keymap = DefaultKeymap
+
 	// Load everything else from config, and don't touch values that were set on
 	// the command-line.
 	options.Update(*configPath, flagsSet)

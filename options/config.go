@@ -101,7 +101,6 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	// Set keymap here. Build on top of default. TODO: validate.
 	keySection := cfg.Section("keymap")
-	o.Keymap = DefaultKeymap
 	for key := range o.Keymap {
 		// Key() will return the empty string if it doesn't exist, it's fine.
 		keyName := keySection.Key(key).String()
