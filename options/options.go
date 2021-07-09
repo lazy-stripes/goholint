@@ -91,6 +91,11 @@ func Parse() *Options {
 	// Keep default keymap in case there is no config file.
 	options.Keymap = DefaultKeymap
 
+	// Create config folder if needed and if no -config flag was used.
+	if *configPath == "" {
+		createDefaultConfig()
+	}
+
 	// Load everything else from config, and don't touch values that were set on
 	// the command-line.
 	options.Update(*configPath, flagsSet)

@@ -2,6 +2,7 @@ package options
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"path/filepath"
 
@@ -12,6 +13,42 @@ import (
 
 // Keymap associating an action name (joypad input, UI command...) to an input.
 type Keymap map[string]sdl.Keycode
+
+const (
+	// ConfigFolder is the path to our dedicated folder in the user's home.
+	ConfigFolder = "~/.goholint/"
+
+	// DefaultConfig contains a reasonable default config.ini that's used
+	// automatically if no config exists at run time.
+	DefaultConfig = `# Most of the flags (except, obviously -config) can be overridden here with
+# the exact same name. See -help for details.
+
+#boot = path/to/dmg_rom.bin
+#cpuprofile = path/to/cpuprofile.pprof
+#level = debug
+#fastboot = 1
+#nosync = 1
+#waitkey = 1
+#zoom = 1
+
+# Define your keymap below with <action>=<key>. Key codes are taken from the
+# SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
+# prefix, and all supported actions are listed hereafter.
+[keymap]
+up     = UP        # Joypad Up
+down   = DOWN      # Joypad Down
+left   = LEFT      # Joypad Left
+right  = RIGHT     # Joypad Right
+a      = s         # A Button
+b      = d         # B Button
+select = BACKSPACE # Select Button
+start  = RETURN    # Start Button
+
+screenshot = F12   # Save a screenshot in the current directory
+
+# TODO: recordgif, quit, reset, snapshot...
+`
+)
 
 // DefaultKeymap is a reasonable default mapping for QWERTY/AZERTY layouts.
 var DefaultKeymap = Keymap{
@@ -54,11 +91,37 @@ func applyBool(cfg *ini.File, flags map[string]bool, name string, dst *bool) {
 	}
 }
 
-// Samme as apply for unsigned integers.
+// Same as apply for unsigned integers.
 func applyUint(cfg *ini.File, flags map[string]bool, name string, dst *uint) {
 	if key := configKey(cfg, flags, name); key != nil {
 		if i, err := key.Uint(); err == nil {
 			*dst = i
+		}
+	}
+}
+
+// Attempt to create home config folder and copy our default config there.
+func createDefaultConfig() {
+	// Only create default config if the config folder isn't there yet.
+	if _, err := os.Stat(ConfigFolder); os.IsNotExist(err) {
+		fmt.Println("No config folder. Creating default config now.")
+
+		if err := os.Mkdir(ConfigFolder, 0755); err != nil {
+			fmt.Printf("Can't create config folder %s: %v\n", ConfigFolder, err)
+			return
+		}
+
+		// Create default config.
+		path := filepath.Join(ConfigFolder, "config.ini")
+		f, err := os.Create(path)
+		if err != nil {
+			fmt.Printf("Creating %s failed: %v", path, err)
+			return
+		}
+		defer f.Close()
+
+		if _, err := f.WriteString(DefaultConfig); err != nil {
+			fmt.Printf("Writing default config failed: %v", err)
 		}
 	}
 }
