@@ -96,8 +96,6 @@ func handleSIGINT(c chan os.Signal, gb *gameboy.GameBoy) {
 
 // Separate function to forcefully run in the main thread.
 func run() {
-	//runtime.LockOSThread()
-
 	args := options.Parse()
 
 	if args.DebugLevel == "help" {
@@ -187,5 +185,6 @@ func run() {
 }
 
 func main() {
-	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
+	// Enable mainthread package and run in a separate goroutine.
+	mainthread.Run(run)
 }
