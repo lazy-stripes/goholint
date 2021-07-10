@@ -30,6 +30,7 @@ type Display interface {
 	VBlank()
 	Blank()
 
+	Message(text string, duration uint)
 	Screenshot(filename string)
 }
 

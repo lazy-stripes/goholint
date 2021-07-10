@@ -74,6 +74,8 @@ See `options/config.ini` for details.
 
 ## Acknowledgements
 
+UI font is [Press Start 2P Font by codeman38](https://www.fontspace.com/press-start-2p-font-f11591)
+
 The present project only exists thanks to Tomek Rękawek and his fascinating
 blog article about [how relatively easy it was to start implementing a GB
 emulator](https://blog.rekawek.eu/2017/02/09/coffee-gb/). His own emulator,

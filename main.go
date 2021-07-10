@@ -25,6 +25,7 @@ import (
 
 	"github.com/faiface/mainthread"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 
 	"github.com/lazy-stripes/goholint/apu"
 	"github.com/lazy-stripes/goholint/gameboy"
@@ -137,6 +138,7 @@ func run() {
 	// Execute all SDL operations in the main thread.
 	mainthread.Call(func() {
 		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
+		ttf.Init()
 
 		// Instantiate emulator and use it with signal interrupts.
 		gb = gameboy.New(args)
