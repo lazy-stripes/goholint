@@ -38,7 +38,7 @@ var testPalette = [4]color.NRGBA{
 
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
-func NewSDL(zoomFactor uint, noSync bool) *SDL {
+func NewSDL(zoomFactor uint, vSync bool) *SDL {
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
@@ -48,7 +48,7 @@ func NewSDL(zoomFactor uint, noSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	// FIXME: having a real icon would be nice. Also I should embed assets.
+	// FIXME: embed assets.
 	icon, err := img.Load("assets/icon.png")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load icon: %s\n", err)
@@ -63,7 +63,7 @@ func NewSDL(zoomFactor uint, noSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	if !noSync {
+	if vSync {
 		if err = sdl.GLSetSwapInterval(-1); err != nil {
 			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 			// Try 'just' syncing to vblank then.

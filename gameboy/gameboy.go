@@ -85,9 +85,9 @@ func New(args *options.Options) *GameBoy {
 
 	if args.GIFPath != "" {
 		fmt.Printf("Saving GIF to %s\n", args.GIFPath)
-		g.Display = screen.NewGIF(args.GIFPath, args.ZoomFactor, args.NoSync)
+		g.Display = screen.NewGIF(args.GIFPath, args.ZoomFactor, args.VSync)
 	} else {
-		g.Display = screen.NewSDL(args.ZoomFactor, args.NoSync)
+		g.Display = screen.NewSDL(args.ZoomFactor, args.VSync)
 	}
 	g.PPU = ppu.New(g.Display)
 	g.PPU.Interrupts = ints
