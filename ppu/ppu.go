@@ -9,10 +9,10 @@ import (
 	"github.com/faiface/mainthread"
 
 	"github.com/lazy-stripes/goholint/interrupts"
-	"github.com/lazy-stripes/goholint/lcd"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/ppu/states"
+	"github.com/lazy-stripes/goholint/screen"
 )
 
 // Package-wide logger.
@@ -70,7 +70,7 @@ type PPU struct {
 	Fetcher
 	Interrupts *interrupts.Interrupts
 	Cycle      int
-	LCD        lcd.Display
+	LCD        screen.Display
 	LCDC       uint8
 	STAT       uint8
 	SCY, SCX   uint8
@@ -95,7 +95,7 @@ type PPU struct {
 }
 
 // New PPU instance.
-func New(display lcd.Display) *PPU {
+func New(display screen.Display) *PPU {
 	p := PPU{MMU: memory.NewEmptyMMU(), LCD: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,

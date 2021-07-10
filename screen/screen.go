@@ -1,6 +1,4 @@
-package lcd
-
-// TODO: Rename this into 'screen' package. Picking this up after a year or so and I have trouble finding my way.
+package screen
 
 import (
 	"fmt"
@@ -10,7 +8,7 @@ import (
 )
 
 // Package-wide logger.
-var log = logger.New("lcd", "actual pixel display operations")
+var log = logger.New("screen", "actual pixel display operations")
 
 func init() {
 	log.Add("gif", "GIF generator operations")

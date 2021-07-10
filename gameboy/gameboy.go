@@ -9,11 +9,11 @@ import (
 	"github.com/lazy-stripes/goholint/cpu"
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/joypad"
-	"github.com/lazy-stripes/goholint/lcd"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu"
+	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/serial"
 	"github.com/lazy-stripes/goholint/timer"
 	"github.com/veandco/go-sdl2/sdl"
@@ -38,7 +38,7 @@ type GameBoy struct {
 	APU     *apu.APU
 	CPU     *cpu.CPU
 	PPU     *ppu.PPU
-	Display lcd.Display // Interface, not pointer.
+	Display screen.Display // Interface, not pointer.
 	DMA     *memory.DMA
 	Serial  *serial.Serial
 	Timer   *timer.Timer
@@ -85,9 +85,9 @@ func New(args *options.Options) *GameBoy {
 
 	if args.GIFPath != "" {
 		fmt.Printf("Saving GIF to %s\n", args.GIFPath)
-		g.Display = lcd.NewGIF(args.GIFPath, args.ZoomFactor, args.NoSync)
+		g.Display = screen.NewGIF(args.GIFPath, args.ZoomFactor, args.NoSync)
 	} else {
-		g.Display = lcd.NewSDL(args.ZoomFactor, args.NoSync)
+		g.Display = screen.NewSDL(args.ZoomFactor, args.NoSync)
 	}
 	g.PPU = ppu.New(g.Display)
 	g.PPU.Interrupts = ints

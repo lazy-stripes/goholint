@@ -1,4 +1,4 @@
-package lcd
+package screen
 
 import (
 	"bytes"
@@ -42,11 +42,11 @@ func NewGIF(filename string, zoomFactor uint, noSync bool) *GIF {
 
 	// Pre-instanciate disabled screen frame.
 	disabled := image.NewPaletted(FrameBounds, DefaultPalette)
-	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.ZP, draw.Src)
+	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.Point{}, draw.Src)
 	middle := disabled.Bounds()
 	middle.Min.Y /= 2
 	middle.Max.Y = (middle.Max.Y / 2) + 1
-	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.ZP, draw.Src)
+	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.Point{}, draw.Src)
 
 	config := image.Config{
 		ColorModel: disabled.ColorModel(),

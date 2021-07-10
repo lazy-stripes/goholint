@@ -1,4 +1,4 @@
-package lcd
+package screen
 
 import (
 	"fmt"
@@ -188,8 +188,13 @@ func (s *SDL) VBlank() {
 		}
 		s.offset = 0
 	} else {
-		s.Clear()
+		s.Clear() // Phase out Clear()
 	}
+
+	// TODO: UI overlay here?
+	//if s.ui.Enabled {
+	//	s.renderer.Copy(s.ui.Texture, nil, nil)
+	//}
 
 	if s.screenshotPath != "" {
 		// Reset screenshotPath for next call.
