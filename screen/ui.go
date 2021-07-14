@@ -27,6 +27,8 @@ type UI struct {
 
 	fg color.RGBA // TODO: make it configurable
 	bg color.RGBA // TODO: make it configurable
+
+	msgTimer *time.Timer
 }
 
 // Return a UI instance given a renderer to create the overlay texture.
@@ -78,6 +80,12 @@ func (u *UI) Disable() {
 // Message creates a new UI texture with the given message, enables UI and
 // starts a timer that will hide the UI when it's done.
 func (u *UI) Message(text string, duration uint) {
+	// Stop reset timer, a new one will be started.
+	// TODO: stack messages
+	if u.msgTimer != nil {
+		u.msgTimer.Stop()
+	}
+
 	// Reset texture. FIXME: can we do without the background texture altogether?
 	u.renderer.SetRenderTarget(u.texture)
 	u.renderer.SetDrawColor(0, 0, 0, 0)
@@ -103,6 +111,5 @@ func (u *UI) Message(text string, duration uint) {
 	// TODO: detect duplicate message, add (×<num>) suffix
 	u.Enabled = true
 
-	// TODO: store timer
-	time.AfterFunc(time.Second*time.Duration(duration), u.Disable)
+	u.msgTimer = time.AfterFunc(time.Second*time.Duration(duration), u.Disable)
 }
