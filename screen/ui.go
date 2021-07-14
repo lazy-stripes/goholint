@@ -2,7 +2,6 @@ package screen
 
 import (
 	"fmt"
-	"image/color"
 	"os"
 	"time"
 
@@ -25,8 +24,8 @@ type UI struct {
 	font     *ttf.Font
 	fontZoom uint
 
-	fg color.RGBA // TODO: make it configurable
-	bg color.RGBA // TODO: make it configurable
+	fg sdl.Color // TODO: make it configurable
+	bg sdl.Color // TODO: make it configurable
 
 	msgTimer *time.Timer
 }
@@ -61,8 +60,8 @@ func NewUI(renderer *sdl.Renderer, zoom uint) *UI {
 		renderer: renderer,
 		font:     font,
 		fontZoom: fontZoom,
-		fg:       ColorBlack,
-		bg:       ColorWhite,
+		fg:       sdl.Color{0, 0, 0, 0xff},
+		bg:       sdl.Color{0xff, 0xff, 0xff, 0xff},
 	}
 	return &ui
 }
