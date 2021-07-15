@@ -1,4 +1,4 @@
-package lcd
+package screen
 
 import (
 	"bytes"
@@ -37,16 +37,16 @@ type GIF struct {
 // NewGIF returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x). This will also
 // buffer frames to put in a GIF.
-func NewGIF(filename string, zoomFactor uint, noSync bool) *GIF {
+func NewGIF(filename string, zoomFactor uint, vSync bool) *GIF {
 	// TODO: check file access, (pre-create it?)
 
 	// Pre-instanciate disabled screen frame.
 	disabled := image.NewPaletted(FrameBounds, DefaultPalette)
-	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.ZP, draw.Src)
+	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.Point{}, draw.Src)
 	middle := disabled.Bounds()
 	middle.Min.Y /= 2
 	middle.Max.Y = (middle.Max.Y / 2) + 1
-	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.ZP, draw.Src)
+	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.Point{}, draw.Src)
 
 	config := image.Config{
 		ColorModel: disabled.ColorModel(),
@@ -55,7 +55,7 @@ func NewGIF(filename string, zoomFactor uint, noSync bool) *GIF {
 	}
 
 	return &GIF{
-		SDL:       *NewSDL(zoomFactor, noSync),
+		SDL:       *NewSDL(zoomFactor, vSync),
 		disabled:  disabled,
 		GIF:       gif.GIF{Config: config},
 		frame:     image.NewPaletted(FrameBounds, DefaultPalette),

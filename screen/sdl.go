@@ -1,4 +1,4 @@
-package lcd
+package screen
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
+	*UI
 	Palette    color.Palette
 	enabled    bool
 	window     *sdl.Window
@@ -38,7 +39,7 @@ var testPalette = [4]color.NRGBA{
 
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
-func NewSDL(zoomFactor uint, noSync bool) *SDL {
+func NewSDL(zoomFactor uint, vSync bool) *SDL {
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
@@ -48,7 +49,7 @@ func NewSDL(zoomFactor uint, noSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	// FIXME: having a real icon would be nice. Also I should embed assets.
+	// FIXME: embed assets.
 	icon, err := img.Load("assets/icon.png")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load icon: %s\n", err)
@@ -63,7 +64,7 @@ func NewSDL(zoomFactor uint, noSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	if !noSync {
+	if vSync {
 		if err = sdl.GLSetSwapInterval(-1); err != nil {
 			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 			// Try 'just' syncing to vblank then.
@@ -122,8 +123,19 @@ func NewSDL(zoomFactor uint, noSync bool) *SDL {
 		image.Point{ScreenWidth * int(zoomFactor), ScreenHeight * int(zoomFactor)},
 	}
 
-	sdl := SDL{Palette: DefaultPalette, renderer: renderer, texture: texture,
-		blank: blank, buffer: buffer, zoom: int(zoomFactor), screenRect: screenRect}
+	// Create UI with actual screen size.
+	ui := NewUI(renderer, zoomFactor)
+
+	sdl := SDL{
+		UI:         ui,
+		Palette:    DefaultPalette,
+		renderer:   renderer,
+		texture:    texture,
+		blank:      blank,
+		buffer:     buffer,
+		zoom:       int(zoomFactor),
+		screenRect: screenRect,
+	}
 
 	sdl.Clear()
 
@@ -141,7 +153,6 @@ func (s *SDL) Close() {
 // Clear draws a disabled GB screen (white background).
 func (s *SDL) Clear() {
 	s.renderer.Copy(s.blank, nil, nil)
-	s.renderer.Present()
 }
 
 // Enable turns on the display. Pixels will be drawn to our texture and showed at VBlank time.
@@ -163,10 +174,10 @@ func (s *SDL) Disable() {
 // Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		s.buffer[s.offset+0] = s.Palette[colorIndex].(color.NRGBA).R
-		s.buffer[s.offset+1] = s.Palette[colorIndex].(color.NRGBA).G
-		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.NRGBA).B
-		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.NRGBA).A
+		s.buffer[s.offset+0] = s.Palette[colorIndex].(color.RGBA).R
+		s.buffer[s.offset+1] = s.Palette[colorIndex].(color.RGBA).G
+		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.RGBA).B
+		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.RGBA).A
 		s.offset += 4
 	}
 }
@@ -181,15 +192,22 @@ func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
 		s.renderer.Copy(s.texture, nil, nil)
-		s.renderer.Present()
 
 		if s.offset != ScreenWidth*ScreenHeight*4 {
 			log.Warning("MISSING PIXELS!")
 		}
 		s.offset = 0
 	} else {
-		s.Clear()
+		s.Clear() // TODO: Phase out Clear()
 	}
+
+	// UI overlay.
+	if s.UI.Enabled {
+		//s.UI.texture.SetBlendMode(sdl.BLENDMODE_ADD)
+		s.renderer.Copy(s.UI.texture, nil, nil)
+	}
+
+	s.renderer.Present()
 
 	if s.screenshotPath != "" {
 		// Reset screenshotPath for next call.
@@ -226,6 +244,7 @@ func (s *SDL) VBlank() {
 			return
 		}
 
+		s.Message("Screenshot saved", 2)
 		fmt.Printf("screenshot saved to %s\n", path)
 	}
 }

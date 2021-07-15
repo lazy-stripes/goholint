@@ -1,5 +1,7 @@
+roms
 test
 *-dump.*
+goholint-*.png
 *.prof
 *.zip
 .vscode/
