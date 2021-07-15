@@ -2,6 +2,7 @@ package screen
 
 import (
 	"image/color"
+	"time"
 
 	"github.com/lazy-stripes/goholint/logger"
 )
@@ -30,7 +31,8 @@ type Display interface {
 	VBlank()
 	Blank()
 
-	Message(text string, duration uint)
+	Text(text string)
+	Message(text string, duration time.Duration)
 	Screenshot(filename string)
 }
 
