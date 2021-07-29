@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/faiface/mainthread"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -136,7 +135,7 @@ func (u *UI) clearMessage() {
 	// Make sure to execute in the UI thread in case we were called from a
 	// timer thread. TODO: sdl.Do()
 	u.message = ""
-	mainthread.Call(u.repaint)
+	sdl.Do(u.repaint)
 }
 
 // Message creates a new UI texture with the given message, enables UI and

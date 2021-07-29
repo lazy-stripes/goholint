@@ -23,7 +23,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/faiface/mainthread"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 
@@ -136,7 +135,7 @@ func run() {
 	}
 
 	// Execute all SDL operations in the main thread.
-	mainthread.Call(func() {
+	sdl.Do(func() {
 		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
 		ttf.Init()
 
@@ -187,6 +186,6 @@ func run() {
 }
 
 func main() {
-	// Enable mainthread package and run in a separate goroutine.
-	mainthread.Run(run)
+	// Run main function in a separate goroutine so sdl can reserve the UI thread.
+	sdl.Main(run)
 }

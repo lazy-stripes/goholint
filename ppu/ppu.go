@@ -6,13 +6,12 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/faiface/mainthread"
-
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/ppu/states"
 	"github.com/lazy-stripes/goholint/screen"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 // Package-wide logger.
@@ -321,7 +320,7 @@ func (p *PPU) Tick() {
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				mainthread.Call(p.LCD.VBlank) // Keep GPU stuff in OS thread.
+				sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread.
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 

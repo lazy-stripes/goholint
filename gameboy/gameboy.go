@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/faiface/mainthread"
 	"github.com/lazy-stripes/goholint/apu"
 	"github.com/lazy-stripes/goholint/cpu"
 	"github.com/lazy-stripes/goholint/interrupts"
@@ -183,7 +182,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 	// Check for external events (button presses, quit, etc.) first. We do that
 	// based on VSync cycles, until I think of something better.
 	if g.PPU.Cycle%(456*153) == 0 {
-		mainthread.Call(func() {
+		sdl.Do(func() {
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 				eventType := event.GetType()
 				switch eventType {
