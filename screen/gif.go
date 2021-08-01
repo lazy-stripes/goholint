@@ -2,7 +2,6 @@ package screen
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -20,27 +19,29 @@ const FrameDelay = (1 / 59.7) * 100
 var FrameBounds = image.Rectangle{Min: image.Point{0, 0},
 	Max: image.Point{X: ScreenWidth, Y: ScreenHeight}}
 
-// GIF display plugging into SDL to generate animated images on the fly.
+// GIF recorder generating animated images on the fly.
 type GIF struct {
-	SDL
 	gif.GIF
 
-	File string
+	config image.Config // Dimensions and colors for GIF files
+
+	Filename string
+	fd       *os.File
 
 	frame     *image.Paletted // Current frame
 	lastFrame *image.Paletted // Previous frame
 	delay     float32         // Current frame's delay
+	offset    uint            // Current frame's current pixel offset
 
 	disabled *image.Paletted // Disabled screen frame
 }
 
-// NewGIF returns an SDL2 display with a greyish palette and takes a zoom
-// factor to size the window (current default is 2x). This will also
-// buffer frames to put in a GIF.
-func NewGIF(filename string, zoomFactor uint, vSync bool) *GIF {
+// NewGIF instantiates a GIF recorder that will buffer frames and then output a
+// GIF file when required.
+func NewGIF(zoomFactor uint) *GIF {
 	// TODO: check file access, (pre-create it?)
 
-	// Pre-instanciate disabled screen frame.
+	// Pre-instantiate disabled screen frame.
 	disabled := image.NewPaletted(FrameBounds, DefaultPalette)
 	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.Point{}, draw.Src)
 	middle := disabled.Bounds()
@@ -55,73 +56,86 @@ func NewGIF(filename string, zoomFactor uint, vSync bool) *GIF {
 	}
 
 	return &GIF{
-		SDL:       *NewSDL(zoomFactor, vSync),
 		disabled:  disabled,
-		GIF:       gif.GIF{Config: config},
-		frame:     image.NewPaletted(FrameBounds, DefaultPalette),
+		config:    config,
 		lastFrame: disabled, // Acceptable zero value to avoid a nil check later
-		File:      filename,
-	}
-}
-
-// Clear draws a disabled GB screen. This is a fixed frame.
-func (g *GIF) Clear() {
-	g.SDL.Clear()
-	if g.lastFrame == g.disabled {
-		g.delay += FrameDelay
-		g.GIF.Delay[len(g.GIF.Delay)] = int(g.delay)
-	} else {
-		g.delay = FrameDelay
-		g.lastFrame = g.disabled
-		g.GIF.Image = append(g.GIF.Image, g.disabled)
-		g.GIF.Delay = append(g.GIF.Delay, 2)
 	}
 }
 
 // Write adds a new pixel to the current GIF frame.
 func (g *GIF) Write(colorIndex uint8) {
-	g.SDL.Write(colorIndex)
-	if g.SDL.enabled {
-		// SDL.Write already advanced its internal offset by 4.
-		g.frame.Pix[(g.SDL.offset/4)-1] = colorIndex
-	}
+	g.frame.Pix[g.offset] = colorIndex
+	g.offset++
 }
 
-// HBlank not used yet. TODO: duplicate last pixel line up to ZoomFactor.
-func (g *GIF) HBlank() {
-}
-
-// VBlank adds the current frame to GIF slice and pre-instantiate next.
-func (g *GIF) VBlank() {
-	g.SDL.VBlank()
-	if g.SDL.enabled {
-		// If current frame is the same as the previous one, only update delay.
-		if bytes.Equal(g.frame.Pix, g.lastFrame.Pix) {
-			g.delay += FrameDelay
-			g.GIF.Delay[len(g.GIF.Delay)-1] = int(g.delay)
-		} else {
-			g.delay = FrameDelay
-			g.lastFrame = g.frame
-			g.GIF.Image = append(g.GIF.Image, g.frame)
-			g.GIF.Delay = append(g.GIF.Delay, 2) // GIF players poorly handle 10ms frames delay
-			g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
-		}
+// SaveFrame adds the current frame to GIF slice and pre-instantiate next. We
+// detect if the display was disabled. If so, save a "disabled screen" frame
+// instead.
+func (g *GIF) SaveFrame() {
+	// Pixel offset should be at the very end of the frame. If not, screen was
+	// off and we save the "disabled" frame instead.
+	var currentFrame *image.Paletted
+	if g.offset == 0 {
+		currentFrame = g.disabled
 	} else {
-		g.Clear()
+		currentFrame = g.frame
 	}
+
+	// If current frame is the same as the previous one, only update delay of
+	// the latest frame.
+	if g.lastFrame != nil && bytes.Equal(currentFrame.Pix, g.lastFrame.Pix) {
+		g.delay += FrameDelay
+		g.GIF.Delay[len(g.GIF.Delay)-1] = int(g.delay)
+	} else {
+		g.delay = FrameDelay
+		g.lastFrame = currentFrame
+		g.GIF.Image = append(g.GIF.Image, g.frame)
+		g.GIF.Delay = append(g.GIF.Delay, 2) // GIF players poorly handle 10ms frames delay
+		g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
+	}
+
+	g.offset = 0
+}
+
+// IsOpen returns true if GIF recording is already in progress (i.e. we have a
+// file currently open) or false otherwise.
+func (g *GIF) IsOpen() bool {
+	return g.fd != nil
+}
+
+// Open creates a new GIF file and starts recording screen output. This should
+// be called at VBlank time to prevent incomplete frames.
+func (g *GIF) Open(filename string) {
+	if g.IsOpen() {
+		log.Sub("gif").Warning("GIF recording already in progress, closing it.")
+		g.Close()
+	}
+
+	fd, err := os.Create(filename)
+	if err != nil {
+		log.Sub("gif").Warningf("creating GIF failed: %s", err)
+		return
+	}
+
+	log.Sub("gif").Infof("recording to %s", filename)
+
+	g.GIF = gif.GIF{Config: g.config}
+	g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
+	g.lastFrame = nil
+	g.Filename = filename
+	g.fd = fd
+	g.offset = 0
+
+	// TODO: create file here, store descriptor for later. Better yet: stream frames to disk.
 }
 
 // Close writes the actual GIF file to disk.
 func (g *GIF) Close() {
-	g.VBlank()
-	f, err := os.Create(g.File)
-	if err == nil {
-		defer func() {
-			f.Close()
-		}()
-		gif.EncodeAll(f, &g.GIF)
-		log.Sub("gif").Infof("%d frames dumped to %s", len(g.GIF.Image), g.File)
-	} else {
-		fmt.Println(err)
-	}
+	g.SaveFrame()
+	defer func() {
+		g.fd.Close()
+		g.fd = nil
+	}()
+	gif.EncodeAll(g.fd, &g.GIF)
+	log.Sub("gif").Infof("%d frames dumped to %s", len(g.GIF.Image), g.Filename)
 }

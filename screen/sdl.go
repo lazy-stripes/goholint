@@ -28,6 +28,12 @@ type SDL struct {
 
 	// Set this to non-empty to save the next frame. Will be reset at VBlank.
 	screenshotPath string
+
+	// GIF recorder. TODO: record video with sound too.
+	gif            *GIF
+	recordPath     string
+	startRecording bool
+	stopRecording  bool
 }
 
 var testPalette = [4]color.NRGBA{
@@ -135,9 +141,11 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 		buffer:     buffer,
 		zoom:       int(zoomFactor),
 		screenRect: screenRect,
+		gif:        NewGIF(zoomFactor),
 	}
 
-	sdl.Clear()
+	// Init texture and trigger stuff usually happening at VBlank.
+	sdl.VBlank() // XXX: is this needed?
 
 	return &sdl
 }
@@ -148,11 +156,6 @@ func (s *SDL) Close() {
 	s.blank.Destroy()
 	s.renderer.Destroy()
 	s.window.Destroy()
-}
-
-// Clear draws a disabled GB screen (white background).
-func (s *SDL) Clear() {
-	s.renderer.Copy(s.blank, nil, nil)
 }
 
 // Enable turns on the display. Pixels will be drawn to our texture and showed at VBlank time.
@@ -179,6 +182,10 @@ func (s *SDL) Write(colorIndex uint8) {
 		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.RGBA).B
 		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.RGBA).A
 		s.offset += 4
+
+		if s.gif.IsOpen() {
+			s.gif.Write(colorIndex)
+		}
 	}
 }
 
@@ -198,7 +205,23 @@ func (s *SDL) VBlank() {
 		}
 		s.offset = 0
 	} else {
-		s.Clear() // TODO: Phase out Clear()
+		s.renderer.Copy(s.blank, nil, nil)
+	}
+
+	// Create GIF here if requested.
+	if s.startRecording {
+		s.startRecording = false
+		s.gif.Open(s.recordPath)
+	}
+
+	if s.stopRecording {
+		s.stopRecording = false
+		s.gif.Close()
+		s.recordPath = ""
+	}
+
+	if s.gif.IsOpen() {
+		s.gif.SaveFrame()
 	}
 
 	// UI overlay.
@@ -249,11 +272,6 @@ func (s *SDL) VBlank() {
 	}
 }
 
-// Blank draws an empty GB screen when the display is disabled.
-func (s *SDL) Blank() {
-	s.Clear()
-}
-
 // Dump writes the current pixel buffer to file for debugging purposes.
 func (s *SDL) Dump() {
 	ioutil.WriteFile("lcd-buffer-dump.bin", s.buffer, 0644)
@@ -262,4 +280,22 @@ func (s *SDL) Dump() {
 // Screenshot will make the display dump the next frame to file.
 func (s *SDL) Screenshot(filename string) {
 	s.screenshotPath = filename
+}
+
+// Record will create a GIF file and output frames until StopRecord is called.
+// We only just raise a flag here, recording should start and stop in VBlank.
+func (s *SDL) Record(filename string) {
+	if s.recordPath != "" {
+		log.Warningf("can't create %s, recording to %s already in progress",
+			filename, s.recordPath)
+		return
+	}
+	s.recordPath = filename
+	s.startRecording = true
+}
+
+// StopRecord will flush recorded frames to the previously created GIF file.
+// We only just raise a flag here, recording should start and stop in VBlank.
+func (s *SDL) StopRecord() {
+	s.stopRecording = true
 }

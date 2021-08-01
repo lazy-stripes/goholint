@@ -194,7 +194,7 @@ func (p *PPU) Tick() {
 			// rate we'd display the current texture upon VBlank.
 			if p.ticks%(456*153) == 0 {
 				log.Sub("ticks").Desperatef("Disabled: %d ticks", 456*153)
-				p.LCD.Blank()
+				p.LCD.VBlank()
 			}
 		} else {
 			p.OAM.Start()
