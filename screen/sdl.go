@@ -210,12 +210,20 @@ func (s *SDL) VBlank() {
 		s.renderer.Copy(s.blank, nil, nil)
 	}
 
+	// Update GIF frame if recording.
+	if s.gif.IsOpen() {
+		d := time.Since(s.recordTime)
+		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
+		s.UI.Text(text)
+		s.gif.SaveFrame()
+	}
+
 	// Create GIF here if requested.
 	if s.startRecording {
 		s.startRecording = false
 		s.recordTime = time.Now()
 		s.UI.Text("•REC [00:00]")
-		s.UI.Message(s.recordPath, 2)
+		//s.UI.Message(s.recordPath, 2)
 		s.gif.Open(s.recordPath)
 	}
 
@@ -224,13 +232,6 @@ func (s *SDL) VBlank() {
 		s.gif.Close()
 		s.UI.Text("")
 		s.recordPath = ""
-	}
-
-	if s.gif.IsOpen() {
-		d := time.Since(s.recordTime)
-		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
-		s.UI.Text(text)
-		s.gif.SaveFrame()
 	}
 
 	// UI overlay.

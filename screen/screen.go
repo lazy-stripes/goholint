@@ -29,7 +29,6 @@ type Display interface {
 	Write(colorIndex uint8)
 	HBlank()
 	VBlank()
-	Blank()
 
 	Text(text string)
 	Message(text string, duration time.Duration)
