@@ -64,8 +64,8 @@ func NewUI(renderer *sdl.Renderer, zoom uint) *UI {
 		renderer: renderer,
 		font:     font,
 		fontZoom: fontZoom,
-		fg:       sdl.Color{0, 0, 0, 0xff},
-		bg:       sdl.Color{0xff, 0xff, 0xff, 0xff},
+		fg:       sdl.Color{R: 0, G: 0, B: 0, A: 0xff},
+		bg:       sdl.Color{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
 	}
 	return &ui
 }
@@ -139,7 +139,8 @@ func (u *UI) clearMessage() {
 }
 
 // Message creates a new UI texture with the given message, enables UI and
-// starts a timer that will hide the UI when it's done.
+// starts a timer that will hide the UI when it's done. Takes a text string and
+// a duration (in seconds).
 func (u *UI) Message(text string, duration time.Duration) {
 	// Stop reset timer, a new one will be started.
 	// TODO: stack messages

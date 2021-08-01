@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -34,6 +35,7 @@ type SDL struct {
 	recordPath     string
 	startRecording bool
 	stopRecording  bool
+	recordTime     time.Time
 }
 
 var testPalette = [4]color.NRGBA{
@@ -211,16 +213,23 @@ func (s *SDL) VBlank() {
 	// Create GIF here if requested.
 	if s.startRecording {
 		s.startRecording = false
+		s.recordTime = time.Now()
+		s.UI.Text("•REC [00:00]")
+		s.UI.Message(s.recordPath, 2)
 		s.gif.Open(s.recordPath)
 	}
 
 	if s.stopRecording {
 		s.stopRecording = false
 		s.gif.Close()
+		s.UI.Text("")
 		s.recordPath = ""
 	}
 
 	if s.gif.IsOpen() {
+		d := time.Since(s.recordTime)
+		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
+		s.UI.Text(text)
 		s.gif.SaveFrame()
 	}
 
