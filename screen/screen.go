@@ -33,7 +33,11 @@ type Display interface {
 
 	Text(text string)
 	Message(text string, duration time.Duration)
+
 	Screenshot(filename string)
+
+	Record(filename string)
+	StopRecord()
 }
 
 // Screen dimensions.

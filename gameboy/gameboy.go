@@ -44,6 +44,9 @@ type GameBoy struct {
 	JPad    *joypad.Joypad
 
 	Controls map[sdl.Keycode]Action
+
+	// For GIF record toggle.
+	recording bool
 }
 
 // SetControls validates and sets the given control map for the emulator.
@@ -61,6 +64,7 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 		"select":     g.JoypadSelect,
 		"start":      g.JoypadStart,
 		"screenshot": g.Screenshot,
+		"recordgif":  g.StartStopRecord,
 	}
 
 	g.Controls = make(map[sdl.Keycode]Action)

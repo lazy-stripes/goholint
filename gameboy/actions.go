@@ -66,4 +66,24 @@ func (g *GameBoy) Screenshot(eventType uint32) {
 	g.Display.Screenshot(filename)
 }
 
-// TODO: so many things! Toggle GIF record, save states, toggle features...
+// StartStopRecord starts recording video output to GIF and closes the file
+// when done. Defined as a single action to toggle between the two and avoid
+// opening several GIFs at once.
+func (g *GameBoy) StartStopRecord(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	if g.recording {
+		g.Display.StopRecord()
+		g.recording = false
+	} else {
+		// Build a nice enough filename. TODO: configurable path.
+		filename := fmt.Sprintf("goholint-%s-%d.gif", time.Now().Format(DateFormat),
+			g.CPU.Cycle)
+		g.recording = true
+		g.Display.Record(filename)
+	}
+}
+
+// TODO: so many things! Save states, toggle features...

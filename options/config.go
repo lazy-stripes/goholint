@@ -19,7 +19,7 @@ const (
 	ConfigFolder = "~/.goholint/"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
-	// automatically if no config exists at run time.
+	// automatically if no config exists at run time. TODO: embed from file?
 	DefaultConfig = `# Most of the flags (except, obviously -config) can be overridden here with
 # the exact same name. See -help for details.
 
@@ -46,7 +46,9 @@ start  = RETURN    # Start Button
 
 screenshot = F12   # Save a screenshot in the current directory
 
-# TODO: recordgif, quit, reset, snapshot...
+recordgif = g      # Start/stop recording video output to GIF
+
+# TODO: quit, reset, snapshot...
 `
 )
 
@@ -61,6 +63,7 @@ var DefaultKeymap = Keymap{
 	"select":     sdl.K_BACKSPACE,
 	"start":      sdl.K_RETURN,
 	"screenshot": sdl.K_F12,
+	"recordgif":  sdl.K_g,
 }
 
 // configKey returns a config key by the given name if it's present in the file
