@@ -21,8 +21,7 @@ Those are the main reasons why this code used to be self-hosted for so long.
 
 ## Getting Goholint
 
-I started this project before Go modules were a thing so the easiest way to run
-Goholint for now is still probably to use `go get`.
+The easiest way to run Goholint for now is probably to use `go get`.
 
 ```
 go get github.com/lazy-stripes/goholint
