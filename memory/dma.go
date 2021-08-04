@@ -53,14 +53,13 @@ func (d *DMA) Tick() {
 	}
 	d.ticks++
 
-	// DMA transfer takes 160*4 ticks (160 "machine cycles").
-	if d.ticks < 160*4 {
-		if d.ticks%4 == 0 {
-			// [VIDEO] It takes 160 cycles to complete a 160-byte DMA transfer, right?
-			d.MMU.Write(d.dest, d.MMU.Read(d.src))
-			d.src++
-			d.dest++
-		}
+	// A DMA transfer takes 160 DMA ticks.
+	if d.ticks < 160 {
+		// [VIDEO] It takes 160 cycles to complete a 160-byte DMA transfer, right?
+		d.MMU.Write(d.dest, d.MMU.Read(d.src))
+		d.src++
+		d.dest++
+
 		return
 	}
 	log.Sub("dma").Debug("DMA transfer done")

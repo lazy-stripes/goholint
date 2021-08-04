@@ -35,7 +35,6 @@ type CPU struct {
 	PC     uint16
 
 	instruction Instruction
-	ticks       uint
 	state       int
 
 	// [GEKKIO] says EI takes one instruction to actually set IME.
@@ -59,13 +58,6 @@ func New(code memory.Addressable) *CPU {
 // Tick advances the CPU state one step.
 func (c *CPU) Tick() {
 	c.Cycle++
-	c.ticks++
-	if c.ticks < 4 {
-		return
-	}
-
-	// Reset tick counter and execute next state
-	c.ticks = 0
 
 	// Handle interrupts
 	if (c.state&states.Interruptible != 0) && c.IME && (c.IF&c.IE != 0) {

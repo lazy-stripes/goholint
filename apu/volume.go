@@ -28,7 +28,7 @@ func (v *VolumeEnvelope) Disable() {
 }
 
 // Tick advances the volume envelope one step. It will adjust the volume value
-// every <sweep>×(1/64) seconds or <sweep>×(<cpuFreq>/64) clocks.
+// every <sweep>×(1/64) seconds or <sweep>×(<sample rate>/64) APU ticks.
 // Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller about NR12.
 func (v *VolumeEnvelope) Tick() {
 	if !v.enabled {
@@ -41,9 +41,9 @@ func (v *VolumeEnvelope) Tick() {
 		return
 	}
 
-	// Update volume every <sweep>×(<cpuFreq>/64) clocks.
+	// Update volume every <sweep>×(<sample rate>/64) APU ticks.
 	v.ticks++
-	if v.ticks < uint(v.Sweep)*(GameBoyRate/64) {
+	if v.ticks < uint(v.Sweep)*(SamplingRate/64) {
 		return
 	}
 	v.ticks = 0
