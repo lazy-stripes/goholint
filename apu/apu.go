@@ -80,8 +80,6 @@ type APU struct {
 	Square2 SquareWave
 	Wave    WaveTable
 	Noise   Noise
-
-	ticks uint // Clock ticks counter for mixing samples
 }
 
 // New APU instance. So many registers.
@@ -132,27 +130,16 @@ func (a *APU) Write(addr uint16, value uint8) {
 }
 
 // Tick advances the state machine of all signal generators to produce a single
-// stereo sample for the sound card. This sample is only actually sent to the
-// sound card at the chosen sampling rate.
-func (a *APU) Tick() (left, right uint8, play bool) {
+// stereo sample for the sound card. Note that the number of internal cycles happening on each signal generator depends on the output frequency.
+func (a *APU) Tick() (left, right uint8) {
 	// Advance all signal generators a step. Right now we only have two but
 	// if we were to implement all four, we'd actually mix all their outputs
 	// together here (with various per-generator parameters to account for).
 
 	// TODO: mix signals here according to the relevant registers.
-	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() //+ a.Noise.Tick()
+	// Because we're returning unsigned ints, the silence point is at 128.
+	left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
 	right = left
-
-	// We're ticking as fast as the Game Boy CPU goes, but our sound sample rate
-	// is much lower than that so we only need to yield an actual sample every
-	// so often.
-	// Yes I'm probably missing a very obvious way to optimize this all.
-	if a.ticks++; a.ticks >= SoundOutRate {
-		// TODO: mix channels here.
-
-		a.ticks = 0
-		play = true
-	}
 
 	return
 }

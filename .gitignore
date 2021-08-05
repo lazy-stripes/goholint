@@ -6,3 +6,5 @@ goholint-*.png
 *.zip
 .vscode/
 bin/
+goholint
+*.bin

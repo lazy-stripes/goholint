@@ -1,6 +1,8 @@
 package apu
 
-import "github.com/lazy-stripes/goholint/memory"
+import (
+	"github.com/lazy-stripes/goholint/memory"
+)
 
 // OutputShift maps the output level code in NR32 with the amount of right
 // shifts to apply to the generated sample.
@@ -67,18 +69,22 @@ func (w *WaveTable) Tick() (sample uint8) {
 	freq := 65536 / (2048 - rawFreq)
 
 	// Advance sample index every 1/(32f) where f is the sound's real frequency.
-	if w.ticks++; w.ticks >= GameBoyRate/(freq*32) {
-		w.sampleOffset = (w.sampleOffset + 1) % 32
-		w.ticks = 0
+	// TODO: figure out minimal tick rate necessary for all updates to happen
+	// and use that instead of SoundOutRate/GameBoyRate.
+	for i := 0; i < SoundOutRate; i++ {
+		if w.ticks++; w.ticks >= GameBoyRate/(freq*32) {
+			w.sampleOffset = (w.sampleOffset + 1) % 32
+			w.ticks = 0
 
-		// Each byte in the wave table contains 2 samples. Read it and only
-		// output the proper nibble.
-		sampleByte := w.sampleOffset / 2
-		sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
-		w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
+			// Each byte in the wave table contains 2 samples. Read it and only
+			// output the proper nibble.
+			sampleByte := w.sampleOffset / 2
+			sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
+			w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
 
-		// Adjust for volume.
-		w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
+			// Adjust for volume.
+			w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
+		}
 	}
 
 	return w.sample

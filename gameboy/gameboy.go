@@ -34,6 +34,7 @@ type TickResult struct {
 type GameBoy struct {
 	args *options.Options
 
+	ticks   uint64
 	APU     *apu.APU
 	CPU     *cpu.CPU
 	PPU     *ppu.PPU
@@ -180,9 +181,10 @@ func New(args *options.Options) *GameBoy {
 // using SDL audio for timing this, we also return the current value of audio
 // samples for each stereo channel as well as whether they should be played now.
 func (g *GameBoy) Tick() (res TickResult) {
-	// Check for external events (button presses, quit, etc.) first. We do that
-	// based on VSync cycles, until I think of something better.
-	if g.PPU.Cycle%(456*153) == 0 {
+	g.ticks++
+
+	// Poll events 1000 times per second.
+	if g.ticks%4000 == 0 {
 		sdl.Do(func() {
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 				eventType := event.GetType()
@@ -207,11 +209,31 @@ func (g *GameBoy) Tick() (res TickResult) {
 		})
 	}
 
-	g.CPU.Tick()
-	g.DMA.Tick()
+	// CPU ticks occur every 4 machine ticks.
+	if g.ticks%4 == 0 {
+		g.CPU.Tick()
+	}
+
+	// DMA ticks occur every 4 machine ticks.
+	if g.ticks%4 == 0 {
+		g.DMA.Tick()
+	}
+
+	// PPU ticks occur every machine tick.
 	g.PPU.Tick()
+
+	// Timer tick occur every machine tick.
 	g.Timer.Tick()
-	res.Left, res.Right, res.Play = g.APU.Tick()
+
+	// APU ticks occur only when we need to generate the next sample.
+	// Note that the Gameboy machine frequency is not an exact multiple of the
+	// sound output frequency, so this is in fact an approximation. So long as
+	// no one can hear the difference, let's call it good enough.
+	if g.ticks%apu.SoundOutRate == 0 {
+		res.Left, res.Right = g.APU.Tick()
+		res.Play = true
+	}
+
 	return
 }
 
