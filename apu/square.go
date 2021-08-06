@@ -22,7 +22,7 @@ type SquareWave struct {
 	enabled bool // Only output silence if this is false
 
 	// Duty-related variables.
-	dutyStep int  // Sub-index into DutyCycles to set the signal high or low.
+	dutyStep uint // Sub-index into DutyCycles to set the signal high or low.
 	ticks    uint // Clock ticks counter for advancing duty step.
 
 	envelope VolumeEnvelope
@@ -68,14 +68,12 @@ func (s *SquareWave) Tick() (sample uint8) {
 	rawFreq := ((uint(s.NRx4) & 7) << 8) | uint(s.NRx3)
 	freq := 131072 / (2048 - rawFreq)
 
-	// Advance duty step every 1/(8f) where f is the sound's real frequency
-	// for as many machine ticks as necessary to generate one sample.
-	for i := 0; i < SoundOutRate; i++ {
-		if s.ticks++; s.ticks >= GameBoyRate/(freq*8) {
-			s.dutyStep = (s.dutyStep + 1) % 8
-			s.ticks = 0
-		}
-	}
+	// Advance duty step every 1/(8f) where f is the sound's real frequency.
+	stepRate := GameBoyRate / (freq * 8)
+	steps := (s.ticks + SoundOutRate) / stepRate
+	s.ticks = (s.ticks + SoundOutRate) % stepRate
+
+	s.dutyStep = (s.dutyStep + steps) % 8
 
 	if DutyCycles[s.NRx1>>6][s.dutyStep] {
 		sample = s.envelope.Volume()
