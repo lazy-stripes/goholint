@@ -27,7 +27,7 @@ type WaveTable struct {
 	enabled bool // Only output silence if this is false
 
 	sample       uint8 // Current sample to play
-	sampleOffset int   // Sub-index of the current sample into the wave table
+	sampleOffset uint  // Sub-index of the current sample into the wave table
 	ticks        uint  // Clock ticks counter for advancing sample index
 }
 
@@ -69,23 +69,20 @@ func (w *WaveTable) Tick() (sample uint8) {
 	freq := 65536 / (2048 - rawFreq)
 
 	// Advance sample index every 1/(32f) where f is the sound's real frequency.
-	// TODO: figure out minimal tick rate necessary for all updates to happen
-	// and use that instead of SoundOutRate/GameBoyRate.
-	for i := 0; i < SoundOutRate; i++ {
-		if w.ticks++; w.ticks >= GameBoyRate/(freq*32) {
-			w.sampleOffset = (w.sampleOffset + 1) % 32
-			w.ticks = 0
+	stepRate := GameBoyRate / (freq * 32)
+	steps := (w.ticks + SoundOutRate) / stepRate
+	w.ticks = (w.ticks + SoundOutRate) % stepRate
 
-			// Each byte in the wave table contains 2 samples. Read it and only
-			// output the proper nibble.
-			sampleByte := w.sampleOffset / 2
-			sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
-			w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
+	w.sampleOffset = (w.sampleOffset + steps) % 32
 
-			// Adjust for volume.
-			w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
-		}
-	}
+	// Each byte in the wave table contains 2 samples. Read it and only
+	// output the proper nibble.
+	sampleByte := w.sampleOffset / 2
+	sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
+	w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
+
+	// Adjust for volume.
+	w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
 
 	return w.sample
 }
