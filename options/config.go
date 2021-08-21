@@ -17,8 +17,8 @@ import (
 type Keymap map[string]sdl.Keycode
 
 const (
-	// ConfigFolder is the path to our dedicated folder in the user's home.
-	ConfigFolder = "~/.goholint/"
+	// DefaultConfigPath is the path to our config file in the user's home.
+	DefaultConfigPath = "~/.goholint/config.ini"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
 	// automatically if no config exists at run time. TODO: embed from file?
@@ -29,7 +29,7 @@ const (
 #cpuprofile = path/to/cpuprofile.pprof
 #level = debug
 #fastboot = 1
-#nosync = 1
+#vsync = 1
 #waitkey = 1
 #zoom = 1
 
@@ -117,6 +117,16 @@ var DefaultPalette = []color.RGBA{
 var DefaultUIBackground = color.RGBA{0x00, 0x00, 0x00, 0xff}
 var DefaultUIForeground = color.RGBA{0xff, 0xff, 0xff, 0xff}
 
+// Go doesn't natively handle ~ in paths, fair enough.
+func expandHome(path string) string {
+	if path[0] == '~' {
+		if u, err := user.Current(); err == nil {
+			path = filepath.Join(u.HomeDir, path[1:])
+		}
+	}
+	return path
+}
+
 // configKey returns a config key by the given name if it's present in the file
 // and not already set by command-line arguments.
 func configKey(cfg *ini.File, flags map[string]bool, name string) *ini.Key {
@@ -127,7 +137,7 @@ func configKey(cfg *ini.File, flags map[string]bool, name string) *ini.Key {
 	return nil
 }
 
-// apply a parameter value from the config file to the string variable whose
+// Apply a parameter value from the config file to the string variable whose
 // address is given, if that parameter was present in the file and not already
 // set on the command-line.
 func apply(cfg *ini.File, flags map[string]bool, name string, dst *string) {
@@ -174,28 +184,34 @@ func applyColor(s *ini.Section, name string, dst *color.RGBA) {
 	}
 }
 
-// Attempt to create home config folder and copy our default config there.
+// Attempt to create home config folder and put our default config there, if
+// it doesn't already exist.
 func createDefaultConfig() {
-	// Only create default config if the config folder isn't there yet.
-	if _, err := os.Stat(ConfigFolder); os.IsNotExist(err) {
-		fmt.Println("No config folder. Creating default config now.")
+	configPath := expandHome(DefaultConfigPath)
+	folder := filepath.Dir(configPath)
 
-		if err := os.Mkdir(ConfigFolder, 0755); err != nil {
-			fmt.Printf("Can't create config folder %s: %v\n", ConfigFolder, err)
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		fmt.Println("Creating default config folder.")
+
+		if err := os.MkdirAll(folder, 0755); err != nil {
+			fmt.Printf("Can't create config folder %s: %v\n", folder, err)
 			return
 		}
+	}
 
-		// Create default config.
-		path := filepath.Join(ConfigFolder, "config.ini")
-		f, err := os.Create(path)
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		fmt.Println("Creating default config.")
+
+		f, err := os.Create(configPath)
 		if err != nil {
-			fmt.Printf("Creating %s failed: %v", path, err)
+			fmt.Printf("Creating %s failed: %v\n", configPath, err)
 			return
 		}
 		defer f.Close()
 
 		if _, err := f.WriteString(DefaultConfig); err != nil {
-			fmt.Printf("Writing default config failed: %v", err)
+			fmt.Printf("Writing default config failed: %v\n", err)
+			return
 		}
 	}
 }
@@ -206,13 +222,6 @@ func createDefaultConfig() {
 func (o *Options) Update(configPath string, flags map[string]bool) {
 	if configPath == "" {
 		return
-	}
-
-	// Go doesn't natively handle ~ in paths, fair enough.
-	if configPath[0] == '~' {
-		if u, err := user.Current(); err == nil {
-			configPath = filepath.Join(u.HomeDir, configPath[1:])
-		}
 	}
 
 	cfg, err := ini.Load(configPath)

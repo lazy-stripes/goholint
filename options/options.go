@@ -46,7 +46,7 @@ func (m *module) Set(value string) error {
 
 // Supported command-line options for the emulator.
 var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
-var configPath = flag.String("config", "~/.goholint.ini", "Path to custom config file")
+var configPath = flag.String("config", "", "Path to custom config file")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 var debugModules module
@@ -98,14 +98,17 @@ func Parse() *Options {
 	options.UIBackground = DefaultUIBackground
 	options.UIForeground = DefaultUIForeground
 
-	// Create config folder if needed and if no -config flag was used.
-	if *configPath == "" {
+	// Use default config if no -config flag was used.
+	fullConfigPath := *configPath
+	if fullConfigPath == "" {
 		createDefaultConfig()
+		fullConfigPath = DefaultConfigPath
 	}
+	fullConfigPath = expandHome(fullConfigPath) // Allow ~ prefix.
 
 	// Load everything else from config, and don't touch values that were set on
 	// the command-line.
-	options.Update(*configPath, flagsSet)
+	options.Update(fullConfigPath, flagsSet)
 
 	return &options
 }
