@@ -75,7 +75,6 @@ func NewUI(renderer *sdl.Renderer, config *options.Options) *UI {
 	}
 
 	ui := UI{
-		Enabled:  true,
 		texture:  texture,
 		renderer: renderer,
 		font:     font,
