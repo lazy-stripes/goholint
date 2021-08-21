@@ -3,24 +3,28 @@ package options
 import (
 	"flag"
 	"fmt"
+	"image/color"
 )
 
 // Options structure grouping command line flags values.
 type Options struct {
-	BootROM      string // -boot <path>
-	CPUProfile   string // -cpuprofile <path>
-	DebugLevel   string // -level <debug level>
-	DebugModules module // -debug <module>
-	Duration     uint   // -cycles <amount>
-	FastBoot     bool   // -fastboot
-	GIFPath      string // -gif <path>
-	Keymap       Keymap // From config.
-	VSync        bool   // -vsync
-	ROMPath      string // -rom <path>
-	SaveDir      string // -savedir <path>
-	SavePath     string // -save <full path>
-	WaitKey      bool   // -waitkey
-	ZoomFactor   uint   // -zoom <factor>
+	BootROM        string       // -boot <path>
+	CPUProfile     string       // -cpuprofile <path>
+	DebugLevel     string       // -level <debug level>
+	DebugModules   module       // -debug <module>
+	Duration       uint         // -cycles <amount>
+	FastBoot       bool         // -fastboot
+	GameBoyPalette []color.RGBA // From config.
+	GIFPath        string       // -gif <path>
+	Keymap         Keymap       // From config.
+	VSync          bool         // -vsync
+	ROMPath        string       // -rom <path>
+	SaveDir        string       // -savedir <path>
+	SavePath       string       // -save <full path>
+	UIBackground   color.RGBA   // From config.
+	UIForeground   color.RGBA   // From config.
+	WaitKey        bool         // -waitkey
+	ZoomFactor     uint         // -zoom <factor>
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -42,7 +46,7 @@ func (m *module) Set(value string) error {
 
 // Supported command-line options for the emulator.
 var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
-var configPath = flag.String("config", "~/.goholint.ini", "Path to custom config file")
+var configPath = flag.String("config", "", "Path to custom config file")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")
 var debugModules module
@@ -88,17 +92,23 @@ func Parse() *Options {
 		flagsSet[f.Name] = true
 	})
 
-	// Keep default keymap in case there is no config file.
+	// Other defaults used if there is no config file.
 	options.Keymap = DefaultKeymap
+	options.GameBoyPalette = DefaultPalette
+	options.UIBackground = DefaultUIBackground
+	options.UIForeground = DefaultUIForeground
 
-	// Create config folder if needed and if no -config flag was used.
-	if *configPath == "" {
+	// Use default config if no -config flag was used.
+	fullConfigPath := *configPath
+	if fullConfigPath == "" {
 		createDefaultConfig()
+		fullConfigPath = DefaultConfigPath
 	}
+	fullConfigPath = expandHome(fullConfigPath) // Allow ~ prefix.
 
 	// Load everything else from config, and don't touch values that were set on
 	// the command-line.
-	options.Update(*configPath, flagsSet)
+	options.Update(fullConfigPath, flagsSet)
 
 	return &options
 }

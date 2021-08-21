@@ -2,9 +2,11 @@ package options
 
 import (
 	"fmt"
+	"image/color"
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 
 	"github.com/veandco/go-sdl2/sdl"
 
@@ -15,8 +17,8 @@ import (
 type Keymap map[string]sdl.Keycode
 
 const (
-	// ConfigFolder is the path to our dedicated folder in the user's home.
-	ConfigFolder = "~/.goholint/"
+	// DefaultConfigPath is the path to our config file in the user's home.
+	DefaultConfigPath = "~/.goholint/config.ini"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
 	// automatically if no config exists at run time. TODO: embed from file?
@@ -27,9 +29,18 @@ const (
 #cpuprofile = path/to/cpuprofile.pprof
 #level = debug
 #fastboot = 1
-#nosync = 1
+#vsync = 1
 #waitkey = 1
 #zoom = 1
+
+# Customize the Game Boy palette and UI colors here. Use hexadecimal RGB format.
+[colors]
+gb-0  = e0f0e7 # Lightest
+gb-1  = 8ba394 # Light
+gb-2  = 55645a # Dark
+gb-3  = 343d37 # Darkest
+ui-bg = ffffff # UI Background (outline)
+ui-fg = 000000 # UI foreground (text)
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
 # SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
@@ -66,6 +77,56 @@ var DefaultKeymap = Keymap{
 	"recordgif":  sdl.K_g,
 }
 
+// Default palette colors with separate RGB components for easier use with SDL
+// API.
+const (
+	// Arbitrary default colors that looked good on my screen. Kinda greenish.
+	ColorWhiteRGB     = 0xe0f0e7
+	ColorLightGrayRGB = 0x8ba394
+	ColorDarkGrayRGB  = 0x55645a
+	ColorBlackRGB     = 0x343d37
+
+	ColorWhiteR     = (ColorWhiteRGB >> 16) & 0xff
+	ColorWhiteG     = (ColorWhiteRGB >> 8) & 0xff
+	ColorWhiteB     = ColorWhiteRGB & 0xff
+	ColorLightGrayR = (ColorLightGrayRGB >> 16) & 0xff
+	ColorLightGrayG = (ColorLightGrayRGB >> 16) & 0xff
+	ColorLightGrayB = ColorLightGrayRGB & 0xff
+	ColorDarkGrayR  = (ColorDarkGrayRGB >> 16) & 0xff
+	ColorDarkGrayG  = (ColorDarkGrayRGB >> 16) & 0xff
+	ColorDarkGrayB  = ColorDarkGrayRGB & 0xff
+	ColorBlackR     = (ColorBlackRGB >> 16) & 0xff
+	ColorBlackG     = (ColorBlackRGB >> 16) & 0xff
+	ColorBlackB     = ColorBlackRGB & 0xff
+)
+
+var ColorWhite = color.RGBA{ColorWhiteR, ColorWhiteG, ColorWhiteB, 0xff}
+var ColorLightGray = color.RGBA{ColorLightGrayR, ColorLightGrayG, ColorLightGrayB, 0xff}
+var ColorDarkGray = color.RGBA{ColorDarkGrayR, ColorDarkGrayG, ColorDarkGrayB, 0xff}
+var ColorBlack = color.RGBA{ColorBlackR, ColorBlackG, ColorBlackB, 0xff}
+
+// DefaultPalette represents the selectable colors in the DMG.
+var DefaultPalette = []color.RGBA{
+	ColorWhite,
+	ColorLightGray,
+	ColorDarkGray,
+	ColorBlack,
+}
+
+// Default UI colors. Black text, white outline.
+var DefaultUIBackground = color.RGBA{0x00, 0x00, 0x00, 0xff}
+var DefaultUIForeground = color.RGBA{0xff, 0xff, 0xff, 0xff}
+
+// Go doesn't natively handle ~ in paths, fair enough.
+func expandHome(path string) string {
+	if path[0] == '~' {
+		if u, err := user.Current(); err == nil {
+			path = filepath.Join(u.HomeDir, path[1:])
+		}
+	}
+	return path
+}
+
 // configKey returns a config key by the given name if it's present in the file
 // and not already set by command-line arguments.
 func configKey(cfg *ini.File, flags map[string]bool, name string) *ini.Key {
@@ -76,7 +137,7 @@ func configKey(cfg *ini.File, flags map[string]bool, name string) *ini.Key {
 	return nil
 }
 
-// apply a parameter value from the config file to the string variable whose
+// Apply a parameter value from the config file to the string variable whose
 // address is given, if that parameter was present in the file and not already
 // set on the command-line.
 func apply(cfg *ini.File, flags map[string]bool, name string, dst *string) {
@@ -103,28 +164,54 @@ func applyUint(cfg *ini.File, flags map[string]bool, name string, dst *uint) {
 	}
 }
 
-// Attempt to create home config folder and copy our default config there.
-func createDefaultConfig() {
-	// Only create default config if the config folder isn't there yet.
-	if _, err := os.Stat(ConfigFolder); os.IsNotExist(err) {
-		fmt.Println("No config folder. Creating default config now.")
+// Apply a parameter value from the config file to the color variable whose
+// address is given, if that parameter was present in the file. If the color
+// value can't be parsed, it's silently ignored.
+func applyColor(s *ini.Section, name string, dst *color.RGBA) {
+	if !s.HasKey(name) {
+		return
+	}
 
-		if err := os.Mkdir(ConfigFolder, 0755); err != nil {
-			fmt.Printf("Can't create config folder %s: %v\n", ConfigFolder, err)
+	if key := s.Key(name); key != nil {
+		// Colors should be in hexadecimal (without 0x prefix).
+		if rgb, err := strconv.ParseUint(key.String(), 16, 32); err == nil {
+			dst.R = uint8((rgb >> 16) & 0xff)
+			dst.G = uint8((rgb >> 8) & 0xff)
+			dst.B = uint8(rgb & 0xff)
+		} else {
+			fmt.Printf("Invalid value for color '%s': %v\n", name, err)
+		}
+	}
+}
+
+// Attempt to create home config folder and put our default config there, if
+// it doesn't already exist.
+func createDefaultConfig() {
+	configPath := expandHome(DefaultConfigPath)
+	folder := filepath.Dir(configPath)
+
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		fmt.Println("Creating default config folder.")
+
+		if err := os.MkdirAll(folder, 0755); err != nil {
+			fmt.Printf("Can't create config folder %s: %v\n", folder, err)
 			return
 		}
+	}
 
-		// Create default config.
-		path := filepath.Join(ConfigFolder, "config.ini")
-		f, err := os.Create(path)
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		fmt.Println("Creating default config.")
+
+		f, err := os.Create(configPath)
 		if err != nil {
-			fmt.Printf("Creating %s failed: %v", path, err)
+			fmt.Printf("Creating %s failed: %v\n", configPath, err)
 			return
 		}
 		defer f.Close()
 
 		if _, err := f.WriteString(DefaultConfig); err != nil {
-			fmt.Printf("Writing default config failed: %v", err)
+			fmt.Printf("Writing default config failed: %v\n", err)
+			return
 		}
 	}
 }
@@ -135,13 +222,6 @@ func createDefaultConfig() {
 func (o *Options) Update(configPath string, flags map[string]bool) {
 	if configPath == "" {
 		return
-	}
-
-	// Go doesn't natively handle ~ in paths, fair enough.
-	if configPath[0] == '~' {
-		if u, err := user.Current(); err == nil {
-			configPath = filepath.Join(u.HomeDir, configPath[1:])
-		}
 	}
 
 	cfg, err := ini.Load(configPath)
@@ -175,4 +255,13 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 			o.Keymap[key] = keySym
 		}
 	}
+
+	// Set colors here. Build on top of default as well.
+	colorSection := cfg.Section("colors")
+	applyColor(colorSection, "gb-0", &o.GameBoyPalette[0])
+	applyColor(colorSection, "gb-1", &o.GameBoyPalette[1])
+	applyColor(colorSection, "gb-2", &o.GameBoyPalette[2])
+	applyColor(colorSection, "gb-3", &o.GameBoyPalette[3])
+	applyColor(colorSection, "ui-bg", &o.UIBackground)
+	applyColor(colorSection, "ui-fg", &o.UIForeground)
 }

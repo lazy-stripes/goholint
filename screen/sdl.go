@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/lazy-stripes/goholint/options"
+
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -16,7 +18,7 @@ import (
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
 	*UI
-	Palette    color.Palette
+	Palette    []color.RGBA
 	enabled    bool
 	window     *sdl.Window
 	renderer   *sdl.Renderer
@@ -38,19 +40,13 @@ type SDL struct {
 	recordTime     time.Time
 }
 
-var testPalette = [4]color.NRGBA{
-	{0xbd, 0xff, 0x9d, 0xff},
-	{0xff, 0xaa, 0x00, 0xff},
-	{0x00, 0xaa, 0xff, 0xff},
-	{0xff, 0x00, 0x00, 0xff},
-}
-
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
-func NewSDL(zoomFactor uint, vSync bool) *SDL {
+func NewSDL(config *options.Options) *SDL {
+	// TODO: subfunctions, this is already too big.
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
+		ScreenWidth*int32(config.ZoomFactor), ScreenHeight*int32(config.ZoomFactor),
 		sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
@@ -72,7 +68,7 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	if vSync {
+	if config.VSync {
 		if err = sdl.GLSetSwapInterval(-1); err != nil {
 			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 			// Try 'just' syncing to vblank then.
@@ -116,10 +112,6 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 		fmt.Fprintf(os.Stderr, "Failed to create blank texture: %s\n", err)
 		return nil // TODO: result, err
 	}
-	renderer.SetRenderTarget(blank)
-	renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
-	renderer.Clear()
-	renderer.SetRenderTarget(nil)
 
 	// Go bindings use byte slices but SDL thinks in terms of uint32
 	screenLen := ScreenWidth * ScreenHeight * 4
@@ -128,28 +120,34 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 	// Keep computed screen size for screenshots.
 	screenRect := image.Rectangle{
 		image.Point{0, 0},
-		image.Point{ScreenWidth * int(zoomFactor), ScreenHeight * int(zoomFactor)},
+		image.Point{ScreenWidth * int(config.ZoomFactor), ScreenHeight * int(config.ZoomFactor)},
 	}
 
-	// Create UI with actual screen size.
-	ui := NewUI(renderer, zoomFactor)
+	// Create UI with actual screen size and colors from config.
+	ui := NewUI(renderer, config)
 
-	sdl := SDL{
+	s := SDL{
 		UI:         ui,
-		Palette:    DefaultPalette,
+		Palette:    config.GameBoyPalette,
 		renderer:   renderer,
 		texture:    texture,
 		blank:      blank,
 		buffer:     buffer,
-		zoom:       int(zoomFactor),
+		zoom:       int(config.ZoomFactor),
 		screenRect: screenRect,
-		gif:        NewGIF(zoomFactor),
+		gif:        NewGIF(config),
 	}
 
-	// Init texture and trigger stuff usually happening at VBlank.
-	sdl.VBlank() // XXX: is this needed?
+	// Initialize blank screen texture.
+	renderer.SetRenderTarget(blank)
+	renderer.SetDrawColor(s.Palette[0].R, s.Palette[0].G, s.Palette[0].B, sdl.ALPHA_OPAQUE)
+	renderer.Clear()
+	renderer.SetRenderTarget(nil)
 
-	return &sdl
+	// Init texture and trigger stuff usually happening at VBlank.
+	s.VBlank() // XXX: is this needed?
+
+	return &s
 }
 
 // Close frees all resources created by SDL.
@@ -179,10 +177,11 @@ func (s *SDL) Disable() {
 // Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		s.buffer[s.offset+0] = s.Palette[colorIndex].(color.RGBA).R
-		s.buffer[s.offset+1] = s.Palette[colorIndex].(color.RGBA).G
-		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.RGBA).B
-		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.RGBA).A
+		col := s.Palette[colorIndex]
+		s.buffer[s.offset+0] = col.R
+		s.buffer[s.offset+1] = col.G
+		s.buffer[s.offset+2] = col.B
+		s.buffer[s.offset+3] = col.A
 		s.offset += 4
 
 		if s.gif.IsOpen() {
