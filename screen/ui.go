@@ -60,14 +60,28 @@ func NewUI(renderer *sdl.Renderer, config *options.Options) *UI {
 	// Background transparency.
 	texture.SetBlendMode(sdl.BLENDMODE_BLEND)
 
+	// Colors from config.
+	fg := sdl.Color{
+		R: config.UIForeground.R,
+		G: config.UIForeground.G,
+		B: config.UIForeground.B,
+		A: config.UIForeground.A,
+	}
+	bg := sdl.Color{
+		R: config.UIBackground.R,
+		G: config.UIBackground.G,
+		B: config.UIBackground.B,
+		A: config.UIBackground.A,
+	}
+
 	ui := UI{
 		Enabled:  true,
 		texture:  texture,
 		renderer: renderer,
 		font:     font,
 		fontZoom: fontZoom,
-		fg:       sdl.Color{R: 0, G: 0, B: 0, A: 0xff},
-		bg:       sdl.Color{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+		fg:       fg,
+		bg:       bg,
 	}
 	return &ui
 }

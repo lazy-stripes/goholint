@@ -40,13 +40,6 @@ type SDL struct {
 	recordTime     time.Time
 }
 
-var testPalette = [4]color.NRGBA{
-	{0xbd, 0xff, 0x9d, 0xff},
-	{0xff, 0xaa, 0x00, 0xff},
-	{0x00, 0xaa, 0xff, 0xff},
-	{0xff, 0x00, 0x00, 0xff},
-}
-
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
 func NewSDL(config *options.Options) *SDL {
@@ -119,10 +112,6 @@ func NewSDL(config *options.Options) *SDL {
 		fmt.Fprintf(os.Stderr, "Failed to create blank texture: %s\n", err)
 		return nil // TODO: result, err
 	}
-	renderer.SetRenderTarget(blank)
-	renderer.SetDrawColor(ColorWhiteR, ColorWhiteG, ColorWhiteB, sdl.ALPHA_OPAQUE)
-	renderer.Clear()
-	renderer.SetRenderTarget(nil)
 
 	// Go bindings use byte slices but SDL thinks in terms of uint32
 	screenLen := ScreenWidth * ScreenHeight * 4
@@ -139,7 +128,7 @@ func NewSDL(config *options.Options) *SDL {
 
 	s := SDL{
 		UI:         ui,
-		Palette:    DefaultPalette,
+		Palette:    config.GameBoyPalette,
 		renderer:   renderer,
 		texture:    texture,
 		blank:      blank,
@@ -148,6 +137,12 @@ func NewSDL(config *options.Options) *SDL {
 		screenRect: screenRect,
 		gif:        NewGIF(config),
 	}
+
+	// Initialize blank screen texture.
+	renderer.SetRenderTarget(blank)
+	renderer.SetDrawColor(s.Palette[0].R, s.Palette[0].G, s.Palette[0].B, sdl.ALPHA_OPAQUE)
+	renderer.Clear()
+	renderer.SetRenderTarget(nil)
 
 	// Init texture and trigger stuff usually happening at VBlank.
 	s.VBlank() // XXX: is this needed?

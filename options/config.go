@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 
 	"github.com/veandco/go-sdl2/sdl"
 
@@ -31,6 +32,15 @@ const (
 #nosync = 1
 #waitkey = 1
 #zoom = 1
+
+# Customize the Game Boy palette and UI colors here. Use hexadecimal RGB format.
+[colors]
+gb-0  = e0f0e7 # Lightest
+gb-1  = 8ba394 # Light
+gb-2  = 55645a # Dark
+gb-3  = 343d37 # Darkest
+ui-bg = ffffff # UI Background (outline)
+ui-fg = 000000 # UI foreground (text)
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
 # SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
@@ -144,6 +154,26 @@ func applyUint(cfg *ini.File, flags map[string]bool, name string, dst *uint) {
 	}
 }
 
+// Apply a parameter value from the config file to the color variable whose
+// address is given, if that parameter was present in the file. If the color
+// value can't be parsed, it's silently ignored.
+func applyColor(s *ini.Section, name string, dst *color.RGBA) {
+	if !s.HasKey(name) {
+		return
+	}
+
+	if key := s.Key(name); key != nil {
+		// Colors should be in hexadecimal (without 0x prefix).
+		if rgb, err := strconv.ParseUint(key.String(), 16, 32); err == nil {
+			dst.R = uint8((rgb >> 16) & 0xff)
+			dst.G = uint8((rgb >> 8) & 0xff)
+			dst.B = uint8(rgb & 0xff)
+		} else {
+			fmt.Printf("Invalid value for color '%s': %v\n", name, err)
+		}
+	}
+}
+
 // Attempt to create home config folder and copy our default config there.
 func createDefaultConfig() {
 	// Only create default config if the config folder isn't there yet.
@@ -216,4 +246,13 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 			o.Keymap[key] = keySym
 		}
 	}
+
+	// Set colors here. Build on top of default as well.
+	colorSection := cfg.Section("colors")
+	applyColor(colorSection, "gb-0", &o.GameBoyPalette[0])
+	applyColor(colorSection, "gb-1", &o.GameBoyPalette[1])
+	applyColor(colorSection, "gb-2", &o.GameBoyPalette[2])
+	applyColor(colorSection, "gb-3", &o.GameBoyPalette[3])
+	applyColor(colorSection, "ui-bg", &o.UIBackground)
+	applyColor(colorSection, "ui-fg", &o.UIForeground)
 }
