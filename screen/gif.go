@@ -26,7 +26,8 @@ var FrameBounds = image.Rectangle{Min: image.Point{0, 0},
 type GIF struct {
 	gif.GIF
 
-	config image.Config // Dimensions and colors for GIF files
+	palette   color.Palette // Pre-instanciated Palette.
+	gifConfig image.Config  // Dimensions and colors for GIF files
 
 	Filename string
 	fd       *os.File
@@ -44,15 +45,19 @@ type GIF struct {
 func NewGIF(config *options.Options) *GIF {
 	// TODO: save path in config
 
-	// Pre-instantiate disabled screen frame.
-	disabled := image.NewPaletted(FrameBounds, DefaultPalette)
-	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{DefaultPalette[0]}, image.Point{}, draw.Src)
-	middle := disabled.Bounds()
-	middle.Min.Y /= 2
-	middle.Max.Y = (middle.Max.Y / 2) + 1
-	draw.Draw(disabled, middle, &image.Uniform{DefaultPalette[3]}, image.Point{}, draw.Src)
+	// Convert our palette array to Color interface slice.
+	palette := []color.Color{
+		config.GameBoyPalette[0],
+		config.GameBoyPalette[1],
+		config.GameBoyPalette[2],
+		config.GameBoyPalette[3],
+	}
 
-	config := image.Config{
+	// Pre-instantiate disabled screen frame.
+	disabled := image.NewPaletted(FrameBounds, palette)
+	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{config.GameBoyPalette[0]}, image.Point{}, draw.Src)
+
+	gifConfig := image.Config{
 		ColorModel: disabled.ColorModel(),
 		Width:      ScreenWidth,
 		Height:     ScreenHeight,
@@ -60,7 +65,8 @@ func NewGIF(config *options.Options) *GIF {
 
 	return &GIF{
 		disabled:  disabled,
-		config:    config,
+		palette:   palette,
+		gifConfig: gifConfig,
 		lastFrame: disabled, // Acceptable zero value to avoid a nil check later
 	}
 }
@@ -94,7 +100,7 @@ func (g *GIF) SaveFrame() {
 		g.lastFrame = currentFrame
 		g.GIF.Image = append(g.GIF.Image, g.frame)
 		g.GIF.Delay = append(g.GIF.Delay, 2) // GIF players poorly handle 10ms frames delay
-		g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
+		g.frame = image.NewPaletted(FrameBounds, g.palette)
 	}
 
 	g.offset = 0
@@ -122,8 +128,8 @@ func (g *GIF) Open(filename string) {
 
 	log.Sub("gif").Infof("recording to %s", filename)
 
-	g.GIF = gif.GIF{Config: g.config}
-	g.frame = image.NewPaletted(FrameBounds, DefaultPalette)
+	g.GIF = gif.GIF{Config: g.gifConfig}
+	g.frame = image.NewPaletted(FrameBounds, g.palette)
 	g.lastFrame = nil
 	g.Filename = filename
 	g.fd = fd
