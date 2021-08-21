@@ -18,7 +18,7 @@ import (
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
 	*UI
-	Palette    color.Palette
+	Palette    []color.RGBA
 	enabled    bool
 	window     *sdl.Window
 	renderer   *sdl.Renderer
@@ -182,10 +182,11 @@ func (s *SDL) Disable() {
 // Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		s.buffer[s.offset+0] = s.Palette[colorIndex].(color.RGBA).R
-		s.buffer[s.offset+1] = s.Palette[colorIndex].(color.RGBA).G
-		s.buffer[s.offset+2] = s.Palette[colorIndex].(color.RGBA).B
-		s.buffer[s.offset+3] = s.Palette[colorIndex].(color.RGBA).A
+		col := s.Palette[colorIndex]
+		s.buffer[s.offset+0] = col.R
+		s.buffer[s.offset+1] = col.G
+		s.buffer[s.offset+2] = col.B
+		s.buffer[s.offset+3] = col.A
 		s.offset += 4
 
 		if s.gif.IsOpen() {
