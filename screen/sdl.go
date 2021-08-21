@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/lazy-stripes/goholint/options"
+
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -47,10 +49,11 @@ var testPalette = [4]color.NRGBA{
 
 // NewSDL returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
-func NewSDL(zoomFactor uint, vSync bool) *SDL {
+func NewSDL(config *options.Options) *SDL {
+	// TODO: subfunctions, this is already too big.
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		ScreenWidth*int32(zoomFactor), ScreenHeight*int32(zoomFactor),
+		ScreenWidth*int32(config.ZoomFactor), ScreenHeight*int32(config.ZoomFactor),
 		sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
@@ -72,7 +75,7 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 		return nil // TODO: result, err
 	}
 
-	if vSync {
+	if config.VSync {
 		if err = sdl.GLSetSwapInterval(-1); err != nil {
 			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 			// Try 'just' syncing to vblank then.
@@ -128,28 +131,28 @@ func NewSDL(zoomFactor uint, vSync bool) *SDL {
 	// Keep computed screen size for screenshots.
 	screenRect := image.Rectangle{
 		image.Point{0, 0},
-		image.Point{ScreenWidth * int(zoomFactor), ScreenHeight * int(zoomFactor)},
+		image.Point{ScreenWidth * int(config.ZoomFactor), ScreenHeight * int(config.ZoomFactor)},
 	}
 
-	// Create UI with actual screen size.
-	ui := NewUI(renderer, zoomFactor)
+	// Create UI with actual screen size and colors from config.
+	ui := NewUI(renderer, config)
 
-	sdl := SDL{
+	s := SDL{
 		UI:         ui,
 		Palette:    DefaultPalette,
 		renderer:   renderer,
 		texture:    texture,
 		blank:      blank,
 		buffer:     buffer,
-		zoom:       int(zoomFactor),
+		zoom:       int(config.ZoomFactor),
 		screenRect: screenRect,
-		gif:        NewGIF(zoomFactor),
+		gif:        NewGIF(config),
 	}
 
 	// Init texture and trigger stuff usually happening at VBlank.
-	sdl.VBlank() // XXX: is this needed?
+	s.VBlank() // XXX: is this needed?
 
-	return &sdl
+	return &s
 }
 
 // Close frees all resources created by SDL.

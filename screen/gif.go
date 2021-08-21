@@ -3,9 +3,12 @@ package screen
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/gif"
 	"os"
+
+	"github.com/lazy-stripes/goholint/options"
 )
 
 // FrameDelay is the time each GIF frame lasts, given that the Gameboy's screen
@@ -38,8 +41,8 @@ type GIF struct {
 
 // NewGIF instantiates a GIF recorder that will buffer frames and then output a
 // GIF file when required.
-func NewGIF(zoomFactor uint) *GIF {
-	// TODO: check file access, (pre-create it?)
+func NewGIF(config *options.Options) *GIF {
+	// TODO: save path in config
 
 	// Pre-instantiate disabled screen frame.
 	disabled := image.NewPaletted(FrameBounds, DefaultPalette)

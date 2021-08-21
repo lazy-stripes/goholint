@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/lazy-stripes/goholint/options"
+
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -34,8 +36,8 @@ type UI struct {
 }
 
 // Return a UI instance given a renderer to create the overlay texture.
-func NewUI(renderer *sdl.Renderer, zoom uint) *UI {
-	font, err := ttf.OpenFont("assets/ui.ttf", int(8*zoom)) // FIXME: make zoom configurable
+func NewUI(renderer *sdl.Renderer, config *options.Options) *UI {
+	font, err := ttf.OpenFont("assets/ui.ttf", int(8*config.ZoomFactor))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to open font: %s\n", err)
 		return nil // TODO: result, err
@@ -44,8 +46,8 @@ func NewUI(renderer *sdl.Renderer, zoom uint) *UI {
 	texture, err := renderer.CreateTexture(
 		sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_TARGET,
-		ScreenWidth*int32(zoom),
-		ScreenHeight*int32(zoom))
+		ScreenWidth*int32(config.ZoomFactor),
+		ScreenHeight*int32(config.ZoomFactor))
 	if err != nil {
 		font.Close()
 		fmt.Fprintf(os.Stderr, "Failed to create UI texture: %s\n", err)
@@ -53,7 +55,7 @@ func NewUI(renderer *sdl.Renderer, zoom uint) *UI {
 	}
 
 	// Scale font up with screen size.
-	fontZoom := zoom // TODO: smaller fontZoom for higher zoom.
+	fontZoom := config.ZoomFactor // TODO: smaller fontZoom for higher zoom.
 
 	// Background transparency.
 	texture.SetBlendMode(sdl.BLENDMODE_BLEND)

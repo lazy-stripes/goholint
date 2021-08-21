@@ -32,7 +32,7 @@ type TickResult struct {
 
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
-	args *options.Options
+	config *options.Options
 
 	ticks   uint64
 	APU     *apu.APU
@@ -76,10 +76,10 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 }
 
 // New just instantiates most of the emulator. No biggie.
-func New(args *options.Options) *GameBoy {
-	g := GameBoy{args: args}
+func New(config *options.Options) *GameBoy {
+	g := GameBoy{config: config}
 
-	g.SetControls(args.Keymap)
+	g.SetControls(config.Keymap)
 
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
@@ -88,10 +88,10 @@ func New(args *options.Options) *GameBoy {
 	g.APU = apu.New()
 
 	// TODO: merge GIF encoder in UI/Screen instance.
-	g.Display = screen.NewSDL(args.ZoomFactor, args.VSync)
-	if args.GIFPath != "" {
+	g.Display = screen.NewSDL(config)
+	if config.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)
-		fmt.Printf("Saving GIF to %s\n", args.GIFPath)
+		fmt.Printf("Saving GIF to %s\n", config.GIFPath)
 	}
 
 	g.PPU = ppu.New(g.Display)
@@ -102,7 +102,7 @@ func New(args *options.Options) *GameBoy {
 	g.Timer.Interrupts = ints
 
 	var boot memory.Addressable
-	if args.FastBoot {
+	if config.FastBoot {
 		// TODO: just implement save states, at this point.
 
 		// XXX: What the BootROM does RAM-wise:
@@ -134,7 +134,7 @@ func New(args *options.Options) *GameBoy {
 			// TODO: set RAM/VRAM
 		}
 	} else {
-		boot = memory.NewBoot(args.BootROM)
+		boot = memory.NewBoot(config.BootROM)
 	}
 
 	wram := memory.NewRAM(0xc000, 0x2000)
@@ -157,21 +157,21 @@ func New(args *options.Options) *GameBoy {
 	g.DMA.MMU = mmu
 	g.CPU.MMU = mmu
 
-	if args.ROMPath != "" {
+	if config.ROMPath != "" {
 		// Build save path in case the cartridge uses one. Or use one
 		// specified by the user.
-		savePath := args.SavePath
+		savePath := config.SavePath
 		if savePath == "" {
 			// The user could also just specify a path to a save folder.
-			prefix := args.SaveDir
+			prefix := config.SaveDir
 			if prefix == "" {
-				prefix = filepath.Dir(args.ROMPath)
+				prefix = filepath.Dir(config.ROMPath)
 			}
-			suffix := filepath.Base(args.ROMPath)
+			suffix := filepath.Base(config.ROMPath)
 			savePath = prefix + "/" + suffix + ".sav"
 		}
 		// TODO: save-related error management.
-		mmu.Add(memory.NewCartridge(args.ROMPath, savePath))
+		mmu.Add(memory.NewCartridge(config.ROMPath, savePath))
 	}
 
 	return &g
@@ -244,7 +244,7 @@ func (g *GameBoy) Stop() {
 	g.Display.Close()
 
 	// If debugging at all, dump debug info.
-	if len(g.args.DebugModules) > 0 {
+	if len(g.config.DebugModules) > 0 {
 		fmt.Println(g.CPU)
 		fmt.Println(g.PPU)
 
