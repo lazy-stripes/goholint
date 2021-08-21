@@ -2,6 +2,7 @@ package options
 
 import (
 	"fmt"
+	"image/color"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -101,6 +102,10 @@ var DefaultPalette = []color.RGBA{
 	ColorDarkGray,
 	ColorBlack,
 }
+
+// Default UI colors. Black text, white outline.
+var DefaultUIBackground = color.RGBA{0x00, 0x00, 0x00, 0xff}
+var DefaultUIForeground = color.RGBA{0xff, 0xff, 0xff, 0xff}
 
 // configKey returns a config key by the given name if it's present in the file
 // and not already set by command-line arguments.

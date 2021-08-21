@@ -3,24 +3,28 @@ package options
 import (
 	"flag"
 	"fmt"
+	"image/color"
 )
 
 // Options structure grouping command line flags values.
 type Options struct {
-	BootROM      string // -boot <path>
-	CPUProfile   string // -cpuprofile <path>
-	DebugLevel   string // -level <debug level>
-	DebugModules module // -debug <module>
-	Duration     uint   // -cycles <amount>
-	FastBoot     bool   // -fastboot
-	GIFPath      string // -gif <path>
-	Keymap       Keymap // From config.
-	VSync        bool   // -vsync
-	ROMPath      string // -rom <path>
-	SaveDir      string // -savedir <path>
-	SavePath     string // -save <full path>
-	WaitKey      bool   // -waitkey
-	ZoomFactor   uint   // -zoom <factor>
+	BootROM        string       // -boot <path>
+	CPUProfile     string       // -cpuprofile <path>
+	DebugLevel     string       // -level <debug level>
+	DebugModules   module       // -debug <module>
+	Duration       uint         // -cycles <amount>
+	FastBoot       bool         // -fastboot
+	GameBoyPalette []color.RGBA // From config.
+	GIFPath        string       // -gif <path>
+	Keymap         Keymap       // From config.
+	VSync          bool         // -vsync
+	ROMPath        string       // -rom <path>
+	SaveDir        string       // -savedir <path>
+	SavePath       string       // -save <full path>
+	UIBackground   color.RGBA   // From config.
+	UIForeground   color.RGBA   // From config.
+	WaitKey        bool         // -waitkey
+	ZoomFactor     uint         // -zoom <factor>
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -88,8 +92,11 @@ func Parse() *Options {
 		flagsSet[f.Name] = true
 	})
 
-	// Keep default keymap in case there is no config file.
+	// Other defaults used if there is no config file.
 	options.Keymap = DefaultKeymap
+	options.GameBoyPalette = DefaultPalette
+	options.UIBackground = DefaultUIBackground
+	options.UIForeground = DefaultUIForeground
 
 	// Create config folder if needed and if no -config flag was used.
 	if *configPath == "" {
