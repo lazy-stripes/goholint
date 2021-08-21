@@ -1,10 +1,11 @@
-roms
-test
-*-dump.*
-goholint-*.png
-*.prof
-*.zip
 .vscode/
 bin/
 goholint
+goholint-*.png
+goholint-*.gif
+roms
+test
+*-dump.*
 *.bin
+*.prof
+*.zip

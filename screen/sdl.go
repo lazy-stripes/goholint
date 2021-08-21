@@ -209,7 +209,10 @@ func (s *SDL) VBlank() {
 		s.renderer.Copy(s.blank, nil, nil)
 	}
 
-	// Update GIF frame if recording.
+	// Update GIF frame if recording. We do this before checking startRecording
+	// otherwise the call to SaveFrame will always insert a "disabled" frame in
+	// first position (since we haven't yet had time to build a full frame in
+	// that specific case).
 	if s.gif.IsOpen() {
 		d := time.Since(s.recordTime)
 		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
@@ -230,6 +233,7 @@ func (s *SDL) VBlank() {
 		s.stopRecording = false
 		s.gif.Close()
 		s.UI.Text("")
+		s.UI.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
 		s.recordPath = ""
 	}
 
