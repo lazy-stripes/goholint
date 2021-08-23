@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 
@@ -242,8 +243,8 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	applyBool(cfg, flags, "waitkey", &o.WaitKey)
 	applyUint(cfg, flags, "zoom", &o.ZoomFactor)
 
-	// Ignoring options that are not really interesting as a config.
-	// Such as -cyles, -gif or -rom...
+	// Ignoring flags that are not really interesting as a config, such as
+	// -cyles, -gif or -rom...
 
 	// Set keymap here. Build on top of default. TODO: validate.
 	keySection := cfg.Section("keymap")
@@ -258,10 +259,13 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")
-	applyColor(colorSection, "gb-0", &o.GameBoyPalette[0])
-	applyColor(colorSection, "gb-1", &o.GameBoyPalette[1])
-	applyColor(colorSection, "gb-2", &o.GameBoyPalette[2])
-	applyColor(colorSection, "gb-3", &o.GameBoyPalette[3])
+
+	// Default palette is palette 0.
+	applyColor(colorSection, "gb-0", &o.Palettes[0][0])
+	applyColor(colorSection, "gb-1", &o.Palettes[0][1])
+	applyColor(colorSection, "gb-2", &o.Palettes[0][2])
+	applyColor(colorSection, "gb-3", &o.Palettes[0][3])
+
 	applyColor(colorSection, "ui-bg", &o.UIBackground)
 	applyColor(colorSection, "ui-fg", &o.UIForeground)
 }

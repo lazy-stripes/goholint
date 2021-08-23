@@ -14,7 +14,6 @@ type Options struct {
 	DebugModules   module       // -debug <module>
 	Duration       uint         // -cycles <amount>
 	FastBoot       bool         // -fastboot
-	GameBoyPalette []color.RGBA // From config.
 	GIFPath        string       // -gif <path>
 	Keymap         Keymap       // From config.
 	VSync          bool         // -vsync
@@ -25,6 +24,7 @@ type Options struct {
 	UIForeground   color.RGBA   // From config.
 	WaitKey        bool         // -waitkey
 	ZoomFactor     uint         // -zoom <factor>
+	Palettes     [][]color.RGBA // From config.
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -44,7 +44,7 @@ func (m *module) Set(value string) error {
 	return nil
 }
 
-// Supported command-line options for the emulator.
+// Supported command-line options.
 var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
 var configPath = flag.String("config", "", "Path to custom config file")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
@@ -93,8 +93,11 @@ func Parse() *Options {
 	})
 
 	// Other defaults used if there is no config file.
+
 	options.Keymap = DefaultKeymap
-	options.GameBoyPalette = DefaultPalette
+
+	// Always include the default palette as palette 0.
+	options.Palettes = append(options.Palettes, DefaultPalette)
 	options.UIBackground = DefaultUIBackground
 	options.UIForeground = DefaultUIForeground
 
