@@ -94,6 +94,7 @@ func (g *GameBoy) NextPalette(eventType uint32) {
 
 	g.paletteIndex = (g.paletteIndex + 1) % uint(len(g.config.Palettes))
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
+	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping around.
@@ -104,6 +105,7 @@ func (g *GameBoy) PreviousPalette(eventType uint32) {
 
 	g.paletteIndex = (g.paletteIndex - 1) % uint(len(g.config.Palettes))
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
+	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // TODO: so many things! Save states, toggle features...

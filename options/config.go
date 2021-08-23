@@ -220,6 +220,7 @@ func (o *Options) addPalette(name, value string) {
 		}
 	}
 	o.Palettes = append(o.Palettes, palette)
+	o.PaletteNames = append(o.PaletteNames, name)
 }
 
 // Attempt to create home config folder and put our default config there, if

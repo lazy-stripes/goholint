@@ -6,25 +6,26 @@ import (
 	"image/color"
 )
 
-// Options structure grouping command line flags values.
+// Options structure grouping command line flags and config file values.
 type Options struct {
-	BootROM        string       // -boot <path>
-	CPUProfile     string       // -cpuprofile <path>
-	DebugLevel     string       // -level <debug level>
-	DebugModules   module       // -debug <module>
-	Duration       uint         // -cycles <amount>
-	FastBoot       bool         // -fastboot
-	GIFPath        string       // -gif <path>
-	Keymap         Keymap       // From config.
-	VSync          bool         // -vsync
-	ROMPath        string       // -rom <path>
-	SaveDir        string       // -savedir <path>
-	SavePath       string       // -save <full path>
-	UIBackground   color.RGBA   // From config.
-	UIForeground   color.RGBA   // From config.
-	WaitKey        bool         // -waitkey
-	ZoomFactor     uint         // -zoom <factor>
+	BootROM      string         // -boot <path>
+	CPUProfile   string         // -cpuprofile <path>
+	DebugLevel   string         // -level <debug level>
+	DebugModules module         // -debug <module>
+	Duration     uint           // -cycles <amount>
+	FastBoot     bool           // -fastboot
 	Palettes     [][]color.RGBA // From config.
+	PaletteNames []string       // From config, same order.
+	GIFPath      string         // -gif <path>
+	Keymap       Keymap         // From config.
+	VSync        bool           // -vsync
+	ROMPath      string         // -rom <path>
+	SaveDir      string         // -savedir <path>
+	SavePath     string         // -save <full path>
+	UIBackground color.RGBA     // From config.
+	UIForeground color.RGBA     // From config.
+	WaitKey      bool           // -waitkey
+	ZoomFactor   uint           // -zoom <factor>
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -98,6 +99,8 @@ func Parse() *Options {
 
 	// Always include the default palette as palette 0.
 	options.Palettes = append(options.Palettes, DefaultPalette)
+	options.PaletteNames = append(options.PaletteNames, "default")
+
 	options.UIBackground = DefaultUIBackground
 	options.UIForeground = DefaultUIForeground
 
