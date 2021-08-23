@@ -67,22 +67,28 @@ screenshot = F12   # Save a screenshot in the current directory
 
 recordgif = g      # Start/stop recording video output to GIF
 
+# Cycle through custom palettes.
+nexpalette      = PAGEDOWN
+previouspalette = PAGEUP
+
 # TODO: quit, reset, snapshot...
 `
 )
 
 // DefaultKeymap is a reasonable default mapping for QWERTY/AZERTY layouts.
 var DefaultKeymap = Keymap{
-	"up":         sdl.K_UP,
-	"down":       sdl.K_DOWN,
-	"left":       sdl.K_LEFT,
-	"right":      sdl.K_RIGHT,
-	"a":          sdl.K_s,
-	"b":          sdl.K_d,
-	"select":     sdl.K_BACKSPACE,
-	"start":      sdl.K_RETURN,
-	"screenshot": sdl.K_F12,
-	"recordgif":  sdl.K_g,
+	"up":              sdl.K_UP,
+	"down":            sdl.K_DOWN,
+	"left":            sdl.K_LEFT,
+	"right":           sdl.K_RIGHT,
+	"a":               sdl.K_s,
+	"b":               sdl.K_d,
+	"select":          sdl.K_BACKSPACE,
+	"start":           sdl.K_RETURN,
+	"screenshot":      sdl.K_F12,
+	"recordgif":       sdl.K_g,
+	"nextpalette":     sdl.K_PAGEDOWN,
+	"previouspalette": sdl.K_PAGEUP,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL

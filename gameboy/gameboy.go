@@ -46,6 +46,9 @@ type GameBoy struct {
 
 	Controls map[sdl.Keycode]Action
 
+	// Current palette.
+	paletteIndex uint
+
 	// For GIF record toggle.
 	recording bool
 }
@@ -56,16 +59,18 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 	// unnecessarily complicated, but should make sense when I start translating
 	// these from a config file. I hope.
 	actions := map[string]Action{
-		"up":         g.JoypadUp,
-		"down":       g.JoypadDown,
-		"left":       g.JoypadLeft,
-		"right":      g.JoypadRight,
-		"a":          g.JoypadA,
-		"b":          g.JoypadB,
-		"select":     g.JoypadSelect,
-		"start":      g.JoypadStart,
-		"screenshot": g.Screenshot,
-		"recordgif":  g.StartStopRecord,
+		"up":              g.JoypadUp,
+		"down":            g.JoypadDown,
+		"left":            g.JoypadLeft,
+		"right":           g.JoypadRight,
+		"a":               g.JoypadA,
+		"b":               g.JoypadB,
+		"select":          g.JoypadSelect,
+		"start":           g.JoypadStart,
+		"screenshot":      g.Screenshot,
+		"recordgif":       g.StartStopRecord,
+		"nextpalette":     g.NextPalette,
+		"previouspalette": g.PreviousPalette,
 	}
 
 	g.Controls = make(map[sdl.Keycode]Action)

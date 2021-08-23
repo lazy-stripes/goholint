@@ -86,4 +86,24 @@ func (g *GameBoy) StartStopRecord(eventType uint32) {
 	}
 }
 
+// NextPalette switches colors to the next defined palette, wrapping around.
+func (g *GameBoy) NextPalette(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	g.paletteIndex = (g.paletteIndex + 1) % uint(len(g.config.Palettes))
+	g.Display.Palette(g.config.Palettes[g.paletteIndex])
+}
+
+// PreviousPalette switches colors to the previous defined palette, wrapping around.
+func (g *GameBoy) PreviousPalette(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	g.paletteIndex = (g.paletteIndex - 1) % uint(len(g.config.Palettes))
+	g.Display.Palette(g.config.Palettes[g.paletteIndex])
+}
+
 // TODO: so many things! Save states, toggle features...
