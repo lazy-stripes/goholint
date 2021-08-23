@@ -34,7 +34,7 @@ const (
 #waitkey = 1
 #zoom = 1
 
-# Customize the Game Boy palette and UI colors here. Use hexadecimal RGB format.
+# Customize the default GB palette and UI colors here. Use hex RGB format.
 [colors]
 gb-0  = e0f0e7 # Lightest
 gb-1  = 8ba394 # Light
@@ -42,6 +42,13 @@ gb-2  = 55645a # Dark
 gb-3  = 343d37 # Darkest
 ui-bg = ffffff # UI Background (outline)
 ui-fg = 000000 # UI foreground (text)
+
+# Define custom palettes here. Use short names and hex RGB format for colors.
+# Format is: <name> = <lightest> <light> <dark> <darkest>
+# The following are courtesy of lospec.com.
+[palettes]
+awakening = 5a3921 6b8c42 7bc67b ffffb5 # https://lospec.com/palette-list/links-awakening-sgb
+sgb = f7e7c6 d68e49 a63725 331e50       # https://lospec.com/palette-list/nintendo-super-gameboy
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
 # SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
@@ -179,10 +186,34 @@ func applyColor(s *ini.Section, name string, dst *color.RGBA) {
 			dst.R = uint8((rgb >> 16) & 0xff)
 			dst.G = uint8((rgb >> 8) & 0xff)
 			dst.B = uint8(rgb & 0xff)
+			dst.A = 0xff
 		} else {
 			fmt.Printf("Invalid value for color '%s': %v\n", name, err)
 		}
 	}
+}
+
+// Add a custom-defined palette to Options.
+func (o *Options) addPalette(name, value string) {
+	hexColors := strings.Fields(value)
+	if len(hexColors) != 4 {
+		return
+	}
+
+	palette := make([]color.RGBA, 4)
+	for i := range palette {
+		// Colors should be in hexadecimal (without 0x prefix).
+		if rgb, err := strconv.ParseUint(hexColors[i], 16, 32); err == nil {
+			palette[i].R = uint8((rgb >> 16) & 0xff)
+			palette[i].G = uint8((rgb >> 8) & 0xff)
+			palette[i].B = uint8(rgb & 0xff)
+			palette[i].A = 0xff
+		} else {
+			fmt.Printf("Invalid value for color %d in palette %s: %v\n", i, name, err)
+			return // Ignore palettes with invalid colors
+		}
+	}
+	o.Palettes = append(o.Palettes, palette)
 }
 
 // Attempt to create home config folder and put our default config there, if
@@ -268,4 +299,11 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	applyColor(colorSection, "ui-bg", &o.UIBackground)
 	applyColor(colorSection, "ui-fg", &o.UIForeground)
+
+	// Add custom palettes.
+	palettesSection := cfg.Section("palettes")
+	for _, palName := range palettesSection.KeyStrings() {
+		palValue := palettesSection.Key(palName).String()
+		o.addPalette(palName, palValue)
+	}
 }
