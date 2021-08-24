@@ -4,7 +4,7 @@
 
 An incomplete, buggy and suboptimal GameBoy emulator written in Go purely for
 fun. It displays pixels, makes noises and can export GIFs. Hopefully it can
-prove remotely informative!
+also prove remotely informative to anyone wanting to get into emulators!
 
 
 ## Disclaimer
@@ -35,45 +35,55 @@ The emulator ships without any kind of ROM for hopefully obvious reasons. If
 you want a scrolling logo, the emulator needs a boot ROM it will attempt to
 read from `bin/boot/dmg_rom.bin` or whatever path you specify with `-boot`.
 
-(Note: if you don't want to hunt down the GameBoy's boot ROM, simply start the
-emulator with the `‑fastboot` parameter to bypass it entirely. It doesn't work
-as well as using the boot ROM yet, alas.)
-
-With that taken care of, `go run main.go ‑rom <path>` should be enough to see
+With that taken care of, `goholint ‑rom <path>` should be enough to see
 an SDL window potentially displaying some interesting things, or more likely a
 blank screen, if it doesn't crash first.
 
-(As of 2020, Tetris and Dr. Mario are kind of playable!)
+(As of 2021, Tetris, Dr. Mario, TMNT and Link's Awakening are actually playable.)
+
+See `goholint -help` for the full list of supported options, until I write an
+actual manual for it.
 
 
 ## Controls
 
-The following controls are set by default:
+The default controls are:
 
-Action            | Key
----               | ---
-**A Button**      | S
-**B Button**      | D
-**Select Button** | Backspace
-**Start Button**  | Return
-**Joypad Up**     | Arrow Up
-**Joypad Down**   | Arrow Down
-**Joypad Left**   | Arrow Left
-**Joypad Right**  | Arrow Right
-**Screenshot**    | F12
+Action                       | Key
+---                          | ---
+**A Button**                 | S
+**B Button**                 | D
+**Select Button**            | Backspace
+**Start Button**             | Return
+**Joypad Up**                | Arrow Up
+**Joypad Down**              | Arrow Down
+**Joypad Left**              | Arrow Left
+**Joypad Right**             | Arrow Right
 
 (It's sort of okay on QWERTY and AZERTY keyboards alike but *does* make Metroid
 II awkward to play.)
 
-You can customize controls using a configuration file, either via the `-config`
-flag or by creating a `.goholint.ini` file in your home folder.
+Goholint also support the following actions:
 
-See `options/config.ini` for details.
+Action                       | Key
+---                          | ---
+**Screenshot**               | F12
+**Start/stop GIF recording** | G
+**Previous palette**         | Page Up
+**Next palette**             | Page Down
+
+All screenshots/GIF files are created in the current folder. GIF animations only
+use the palette that was active when the recording started.
+
+You can customize all controls by modifying the `~/.goholint/config.ini` file 
+in your home folder (it should be created automatically if it doesn't exist yet)
+of by providing your own with `-config`.
 
 
 ## Acknowledgements
 
-UI font is [Press Start 2P Font by codeman38](https://www.fontspace.com/press-start-2p-font-f11591)
+UI font is [Press Start 2P Font](https://www.fontspace.com/press-start-2p-font-f11591)
+by [codeman38](https://www.fontspace.com/codeman38).
 
 The present project only exists thanks to Tomek Rękawek and his fascinating
 blog article about [how relatively easy it was to start implementing a GB

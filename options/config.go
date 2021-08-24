@@ -23,7 +23,7 @@ const (
 
 	// DefaultConfig contains a reasonable default config.ini that's used
 	// automatically if no config exists at run time. TODO: embed from file?
-	DefaultConfig = `# Most of the flags (except, obviously -config) can be overridden here with
+	DefaultConfig = `# Most of the flags (except, obviously, -config) can be overridden here with
 # the exact same name. See -help for details.
 
 #boot = path/to/dmg_rom.bin
@@ -45,9 +45,15 @@ ui-fg = 000000 # UI foreground (text)
 
 # Define custom palettes here. Use short names and hex RGB format for colors.
 # Format is: <name> = <lightest> <light> <dark> <darkest>
-# The following are courtesy of lospec.com.
+# The following are courtesy of lospec.com. They have tons more.
 [palettes]
-awakening = 5a3921 6b8c42 7bc67b ffffb5 # https://lospec.com/palette-list/links-awakening-sgb
+awakening = ffffb5 7bc67b 6b8c42 5a3921 # https://lospec.com/palette-list/links-awakening-sgb
+icarus = cef7f7 f78e50 9e0000 1e0000    # https://lospec.com/palette-list/kid-icarus-sgb
+kirby = f7bef7 e78686 7733e7 2c2c96     # https://lospec.com/palette-list/kirby-sgb
+mario2 = eff7b6 dfa677 11c600 000000    # https://lospec.com/palette-list/super-mario-land-2-sgb
+megaman = cecece 6f9edf 42678e 102533   # https://lospec.com/palette-list/megaman-v-sgb
+metroid = aedf1e b62558 047e60 2c1700   # https://lospec.com/palette-list/metroid-ii-sgb
+pokemon = ffefff f7b58c 84739c 181010   # https://lospec.com/palette-list/pokemon-sgb
 sgb = f7e7c6 d68e49 a63725 331e50       # https://lospec.com/palette-list/nintendo-super-gameboy
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
