@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 
@@ -22,7 +23,7 @@ const (
 
 	// DefaultConfig contains a reasonable default config.ini that's used
 	// automatically if no config exists at run time. TODO: embed from file?
-	DefaultConfig = `# Most of the flags (except, obviously -config) can be overridden here with
+	DefaultConfig = `# Most of the flags (except, obviously, -config) can be overridden here with
 # the exact same name. See -help for details.
 
 #boot = path/to/dmg_rom.bin
@@ -33,7 +34,7 @@ const (
 #waitkey = 1
 #zoom = 1
 
-# Customize the Game Boy palette and UI colors here. Use hexadecimal RGB format.
+# Customize the default GB palette and UI colors here. Use hex RGB format.
 [colors]
 gb-0  = e0f0e7 # Lightest
 gb-1  = 8ba394 # Light
@@ -41,6 +42,19 @@ gb-2  = 55645a # Dark
 gb-3  = 343d37 # Darkest
 ui-bg = ffffff # UI Background (outline)
 ui-fg = 000000 # UI foreground (text)
+
+# Define custom palettes here. Use short names and hex RGB format for colors.
+# Format is: <name> = <lightest> <light> <dark> <darkest>
+# The following are courtesy of lospec.com. They have tons more.
+[palettes]
+awakening = ffffb5 7bc67b 6b8c42 5a3921 # https://lospec.com/palette-list/links-awakening-sgb
+icarus = cef7f7 f78e50 9e0000 1e0000    # https://lospec.com/palette-list/kid-icarus-sgb
+kirby = f7bef7 e78686 7733e7 2c2c96     # https://lospec.com/palette-list/kirby-sgb
+mario2 = eff7b6 dfa677 11c600 000000    # https://lospec.com/palette-list/super-mario-land-2-sgb
+megaman = cecece 6f9edf 42678e 102533   # https://lospec.com/palette-list/megaman-v-sgb
+metroid = aedf1e b62558 047e60 2c1700   # https://lospec.com/palette-list/metroid-ii-sgb
+pokemon = ffefff f7b58c 84739c 181010   # https://lospec.com/palette-list/pokemon-sgb
+sgb = f7e7c6 d68e49 a63725 331e50       # https://lospec.com/palette-list/nintendo-super-gameboy
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
 # SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
@@ -59,22 +73,28 @@ screenshot = F12   # Save a screenshot in the current directory
 
 recordgif = g      # Start/stop recording video output to GIF
 
+# Cycle through custom palettes.
+nexpalette      = PAGEDOWN
+previouspalette = PAGEUP
+
 # TODO: quit, reset, snapshot...
 `
 )
 
 // DefaultKeymap is a reasonable default mapping for QWERTY/AZERTY layouts.
 var DefaultKeymap = Keymap{
-	"up":         sdl.K_UP,
-	"down":       sdl.K_DOWN,
-	"left":       sdl.K_LEFT,
-	"right":      sdl.K_RIGHT,
-	"a":          sdl.K_s,
-	"b":          sdl.K_d,
-	"select":     sdl.K_BACKSPACE,
-	"start":      sdl.K_RETURN,
-	"screenshot": sdl.K_F12,
-	"recordgif":  sdl.K_g,
+	"up":              sdl.K_UP,
+	"down":            sdl.K_DOWN,
+	"left":            sdl.K_LEFT,
+	"right":           sdl.K_RIGHT,
+	"a":               sdl.K_s,
+	"b":               sdl.K_d,
+	"select":          sdl.K_BACKSPACE,
+	"start":           sdl.K_RETURN,
+	"screenshot":      sdl.K_F12,
+	"recordgif":       sdl.K_g,
+	"nextpalette":     sdl.K_PAGEDOWN,
+	"previouspalette": sdl.K_PAGEUP,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL
@@ -178,10 +198,35 @@ func applyColor(s *ini.Section, name string, dst *color.RGBA) {
 			dst.R = uint8((rgb >> 16) & 0xff)
 			dst.G = uint8((rgb >> 8) & 0xff)
 			dst.B = uint8(rgb & 0xff)
+			dst.A = 0xff
 		} else {
 			fmt.Printf("Invalid value for color '%s': %v\n", name, err)
 		}
 	}
+}
+
+// Add a custom-defined palette to Options.
+func (o *Options) addPalette(name, value string) {
+	hexColors := strings.Fields(value)
+	if len(hexColors) != 4 {
+		return
+	}
+
+	palette := make([]color.RGBA, 4)
+	for i := range palette {
+		// Colors should be in hexadecimal (without 0x prefix).
+		if rgb, err := strconv.ParseUint(hexColors[i], 16, 32); err == nil {
+			palette[i].R = uint8((rgb >> 16) & 0xff)
+			palette[i].G = uint8((rgb >> 8) & 0xff)
+			palette[i].B = uint8(rgb & 0xff)
+			palette[i].A = 0xff
+		} else {
+			fmt.Printf("Invalid value for color %d in palette %s: %v\n", i, name, err)
+			return // Ignore palettes with invalid colors
+		}
+	}
+	o.Palettes = append(o.Palettes, palette)
+	o.PaletteNames = append(o.PaletteNames, name)
 }
 
 // Attempt to create home config folder and put our default config there, if
@@ -242,8 +287,8 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	applyBool(cfg, flags, "waitkey", &o.WaitKey)
 	applyUint(cfg, flags, "zoom", &o.ZoomFactor)
 
-	// Ignoring options that are not really interesting as a config.
-	// Such as -cyles, -gif or -rom...
+	// Ignoring flags that are not really interesting as a config, such as
+	// -cyles, -gif or -rom...
 
 	// Set keymap here. Build on top of default. TODO: validate.
 	keySection := cfg.Section("keymap")
@@ -258,10 +303,20 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")
-	applyColor(colorSection, "gb-0", &o.GameBoyPalette[0])
-	applyColor(colorSection, "gb-1", &o.GameBoyPalette[1])
-	applyColor(colorSection, "gb-2", &o.GameBoyPalette[2])
-	applyColor(colorSection, "gb-3", &o.GameBoyPalette[3])
+
+	// Default palette is palette 0.
+	applyColor(colorSection, "gb-0", &o.Palettes[0][0])
+	applyColor(colorSection, "gb-1", &o.Palettes[0][1])
+	applyColor(colorSection, "gb-2", &o.Palettes[0][2])
+	applyColor(colorSection, "gb-3", &o.Palettes[0][3])
+
 	applyColor(colorSection, "ui-bg", &o.UIBackground)
 	applyColor(colorSection, "ui-fg", &o.UIForeground)
+
+	// Add custom palettes.
+	palettesSection := cfg.Section("palettes")
+	for _, palName := range palettesSection.KeyStrings() {
+		palValue := palettesSection.Key(palName).String()
+		o.addPalette(palName, palValue)
+	}
 }

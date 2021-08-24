@@ -37,6 +37,8 @@ type Display interface {
 
 	Record(filename string)
 	StopRecord()
+
+	Palette(palette []color.RGBA)
 }
 
 // Screen dimensions.

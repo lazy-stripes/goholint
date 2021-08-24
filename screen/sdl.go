@@ -18,7 +18,12 @@ import (
 // SDL display shifting pixels out to a single texture.
 type SDL struct {
 	*UI
-	Palette    []color.RGBA
+
+	config *options.Options
+
+	palette    []color.RGBA
+	newPalette []color.RGBA // Store new value until next frame
+
 	enabled    bool
 	window     *sdl.Window
 	renderer   *sdl.Renderer
@@ -128,7 +133,8 @@ func NewSDL(config *options.Options) *SDL {
 
 	s := SDL{
 		UI:         ui,
-		Palette:    config.GameBoyPalette,
+		config:     config,
+		palette:    config.Palettes[0],
 		renderer:   renderer,
 		texture:    texture,
 		blank:      blank,
@@ -138,9 +144,9 @@ func NewSDL(config *options.Options) *SDL {
 		gif:        NewGIF(config),
 	}
 
-	// Initialize blank screen texture.
+	// Initialize blank screen texture from color 0.
 	renderer.SetRenderTarget(blank)
-	renderer.SetDrawColor(s.Palette[0].R, s.Palette[0].G, s.Palette[0].B, sdl.ALPHA_OPAQUE)
+	renderer.SetDrawColor(s.palette[0].R, s.palette[0].G, s.palette[0].B, 0xff)
 	renderer.Clear()
 	renderer.SetRenderTarget(nil)
 
@@ -177,7 +183,7 @@ func (s *SDL) Disable() {
 // Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *SDL) Write(colorIndex uint8) {
 	if s.enabled {
-		col := s.Palette[colorIndex]
+		col := s.palette[colorIndex]
 		s.buffer[s.offset+0] = col.R
 		s.buffer[s.offset+1] = col.G
 		s.buffer[s.offset+2] = col.B
@@ -199,15 +205,20 @@ func (s *SDL) HBlank() {}
 func (s *SDL) VBlank() {
 	if s.enabled {
 		s.texture.Update(nil, s.buffer, ScreenWidth*4)
-		s.renderer.Copy(s.texture, nil, nil)
 
 		if s.offset != ScreenWidth*ScreenHeight*4 {
 			log.Warning("MISSING PIXELS!")
 		}
 		s.offset = 0
 	} else {
-		s.renderer.Copy(s.blank, nil, nil)
+		// Draw blank screen texture.
+		s.renderer.SetRenderTarget(s.texture)
+		s.renderer.SetDrawColor(s.palette[0].R, s.palette[0].G, s.palette[0].B, 0xff)
+		s.renderer.Clear()
+		s.renderer.SetRenderTarget(nil)
+
 	}
+	s.renderer.Copy(s.texture, nil, nil)
 
 	// Update GIF frame if recording. We do this before checking startRecording
 	// otherwise the call to SaveFrame will always insert a "disabled" frame in
@@ -226,7 +237,7 @@ func (s *SDL) VBlank() {
 		s.recordTime = time.Now()
 		s.UI.Text("•REC [00:00]")
 		//s.UI.Message(s.recordPath, 2)
-		s.gif.Open(s.recordPath)
+		s.gif.Open(s.recordPath, s.palette)
 	}
 
 	if s.stopRecording {
@@ -283,6 +294,11 @@ func (s *SDL) VBlank() {
 		s.Message("Screenshot saved", 2)
 		fmt.Printf("screenshot saved to %s\n", path)
 	}
+
+	if s.newPalette != nil {
+		s.palette = s.newPalette
+		s.newPalette = nil
+	}
 }
 
 // Dump writes the current pixel buffer to file for debugging purposes.
@@ -311,4 +327,10 @@ func (s *SDL) Record(filename string) {
 // We only just raise a flag here, recording should start and stop in VBlank.
 func (s *SDL) StopRecord() {
 	s.stopRecording = true
+}
+
+// Palette will set a new palette for the display and GIF.
+func (s *SDL) Palette(p []color.RGBA) {
+	// Wait until next frame to apply new palette.
+	s.newPalette = p
 }

@@ -26,8 +26,9 @@ var FrameBounds = image.Rectangle{Min: image.Point{0, 0},
 type GIF struct {
 	gif.GIF
 
-	palette   color.Palette // Pre-instanciated Palette.
-	gifConfig image.Config  // Dimensions and colors for GIF files
+	config *options.Options
+
+	palette color.Palette // Pre-instanciated Palette from our RGBA array.
 
 	Filename string
 	fd       *os.File
@@ -44,30 +45,8 @@ type GIF struct {
 // GIF file when required.
 func NewGIF(config *options.Options) *GIF {
 	// TODO: save path in config
-
-	// Convert our palette array to Color interface slice.
-	palette := []color.Color{
-		config.GameBoyPalette[0],
-		config.GameBoyPalette[1],
-		config.GameBoyPalette[2],
-		config.GameBoyPalette[3],
-	}
-
-	// Pre-instantiate disabled screen frame.
-	disabled := image.NewPaletted(FrameBounds, palette)
-	draw.Draw(disabled, disabled.Bounds(), &image.Uniform{config.GameBoyPalette[0]}, image.Point{}, draw.Src)
-
-	gifConfig := image.Config{
-		ColorModel: disabled.ColorModel(),
-		Width:      ScreenWidth,
-		Height:     ScreenHeight,
-	}
-
 	return &GIF{
-		disabled:  disabled,
-		palette:   palette,
-		gifConfig: gifConfig,
-		lastFrame: disabled, // Acceptable zero value to avoid a nil check later
+		config: config,
 	}
 }
 
@@ -80,6 +59,7 @@ func (g *GIF) Write(colorIndex uint8) {
 // SaveFrame adds the current frame to GIF slice and pre-instantiate next. We
 // detect if the display was disabled. If so, save a "disabled screen" frame
 // instead.
+// TODO: stream saved frames to disk.
 func (g *GIF) SaveFrame() {
 	// Pixel offset should be at the very end of the frame. If not, screen was
 	// off and we save the "disabled" frame instead.
@@ -114,7 +94,7 @@ func (g *GIF) IsOpen() bool {
 
 // Open creates a new GIF file and starts recording screen output. This should
 // be called at VBlank time to prevent incomplete frames.
-func (g *GIF) Open(filename string) {
+func (g *GIF) Open(filename string, palette []color.RGBA) {
 	if g.IsOpen() {
 		log.Sub("gif").Warning("GIF recording already in progress, closing it.")
 		g.Close()
@@ -128,14 +108,26 @@ func (g *GIF) Open(filename string) {
 
 	log.Sub("gif").Infof("recording to %s", filename)
 
-	g.GIF = gif.GIF{Config: g.gifConfig}
+	// Convert the current palette's RGBA array to Color interface slice.
+	g.palette = []color.Color{palette[0], palette[1], palette[2], palette[3]}
+
+	// Pre-instanciate "disabled screen" frame with current palette.
+	g.disabled = image.NewPaletted(FrameBounds, g.palette)
+	draw.Draw(g.disabled, g.disabled.Bounds(), &image.Uniform{g.palette[0]}, image.Point{}, draw.Src)
+
+	// Dimensions and colors for generated GIF file.
+	gifConfig := image.Config{
+		ColorModel: g.disabled.ColorModel(),
+		Width:      ScreenWidth,
+		Height:     ScreenHeight,
+	}
+
+	g.GIF = gif.GIF{Config: gifConfig}
 	g.frame = image.NewPaletted(FrameBounds, g.palette)
 	g.lastFrame = nil
 	g.Filename = filename
 	g.fd = fd
 	g.offset = 0
-
-	// TODO: create file here, store descriptor for later. Better yet: stream frames to disk.
 }
 
 // Close writes the actual GIF file to disk.
