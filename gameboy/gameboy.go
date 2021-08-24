@@ -47,7 +47,7 @@ type GameBoy struct {
 	Controls map[sdl.Keycode]Action
 
 	// Current palette.
-	paletteIndex uint
+	paletteIndex int
 
 	// For GIF record toggle.
 	recording bool

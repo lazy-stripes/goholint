@@ -87,23 +87,30 @@ func (g *GameBoy) StartStopRecord(eventType uint32) {
 }
 
 // NextPalette switches colors to the next defined palette, wrapping around.
+// There should always be at least a default palette in the config object.
 func (g *GameBoy) NextPalette(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
 
-	g.paletteIndex = (g.paletteIndex + 1) % uint(len(g.config.Palettes))
+	g.paletteIndex = (g.paletteIndex + 1) % len(g.config.Palettes)
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
 	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
-// PreviousPalette switches colors to the previous defined palette, wrapping around.
+// PreviousPalette switches colors to the previous defined palette, wrapping
+// around. There should always be at least a default palette in the config
+// object.
 func (g *GameBoy) PreviousPalette(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
 
-	g.paletteIndex = (g.paletteIndex - 1) % uint(len(g.config.Palettes))
+	g.paletteIndex -= 1
+	if g.paletteIndex < 0 {
+		// Wrap around (can't use % with negative values).
+		g.paletteIndex = len(g.config.Palettes) - 1
+	}
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
 	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
