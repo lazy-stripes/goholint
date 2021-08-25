@@ -51,7 +51,6 @@ func (d *DMA) Tick() {
 	if !d.isActive {
 		return
 	}
-	d.ticks++
 
 	// A DMA transfer takes 160 DMA ticks.
 	if d.ticks < 160 {
@@ -59,9 +58,11 @@ func (d *DMA) Tick() {
 		d.MMU.Write(d.dest, d.MMU.Read(d.src))
 		d.src++
 		d.dest++
+		d.ticks++
 
 		return
 	}
+
 	log.Sub("dma").Debug("DMA transfer done")
 	d.isActive = false
 }
