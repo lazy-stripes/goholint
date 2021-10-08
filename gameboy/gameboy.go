@@ -92,7 +92,6 @@ func New(config *options.Options) *GameBoy {
 
 	g.APU = apu.New()
 
-	// TODO: merge GIF encoder in UI/Screen instance.
 	g.Display = screen.NewSDL(config)
 	if config.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)

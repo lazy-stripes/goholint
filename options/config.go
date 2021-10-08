@@ -48,13 +48,13 @@ ui-fg = 000000 # UI foreground (text)
 # The following are courtesy of lospec.com. They have tons more.
 [palettes]
 awakening = ffffb5 7bc67b 6b8c42 5a3921 # https://lospec.com/palette-list/links-awakening-sgb
-icarus = cef7f7 f78e50 9e0000 1e0000    # https://lospec.com/palette-list/kid-icarus-sgb
-kirby = f7bef7 e78686 7733e7 2c2c96     # https://lospec.com/palette-list/kirby-sgb
-mario2 = eff7b6 dfa677 11c600 000000    # https://lospec.com/palette-list/super-mario-land-2-sgb
-megaman = cecece 6f9edf 42678e 102533   # https://lospec.com/palette-list/megaman-v-sgb
-metroid = aedf1e b62558 047e60 2c1700   # https://lospec.com/palette-list/metroid-ii-sgb
-pokemon = ffefff f7b58c 84739c 181010   # https://lospec.com/palette-list/pokemon-sgb
-sgb = f7e7c6 d68e49 a63725 331e50       # https://lospec.com/palette-list/nintendo-super-gameboy
+icarus    = cef7f7 f78e50 9e0000 1e0000 # https://lospec.com/palette-list/kid-icarus-sgb
+kirby     = f7bef7 e78686 7733e7 2c2c96 # https://lospec.com/palette-list/kirby-sgb
+mario2    = eff7b6 dfa677 11c600 000000 # https://lospec.com/palette-list/super-mario-land-2-sgb
+megaman   = cecece 6f9edf 42678e 102533 # https://lospec.com/palette-list/megaman-v-sgb
+metroid   = aedf1e b62558 047e60 2c1700 # https://lospec.com/palette-list/metroid-ii-sgb
+pokemon   = ffefff f7b58c 84739c 181010 # https://lospec.com/palette-list/pokemon-sgb
+sgb       = f7e7c6 d68e49 a63725 331e50 # https://lospec.com/palette-list/nintendo-super-gameboy
 
 # Define your keymap below with <action>=<key>. Key codes are taken from the
 # SDL2 documentation (https://wiki.libsdl.org/SDL_Keycode) without the SDLK_
