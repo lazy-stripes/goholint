@@ -12,8 +12,9 @@ type DMA struct {
 	DMA uint8
 	MMU Addressable
 
+	pending   bool // For initial delay
 	isActive  bool
-	ticks     int
+	written   uint // Total bytes written
 	src, dest uint16
 }
 
@@ -40,25 +41,36 @@ func (d *DMA) Write(addr uint16, value uint8) {
 	d.DMA = value
 	d.src = uint16(value) * 0x100
 	d.dest = 0xfe00 // OAM RAM
-	d.ticks = 0
-	d.isActive = true
+	d.written = 0
+	d.pending = true
 
-	log.Sub("dma").Debugf("Start DMA transfer 0x%04x→0xfe00", d.src)
+	log.Sub("dma").Debugf("Request DMA transfer 0x%04x→0xfe00", d.src)
 }
 
-// Tick advances DMA transfer one step if it's active. Called every clock tick.
+// Tick advances DMA transfer one step if it's active. Called every 4 CPU ticks.
 func (d *DMA) Tick() {
+	// Start DMA transfer with a 1-cycle delay according to [GEKKIO].
+	if d.pending {
+		d.isActive = true
+		d.pending = false
+		return
+	}
+
 	if !d.isActive {
 		return
 	}
 
-	// A DMA transfer takes 160 DMA ticks.
-	if d.ticks < 160 {
-		// [VIDEO] It takes 160 cycles to complete a 160-byte DMA transfer, right?
+	// Feeling like tracking down DMA timings. Might delete later.
+	if d.written == 0 {
+		log.Sub("dma").Debugf("Start DMA transfer")
+	}
+
+	// A DMA transfer takes 160 CPU cycles (160×4 ticks).
+	if d.written < 160 {
 		d.MMU.Write(d.dest, d.MMU.Read(d.src))
 		d.src++
 		d.dest++
-		d.ticks++
+		d.written++
 
 		return
 	}

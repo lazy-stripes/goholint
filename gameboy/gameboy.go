@@ -216,14 +216,14 @@ func (g *GameBoy) Tick() (res TickResult) {
 		})
 	}
 
-	// CPU ticks occur every 4 machine ticks.
-	if g.ticks%4 == 0 {
-		g.CPU.Tick()
-	}
-
 	// DMA ticks occur every 4 machine ticks.
 	if g.ticks%4 == 0 {
 		g.DMA.Tick()
+	}
+
+	// CPU ticks occur every 4 machine ticks.
+	if g.ticks%4 == 0 {
+		g.CPU.Tick()
 	}
 
 	// PPU ticks occur every machine tick.
