@@ -4,7 +4,7 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Tick() (done bool) {
-	op.cpu.{{.Register}} = op.cpu.MMU.Read(op.cpu.{{.Address}}())
+	op.cpu.{{.Register}} = op.cpu.Memory.Read(op.cpu.{{.Address}}())
 	return true
 }
 

@@ -6,7 +6,7 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	// Flags: z 1 h c
 {{- with .Address}}
-	value := op.cpu.MMU.Read(op.cpu.{{.}}())
+	value := op.cpu.Memory.Read(op.cpu.{{.}}())
 {{- else}}
 	value := op.cpu.NextByte()
 {{- end}}

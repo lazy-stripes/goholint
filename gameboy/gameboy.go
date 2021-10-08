@@ -145,7 +145,6 @@ func New(config *options.Options) *GameBoy {
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff80, 0x7e)
 	g.JPad = joypad.New() // TODO: interrupts
-	g.DMA = &memory.DMA{}
 	mmu := memory.NewMMU([]memory.Addressable{
 		boot,
 		g.APU,
@@ -156,11 +155,14 @@ func New(config *options.Options) *GameBoy {
 		g.JPad,
 		g.Serial,
 		g.Timer,
-		g.DMA,
 		hram,
 	})
-	g.DMA.MMU = mmu
-	g.CPU.MMU = mmu
+
+	// Memory space for the CPU, taking DMA transfers into account.
+	mem := memory.NewDMAMemory(mmu)
+	g.DMA = mem.DMA
+	mmu.Add(g.DMA)
+	g.CPU.Memory = mem
 
 	if config.ROMPath != "" {
 		// Build save path in case the cartridge uses one. Or use one

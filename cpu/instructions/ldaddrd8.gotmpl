@@ -9,7 +9,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.NextByte()
 		op.step++
 	case 1:
-		op.cpu.MMU.Write(op.cpu.{{.Address}}(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.{{.Address}}(), op.cpu.temp8)
 		done = true
 	}
 	return

@@ -7,11 +7,11 @@ func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x{{.Address}}

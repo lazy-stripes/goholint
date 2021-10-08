@@ -66,3 +66,39 @@ func (d *DMA) Tick() {
 	log.Sub("dma").Debug("DMA transfer done")
 	d.isActive = false
 }
+
+// DMAMemory wraps the whole address space to forbid memory access to the CPU
+// while a DMA transfer is taking place.
+type DMAMemory struct {
+	Addressable
+	DMA *DMA
+}
+
+// NewDMA returns an instance of DMA managing the actual register and memory
+// transfers. Parameter is an Addressable that must span source and destination
+// address spaces.
+func NewDMAMemory(mmu Addressable) *DMAMemory {
+	return &DMAMemory{Addressable: mmu, DMA: NewDMA(mmu)}
+}
+
+// Read overrides the embedded Addressable method to only allow reading from
+// high RAM if a DMA transfer is currently taking place.
+func (d *DMAMemory) Read(addr uint16) uint8 {
+	if d.DMA.isActive && addr < 0xfe00 {
+		log.Sub("dma").Desperatef("read to %x during DMA transfer", addr)
+		return 0xff
+	} else {
+		return d.Addressable.Read(addr)
+	}
+}
+
+// Write overrides the embedded Addressable method to only allow writing to high
+// RAM if a DMA transfer is currently taking place.
+func (d *DMAMemory) Write(addr uint16, value uint8) {
+	if d.DMA.isActive && addr < 0xfe00 {
+		log.Sub("dma").Desperatef("write to %x during DMA transfer", addr)
+		return
+	} else {
+		d.Addressable.Write(addr, value)
+	}
+}

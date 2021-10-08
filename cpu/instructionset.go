@@ -1,4 +1,4 @@
-// Auto-generated on 2019-05-09T20:01:43+02:00. See instructions.go
+// Auto-generated on 2021-08-26T19:28:07+02:00. See instructions.go
 
 package cpu
 
@@ -544,7 +544,7 @@ type op02 struct {
 }
 
 func (op *op02) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.BC(), op.cpu.A)
+	op.cpu.Memory.Write(op.cpu.BC(), op.cpu.A)
 	return true
 }
 
@@ -639,9 +639,9 @@ func (op *op08) Tick() (done bool) {
 	case 1:
 		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
-		op.cpu.MMU.Write(op.cpu.temp16, uint8(op.cpu.SP&0xff))
+		op.cpu.Memory.Write(op.cpu.temp16, uint8(op.cpu.SP&0xff))
 	case 3:
-		op.cpu.MMU.Write(op.cpu.temp16+1, uint8(op.cpu.SP>>8))
+		op.cpu.Memory.Write(op.cpu.temp16+1, uint8(op.cpu.SP>>8))
 		done = true
 	}
 	op.step++
@@ -675,7 +675,7 @@ type op0a struct {
 }
 
 func (op *op0a) Tick() (done bool) {
-	op.cpu.A = op.cpu.MMU.Read(op.cpu.BC())
+	op.cpu.A = op.cpu.Memory.Read(op.cpu.BC())
 	return true
 }
 
@@ -793,7 +793,7 @@ type op12 struct {
 }
 
 func (op *op12) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.DE(), op.cpu.A)
+	op.cpu.Memory.Write(op.cpu.DE(), op.cpu.A)
 	return true
 }
 
@@ -924,7 +924,7 @@ type op1a struct {
 }
 
 func (op *op1a) Tick() (done bool) {
-	op.cpu.A = op.cpu.MMU.Read(op.cpu.DE())
+	op.cpu.A = op.cpu.Memory.Read(op.cpu.DE())
 	return true
 }
 
@@ -1056,7 +1056,7 @@ type op22 struct {
 
 func (op *op22) Tick() (done bool) {
 	hl := op.cpu.HL()
-	op.cpu.MMU.Write(hl, op.cpu.A)
+	op.cpu.Memory.Write(hl, op.cpu.A)
 	op.cpu.SetHL(hl+1)
 	return true
 }
@@ -1207,7 +1207,7 @@ type op2a struct {
 
 func (op *op2a) Tick() (done bool) {
 	hl := op.cpu.HL()
-	op.cpu.A = op.cpu.MMU.Read(hl)
+	op.cpu.A = op.cpu.Memory.Read(hl)
 	op.cpu.SetHL(hl+1)
 	return true
 }
@@ -1331,7 +1331,7 @@ type op32 struct {
 
 func (op *op32) Tick() (done bool) {
 	hl := op.cpu.HL()
-	op.cpu.MMU.Write(hl, op.cpu.A)
+	op.cpu.Memory.Write(hl, op.cpu.A)
 	op.cpu.SetHL(hl-1)
 	return true
 }
@@ -1354,7 +1354,7 @@ type op34 struct {
 func (op *op34) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 h -
@@ -1366,7 +1366,7 @@ func (op *op34) Tick() (done bool) {
 		if op.cpu.temp8 == 0 {
 			op.cpu.F |= FlagZ
 		}
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -1380,7 +1380,7 @@ type op35 struct {
 func (op *op35) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 1 h -
@@ -1393,7 +1393,7 @@ func (op *op35) Tick() (done bool) {
 		if op.cpu.temp8 == 0 {
 			op.cpu.F |= FlagZ
 		}
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -1410,7 +1410,7 @@ func (op *op36) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.NextByte()
 		op.step++
 	case 1:
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -1479,7 +1479,7 @@ type op3a struct {
 
 func (op *op3a) Tick() (done bool) {
 	hl := op.cpu.HL()
-	op.cpu.A = op.cpu.MMU.Read(hl)
+	op.cpu.A = op.cpu.Memory.Read(hl)
 	op.cpu.SetHL(hl-1)
 	return true
 }
@@ -1620,7 +1620,7 @@ type op46 struct {
 }
 
 func (op *op46) Tick() (done bool) {
-	op.cpu.B = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.B = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -1700,7 +1700,7 @@ type op4e struct {
 }
 
 func (op *op4e) Tick() (done bool) {
-	op.cpu.C = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.C = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -1780,7 +1780,7 @@ type op56 struct {
 }
 
 func (op *op56) Tick() (done bool) {
-	op.cpu.D = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.D = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -1860,7 +1860,7 @@ type op5e struct {
 }
 
 func (op *op5e) Tick() (done bool) {
-	op.cpu.E = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.E = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -1940,7 +1940,7 @@ type op66 struct {
 }
 
 func (op *op66) Tick() (done bool) {
-	op.cpu.H = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.H = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -2020,7 +2020,7 @@ type op6e struct {
 }
 
 func (op *op6e) Tick() (done bool) {
-	op.cpu.L = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.L = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -2040,7 +2040,7 @@ type op70 struct {
 }
 
 func (op *op70) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.B)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.B)
 	return true
 }
 
@@ -2050,7 +2050,7 @@ type op71 struct {
 }
 
 func (op *op71) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.C)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.C)
 	return true
 }
 
@@ -2060,7 +2060,7 @@ type op72 struct {
 }
 
 func (op *op72) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.D)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.D)
 	return true
 }
 
@@ -2070,7 +2070,7 @@ type op73 struct {
 }
 
 func (op *op73) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.E)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.E)
 	return true
 }
 
@@ -2080,7 +2080,7 @@ type op74 struct {
 }
 
 func (op *op74) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.H)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.H)
 	return true
 }
 
@@ -2090,7 +2090,7 @@ type op75 struct {
 }
 
 func (op *op75) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.L)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.L)
 	return true
 }
 
@@ -2111,7 +2111,7 @@ type op77 struct {
 }
 
 func (op *op77) Tick() (done bool) {
-	op.cpu.MMU.Write(op.cpu.HL(), op.cpu.A)
+	op.cpu.Memory.Write(op.cpu.HL(), op.cpu.A)
 	return true
 }
 
@@ -2181,7 +2181,7 @@ type op7e struct {
 }
 
 func (op *op7e) Tick() (done bool) {
-	op.cpu.A = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.A = op.cpu.Memory.Read(op.cpu.HL())
 	return true
 }
 
@@ -2335,7 +2335,7 @@ type op86 struct {
 func (op *op86) Tick() (done bool) {
 	// Flags: z 0 h c
 	op.cpu.F = 0
-	value := op.cpu.MMU.Read(op.cpu.HL())
+	value := op.cpu.Memory.Read(op.cpu.HL())
 	if op.cpu.A&0xf+value&0xf > 0xf {
 		op.cpu.F |= FlagH
 	}
@@ -2520,7 +2520,7 @@ func (op *op8e) Tick() (done bool) {
 	carry := (op.cpu.F & FlagC) >> 4
 	// Flags: z 0 h c
 	op.cpu.F = 0
-	value := op.cpu.MMU.Read(op.cpu.HL())
+	value := op.cpu.Memory.Read(op.cpu.HL())
 	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
 		op.cpu.F |= FlagH
 	}
@@ -2704,7 +2704,7 @@ type op96 struct {
 
 func (op *op96) Tick() (done bool) {
 	// Flags: z 1 h c
-	value := op.cpu.MMU.Read(op.cpu.HL())
+	value := op.cpu.Memory.Read(op.cpu.HL())
 	op.cpu.F = FlagN
 	if value&0xf > op.cpu.A&0xf {
 		op.cpu.F |= FlagH
@@ -2903,7 +2903,7 @@ func (op *op9e) Tick() (done bool) {
 	carry := int((op.cpu.F & FlagC) >> 4)
 	// Flags: z 1 h c
 	op.cpu.F = FlagN
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
 	// Trusting the Internet on this one.
 	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
@@ -3041,7 +3041,7 @@ type opA6 struct {
 }
 
 func (op *opA6) Tick() (done bool) {
-	op.cpu.A &= op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.A &= op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 0
 	op.cpu.F = FlagH
 	if op.cpu.A == 0 {
@@ -3161,7 +3161,7 @@ type opAe struct {
 }
 
 func (op *opAe) Tick() (done bool) {
-	op.cpu.A ^= op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.A ^= op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 0 0
 	op.cpu.F = 0
 	if op.cpu.A == 0 {
@@ -3281,7 +3281,7 @@ type opB6 struct {
 }
 
 func (op *opB6) Tick() (done bool) {
-	op.cpu.A |= op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.A |= op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 0 0
 	op.cpu.F = 0
 	if op.cpu.A == 0 {
@@ -3444,7 +3444,7 @@ type opBe struct {
 
 func (op *opBe) Tick() (done bool) {
 	// Flags: z 1 h c
-	value := op.cpu.MMU.Read(op.cpu.HL())
+	value := op.cpu.Memory.Read(op.cpu.HL())
 	op.cpu.F = FlagN
 	if value&0xf > op.cpu.A&0xf {
 		op.cpu.F |= FlagH
@@ -3496,11 +3496,11 @@ func (op *opC0) Tick() (done bool) {
 			done = true
 		}
 	case 1:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 2:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 3:
@@ -3518,11 +3518,11 @@ type opC1 struct {
 func (op *opC1) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.C = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.C = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.B = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.B = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		done = true
 	}
@@ -3592,11 +3592,11 @@ func (op *opC4) Tick() (done bool) {
 		}
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 		op.cpu.PC = op.cpu.temp16
@@ -3617,11 +3617,11 @@ func (op *opC5) Tick() (done bool) {
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.B))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.B))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.C))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.C))
 		done = true
 	}
 	return
@@ -3660,11 +3660,11 @@ func (op *opC7) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x00
@@ -3687,11 +3687,11 @@ func (op *opC8) Tick() (done bool) {
 			done = true
 		}
 	case 1:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 2:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 3:
@@ -3709,11 +3709,11 @@ type opC9 struct {
 func (op *opC9) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 2:
@@ -3766,11 +3766,11 @@ func (op *opCc) Tick() (done bool) {
 		}
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 		op.cpu.PC = op.cpu.temp16
@@ -3794,11 +3794,11 @@ func (op *opCd) Tick() (done bool) {
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 		op.cpu.PC = op.cpu.temp16
@@ -3841,11 +3841,11 @@ func (op *opCf) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x08
@@ -3868,11 +3868,11 @@ func (op *opD0) Tick() (done bool) {
 			done = true
 		}
 	case 1:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 2:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 3:
@@ -3890,11 +3890,11 @@ type opD1 struct {
 func (op *opD1) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.E = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.E = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.D = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.D = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		done = true
 	}
@@ -3944,11 +3944,11 @@ func (op *opD4) Tick() (done bool) {
 		}
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 		op.cpu.PC = op.cpu.temp16
@@ -3969,11 +3969,11 @@ func (op *opD5) Tick() (done bool) {
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.D))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.D))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.E))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.E))
 		done = true
 	}
 	return
@@ -4012,11 +4012,11 @@ func (op *opD7) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x10
@@ -4039,11 +4039,11 @@ func (op *opD8) Tick() (done bool) {
 			done = true
 		}
 	case 1:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 2:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 3:
@@ -4061,11 +4061,11 @@ type opD9 struct {
 func (op *opD9) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.PC = uint16(op.cpu.MMU.Read(op.cpu.SP))
+		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.PC |= uint16(op.cpu.MMU.Read(op.cpu.SP)) << 8
+		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 	case 2:
@@ -4119,11 +4119,11 @@ func (op *opDc) Tick() (done bool) {
 		}
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 3:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 4:
 		op.cpu.PC = op.cpu.temp16
@@ -4167,11 +4167,11 @@ func (op *opDf) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x18
@@ -4191,7 +4191,7 @@ func (op *opE0) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.NextByte()
 		op.step++
 	case 1:
-		op.cpu.MMU.Write(uint16(0xff00+uint16(op.cpu.temp8)), op.cpu.A)
+		op.cpu.Memory.Write(uint16(0xff00+uint16(op.cpu.temp8)), op.cpu.A)
 		done = true
 	}
 	return
@@ -4205,11 +4205,11 @@ type opE1 struct {
 func (op *opE1) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.L = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.L = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.H = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.H = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		done = true
 	}
@@ -4222,7 +4222,7 @@ type opE2 struct {
 }
 
 func (op *opE2) Tick() (done bool) {
-	op.cpu.MMU.Write(uint16(0xff00+uint16(op.cpu.C)), op.cpu.A)
+	op.cpu.Memory.Write(uint16(0xff00+uint16(op.cpu.C)), op.cpu.A)
 	return true
 }
 
@@ -4238,11 +4238,11 @@ func (op *opE5) Tick() (done bool) {
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.H))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.H))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.L))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.L))
 		done = true
 	}
 	return
@@ -4272,11 +4272,11 @@ func (op *opE7) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x20
@@ -4339,7 +4339,7 @@ func (op *opEa) Tick() (done bool) {
 	case 1:
 		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
-		op.cpu.MMU.Write(op.cpu.temp16, op.cpu.A)
+		op.cpu.Memory.Write(op.cpu.temp16, op.cpu.A)
 		done = true
 	}
 	op.step++
@@ -4370,11 +4370,11 @@ func (op *opEf) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x28
@@ -4394,7 +4394,7 @@ func (op *opF0) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.NextByte()
 		op.step++
 	case 1:
-		op.cpu.A = op.cpu.MMU.Read(uint16(0xff00+uint16(op.cpu.temp8)))
+		op.cpu.A = op.cpu.Memory.Read(uint16(0xff00+uint16(op.cpu.temp8)))
 		done = true
 	}
 	return
@@ -4408,11 +4408,11 @@ type opF1 struct {
 func (op *opF1) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.F = op.cpu.MMU.Read(op.cpu.SP) & 0xf0
+		op.cpu.F = op.cpu.Memory.Read(op.cpu.SP) & 0xf0
 		op.cpu.SP++
 		op.step++
 	case 1:
-		op.cpu.A = op.cpu.MMU.Read(op.cpu.SP)
+		op.cpu.A = op.cpu.Memory.Read(op.cpu.SP)
 		op.cpu.SP++
 		done = true
 	}
@@ -4425,7 +4425,7 @@ type opF2 struct {
 }
 
 func (op *opF2) Tick() (done bool) {
-	op.cpu.A = op.cpu.MMU.Read(uint16(0xff00+uint16(op.cpu.C)))
+	op.cpu.A = op.cpu.Memory.Read(uint16(0xff00+uint16(op.cpu.C)))
 	return true
 }
 
@@ -4452,11 +4452,11 @@ func (op *opF5) Tick() (done bool) {
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.A))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.A))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.F))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.F))
 		done = true
 	}
 	return
@@ -4486,11 +4486,11 @@ func (op *opF7) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x30
@@ -4550,7 +4550,7 @@ func (op *opFa) Tick() (done bool) {
 	case 1:
 		op.cpu.temp16 |= uint16(op.cpu.NextByte()) << 8
 	case 2:
-		op.cpu.A = op.cpu.MMU.Read(op.cpu.temp16)
+		op.cpu.A = op.cpu.Memory.Read(op.cpu.temp16)
 		done = true
 	}
 	op.step++
@@ -4600,11 +4600,11 @@ func (op *opFf) Tick() (done bool) {
 	switch op.step {
 	case 0:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC>>8))
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.PC&0x00ff))
 		op.step++
 	case 2:
 		op.cpu.PC = 0x38
@@ -4741,7 +4741,7 @@ type opCb06 struct {
 func (op *opCb06) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c
@@ -4755,7 +4755,7 @@ func (op *opCb06) Tick() (done bool) {
 		if result == 0 {
 			op.cpu.F |= FlagZ
 		}
-		op.cpu.MMU.Write(op.cpu.HL(), result)
+		op.cpu.Memory.Write(op.cpu.HL(), result)
 		done = true
 	}
 	return
@@ -4915,7 +4915,7 @@ type opCb0e struct {
 func (op *opCb0e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c
@@ -4929,7 +4929,7 @@ func (op *opCb0e) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.HL(), result)
+		op.cpu.Memory.Write(op.cpu.HL(), result)
 		done = true
 	}
 	return
@@ -5102,7 +5102,7 @@ type opCb16 struct {
 func (op *opCb16) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c
@@ -5117,7 +5117,7 @@ func (op *opCb16) Tick() (done bool) {
 		if result == 0 {
 			op.cpu.F |= FlagZ
 		}
-		op.cpu.MMU.Write(op.cpu.HL(), result)
+		op.cpu.Memory.Write(op.cpu.HL(), result)
 		done = true
 	}
 	return
@@ -5292,7 +5292,7 @@ type opCb1e struct {
 func (op *opCb1e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c
@@ -5307,7 +5307,7 @@ func (op *opCb1e) Tick() (done bool) {
 		if op.cpu.temp8&1 != 0 {
 			op.cpu.F |= FlagC
 		}
-		op.cpu.MMU.Write(op.cpu.HL(), result)
+		op.cpu.Memory.Write(op.cpu.HL(), result)
 		done = true
 	}
 	return
@@ -5452,7 +5452,7 @@ type opCb26 struct {
 func (op *opCb26) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c
@@ -5465,7 +5465,7 @@ func (op *opCb26) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -5605,7 +5605,7 @@ type opCb2e struct {
 func (op *opCb2e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c (though [OPCODES] says z 0 0 0 for SRA)
@@ -5618,7 +5618,7 @@ func (op *opCb2e) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -5740,7 +5740,7 @@ type opCb36 struct {
 func (op *opCb36) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 0
@@ -5750,7 +5750,7 @@ func (op *opCb36) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -5887,7 +5887,7 @@ type opCb3e struct {
 func (op *opCb3e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		// Flags z 0 0 c (though [OPCODES] says z 0 0 0 for SRA)
@@ -5900,7 +5900,7 @@ func (op *opCb3e) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -6020,7 +6020,7 @@ type opCb46 struct {
 }
 
 func (op *opCb46) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<0) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6141,7 +6141,7 @@ type opCb4e struct {
 }
 
 func (op *opCb4e) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<1) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6262,7 +6262,7 @@ type opCb56 struct {
 }
 
 func (op *opCb56) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<2) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6383,7 +6383,7 @@ type opCb5e struct {
 }
 
 func (op *opCb5e) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<3) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6504,7 +6504,7 @@ type opCb66 struct {
 }
 
 func (op *opCb66) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<4) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6625,7 +6625,7 @@ type opCb6e struct {
 }
 
 func (op *opCb6e) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<5) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6746,7 +6746,7 @@ type opCb76 struct {
 }
 
 func (op *opCb76) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<6) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6867,7 +6867,7 @@ type opCb7e struct {
 }
 
 func (op *opCb7e) Tick() (done bool) {
-	op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	// Flags z 0 1 -
 	if op.cpu.temp8&(1<<7) == 0 {
 		op.cpu.F = (op.cpu.F & ^FlagN) | FlagZ | FlagH
@@ -6960,11 +6960,11 @@ type opCb86 struct {
 func (op *opCb86) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<0)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7048,11 +7048,11 @@ type opCb8e struct {
 func (op *opCb8e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<1)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7136,11 +7136,11 @@ type opCb96 struct {
 func (op *opCb96) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<2)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7224,11 +7224,11 @@ type opCb9e struct {
 func (op *opCb9e) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<3)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7312,11 +7312,11 @@ type opCbA6 struct {
 func (op *opCbA6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<4)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7400,11 +7400,11 @@ type opCbAe struct {
 func (op *opCbAe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<5)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7488,11 +7488,11 @@ type opCbB6 struct {
 func (op *opCbB6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<6)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7576,11 +7576,11 @@ type opCbBe struct {
 func (op *opCbBe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 &= ^uint8(1<<7)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7664,11 +7664,11 @@ type opCbC6 struct {
 func (op *opCbC6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<0)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7752,11 +7752,11 @@ type opCbCe struct {
 func (op *opCbCe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<1)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7840,11 +7840,11 @@ type opCbD6 struct {
 func (op *opCbD6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<2)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -7928,11 +7928,11 @@ type opCbDe struct {
 func (op *opCbDe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<3)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -8016,11 +8016,11 @@ type opCbE6 struct {
 func (op *opCbE6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<4)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -8104,11 +8104,11 @@ type opCbEe struct {
 func (op *opCbEe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<5)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -8192,11 +8192,11 @@ type opCbF6 struct {
 func (op *opCbF6) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<6)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return
@@ -8280,11 +8280,11 @@ type opCbFe struct {
 func (op *opCbFe) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.HL())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
 		op.cpu.temp8 |= uint8(1<<7)
-		op.cpu.MMU.Write(op.cpu.HL(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
 	return

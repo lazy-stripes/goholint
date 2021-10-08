@@ -6,7 +6,7 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	switch op.step {
 	case 0:
-		op.cpu.temp8 = op.cpu.MMU.Read(op.cpu.{{.Address}}())
+		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.{{.Address}}())
 		op.step++
 	case 1:
 		// Flags z 0 0 0
@@ -16,7 +16,7 @@ func (op *{{name .}}) Tick() (done bool) {
 			op.cpu.F |= FlagZ
 		}
 
-		op.cpu.MMU.Write(op.cpu.{{.Address}}(), op.cpu.temp8)
+		op.cpu.Memory.Write(op.cpu.{{.Address}}(), op.cpu.temp8)
 		done = true
 	}
 	return

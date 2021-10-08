@@ -10,11 +10,11 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.step++
 	case 1:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.{{.High}}))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.{{.High}}))
 		op.step++
 	case 2:
 		op.cpu.SP--
-		op.cpu.MMU.Write(op.cpu.SP, uint8(op.cpu.{{.Low}}))
+		op.cpu.Memory.Write(op.cpu.SP, uint8(op.cpu.{{.Low}}))
 		done = true
 	}
 	return

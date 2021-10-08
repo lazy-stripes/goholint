@@ -21,9 +21,9 @@ const (
 	FlagZ
 )
 
-// A CPU implementation of the DMG-01's
+// CPU emulates a DMG-01 CPU.
 type CPU struct {
-	MMU    memory.Addressable
+	Memory memory.Addressable
 	Cycle  uint
 	IME    bool // Interrupt Master Enable flag
 	IF, IE uint8
@@ -51,8 +51,8 @@ type CPU struct {
 }
 
 // New CPU running code in the given address space starting from 0.
-func New(code memory.Addressable) *CPU {
-	return &CPU{MMU: code, state: states.FetchOpCode, startFrom: 0xFFFF}
+func New(mem memory.Addressable) *CPU {
+	return &CPU{Memory: mem, state: states.FetchOpCode, startFrom: 0xFFFF}
 }
 
 // Tick advances the CPU state one step.
@@ -147,12 +147,12 @@ func (c *CPU) Tick() {
 
 	case states.InterruptPushPCHigh:
 		c.SP--
-		c.MMU.Write(c.SP, uint8(c.PC>>8))
+		c.Memory.Write(c.SP, uint8(c.PC>>8))
 		c.state = states.InterruptPushPCLow
 
 	case states.InterruptPushPCLow:
 		c.SP--
-		c.MMU.Write(c.SP, uint8(c.PC&0xff))
+		c.Memory.Write(c.SP, uint8(c.PC&0xff))
 		c.state = states.InterruptCall
 
 	case states.InterruptCall:
@@ -233,7 +233,7 @@ func (c *CPU) String() string {
 
 // NextByte returns the next byte pointed to by PC.
 func (c *CPU) NextByte() uint8 {
-	value := c.MMU.Read(c.PC)
+	value := c.Memory.Read(c.PC)
 	c.PC++
 	return value
 }
@@ -246,7 +246,7 @@ func (c *CPU) NextWord() uint16 {
 // Context returns a printable context to prepend to log messages. Currently,
 // it only shows the current value of PC.
 func (c *CPU) Context() string {
-	return fmt.Sprintf("[PC=%04x] ", c.PC)
+	return fmt.Sprintf("[PC=%04x, Cycle=%08x] ", c.PC, c.Cycle)
 }
 
 // DumpRAM writes current RAM values to a file. TODO: make filename configurable.
@@ -255,11 +255,11 @@ func (c *CPU) DumpRAM() {
 		defer func() {
 			f.Close()
 		}()
-		buf := make([]byte, 1, 1)
+		buf := make([]byte, 0xffff)
 		for addr := uint16(0); addr < 0xffff; addr++ {
-			buf[0] = c.MMU.Read(addr)
-			f.Write(buf)
+			buf[addr] = c.Memory.Read(addr)
 		}
+		f.Write(buf)
 		fmt.Println("RAM dumped to ram-dump.bin")
 	}
 }
@@ -269,10 +269,10 @@ func instructionError(c *CPU, extended bool) {
 	if r := recover(); r != nil {
 		if extended {
 			fmt.Printf("Execute error at instruction %#04x (0xCB %#02x) (%v)\n",
-				c.PC-2, c.MMU.Read(c.PC-1), r)
+				c.PC-2, c.Memory.Read(c.PC-1), r)
 		} else {
 			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n",
-				c.PC-1, c.MMU.Read(c.PC-1), r)
+				c.PC-1, c.Memory.Read(c.PC-1), r)
 		}
 		fmt.Printf("CPU's final state:\n%s\n", c)
 		// Dump memory
