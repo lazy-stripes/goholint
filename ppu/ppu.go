@@ -110,15 +110,14 @@ func New(display screen.Display) *PPU {
 		AddrWX:   &p.WX,
 	})
 
+	// FIXME: mode-dependent addressing for those.
 	videoRAM := memory.NewVRAM(0x8000, 0x2000)
-	oamRAM := memory.NewRAM(AddrOAM, 0xa0)
-
 	p.Add(videoRAM)
-	p.Add(oamRAM)
 
 	p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU, lcdc: &p.LCDC}
-	p.OAM = OAM{Sprites: make([]Sprite, 0, 10), ram: oamRAM, ly: &p.LY,
-		lcdc: &p.LCDC}
+
+	p.OAM = *NewOAM(&p)
+	p.Add(p.OAM)
 
 	p.palettes = [3]*uint8{&p.BGP, &p.OBP0, &p.OBP1}
 	p.state = states.OAMSearch

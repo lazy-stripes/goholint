@@ -10,13 +10,27 @@ const AddrOAM = 0xfe00
 
 // OAM computes a list of sprites to display for the current scanline.
 type OAM struct {
+	*memory.RAM
+
 	Sprites []Sprite
 
-	ram      memory.Addressable
 	state    states.State
 	ly, lcdc *uint8 // References to PPU's registers
 	index    uint8
 	sprite   Sprite // Current sprite
+}
+
+// NewOAM creates an OAM address space. Takes a reference to a PPU instance so
+// it can access the LY and LCDC registers.
+func NewOAM(ppu *PPU) *OAM {
+	o := OAM{
+		RAM:     memory.NewRAM(AddrOAM, 0xa0),
+		Sprites: make([]Sprite, 0, 10),
+		ly:      &ppu.LY,
+		lcdc:    &ppu.LCDC,
+	}
+
+	return &o
 }
 
 // Start OAM search.
@@ -31,7 +45,7 @@ func (o *OAM) Tick() (done bool) {
 	o.sprite.Address = AddrOAM + uint16(o.index*4)
 	switch o.state {
 	case states.ReadSpriteY:
-		o.sprite.Y = o.ram.Read(o.sprite.Address)
+		o.sprite.Y = o.RAM.Read(o.sprite.Address)
 		o.state = states.ReadSpriteX
 	case states.ReadSpriteX:
 		// Sprite table must have room left, and current sprite tile must
@@ -58,7 +72,7 @@ func (o *OAM) Tick() (done bool) {
 		//              |
 		//              .
 		//             144
-		o.sprite.X = o.ram.Read(o.sprite.Address + 1)
+		o.sprite.X = o.RAM.Read(o.sprite.Address + 1)
 		if o.sprite.X != 0 {
 			y := *o.ly + 16
 			if o.sprite.Y <= y && o.sprite.Y+height > y {
