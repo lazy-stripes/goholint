@@ -2,7 +2,10 @@ package gameboy
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"runtime/debug"
+	"runtime/pprof"
 
 	"github.com/lazy-stripes/goholint/apu"
 	"github.com/lazy-stripes/goholint/cpu"
@@ -270,5 +273,15 @@ func (g *GameBoy) Recover() {
 
 		// Dump memory
 		g.CPU.DumpRAM()
+
+		// Force-close CPU-profile if any.
+		pprof.StopCPUProfile()
+
+		// Still display stack trace for debugging.
+		fmt.Println("\nThe information below may help fix the problem:\n")
+		debug.PrintStack()
+
+		// Bail. Bummer.
+		os.Exit(1)
 	}
 }
