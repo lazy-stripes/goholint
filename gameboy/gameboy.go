@@ -161,7 +161,7 @@ func New(config *options.Options) *GameBoy {
 	})
 
 	// Memory space for the CPU, taking DMA transfers into account.
-	mem := memory.NewDMAMemory(mmu)
+	mem := memory.NewDMAMemory(mmu, g.PPU.OAM.RAM)
 	g.DMA = mem.DMA
 	mmu.Add(g.DMA)
 	g.CPU.Memory = mem

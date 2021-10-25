@@ -64,9 +64,11 @@ const (
 // PPU address space handling video RAM and display.
 type PPU struct {
 	*memory.MMU
+	*Fetcher
 	FIFO
-	OAM
-	Fetcher
+
+	VRAM       *VRAM
+	OAM        *OAM
 	Interrupts *interrupts.Interrupts
 	Cycle      int
 	LCD        screen.Display
@@ -111,13 +113,14 @@ func New(display screen.Display) *PPU {
 	})
 
 	// FIXME: mode-dependent addressing for those.
-	videoRAM := memory.NewVRAM(0x8000, 0x2000)
-	p.Add(videoRAM)
+	p.VRAM = NewVRAM(&p)
+	p.Add(p.VRAM)
 
-	p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU, lcdc: &p.LCDC}
-
-	p.OAM = *NewOAM(&p)
+	p.OAM = NewOAM(&p)
 	p.Add(p.OAM)
+
+	//p.Fetcher = Fetcher{fifo: &p.FIFO, vRAM: p.MMU, lcdc: &p.LCDC}
+	p.Fetcher = NewFetcher(&p)
 
 	p.palettes = [3]*uint8{&p.BGP, &p.OBP0, &p.OBP1}
 	p.state = states.OAMSearch

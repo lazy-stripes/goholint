@@ -15,7 +15,8 @@ type OAM struct {
 	Sprites []Sprite
 
 	state    states.State
-	ly, lcdc *uint8 // References to PPU's registers
+	ly, lcdc *uint8        // References to PPU's registers
+	mode     *states.State // Display mode (equivalent to ppu.STAT&3)
 	index    uint8
 	sprite   Sprite // Current sprite
 }
@@ -28,9 +29,30 @@ func NewOAM(ppu *PPU) *OAM {
 		Sprites: make([]Sprite, 0, 10),
 		ly:      &ppu.LY,
 		lcdc:    &ppu.LCDC,
+		mode:    &ppu.state,
 	}
 
 	return &o
+}
+
+// Read overrides RAM method to restrict access to OAM to PPU modes 0 and 1.
+// [https://gbdev.io/pandocs/Accessing_VRAM_and_OAM.html]
+func (o *OAM) Read(addr uint16) uint8 {
+	if *o.mode == states.HBlank || *o.mode == states.VBlank {
+		return o.RAM.Read(addr)
+	}
+	return 0xff
+}
+
+// Write overrides RAM method to restrict access to OAM to PPU modes 0 and 1.
+// DMA should bypass this method and directly call the underlying RAM object's
+// Write method instead.
+// [https://gbdev.io/pandocs/Accessing_VRAM_and_OAM.html]
+func (o *OAM) Write(addr uint16, value uint8) {
+	if *o.mode == states.HBlank || *o.mode == states.VBlank {
+		o.RAM.Write(addr, value)
+	}
+	// Ignore write otherwise.
 }
 
 // Start OAM search.

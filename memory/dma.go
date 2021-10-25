@@ -11,6 +11,7 @@ const AddrDMA = 0xff46
 type DMA struct {
 	DMA uint8
 	MMU Addressable
+	OAM Addressable
 
 	pending   bool // For initial delay
 	isActive  bool
@@ -21,8 +22,8 @@ type DMA struct {
 // NewDMA returns an instance of DMA managing the actual register and memory
 // transfers. Parameter is an Addressable that must span source and destination
 // address spaces.
-func NewDMA(mmu Addressable) *DMA {
-	return &DMA{MMU: mmu}
+func NewDMA(mmu, oam Addressable) *DMA {
+	return &DMA{MMU: mmu, OAM: oam}
 }
 
 // Contains return true if the requested address is the DMA register.
@@ -67,7 +68,7 @@ func (d *DMA) Tick() {
 
 	// A DMA transfer takes 160 CPU cycles (160×4 ticks).
 	if d.written < 160 {
-		d.MMU.Write(d.dest, d.MMU.Read(d.src))
+		d.OAM.Write(d.dest, d.MMU.Read(d.src))
 		d.src++
 		d.dest++
 		d.written++
@@ -89,8 +90,8 @@ type DMAMemory struct {
 // NewDMA returns an instance of DMA managing the actual register and memory
 // transfers. Parameter is an Addressable that must span source and destination
 // address spaces.
-func NewDMAMemory(mmu Addressable) *DMAMemory {
-	return &DMAMemory{Addressable: mmu, DMA: NewDMA(mmu)}
+func NewDMAMemory(mmu, oam Addressable) *DMAMemory {
+	return &DMAMemory{Addressable: mmu, DMA: NewDMA(mmu, oam)}
 }
 
 // Read overrides the embedded Addressable method to only allow reading from

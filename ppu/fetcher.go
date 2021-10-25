@@ -10,6 +10,7 @@ type Fetcher struct {
 	Enabled         bool
 	fifo            *FIFO
 	vRAM            memory.Addressable
+	oamRAM          memory.Addressable
 	ticks           int
 	state, oldState states.State
 	lcdc            *uint8 // Reference to LCDC for sprites height bit
@@ -28,6 +29,18 @@ type Fetcher struct {
 	spriteOffset uint8 // X offset for sprite (if not fully on screen)
 	spriteLine   uint8 // Y offset (in pixels) in the sprite
 	spriteData   [8]uint8
+}
+
+// NewFetcher creates a pixel fetcher instance that can read directly from
+// video and OAM RAM.
+func NewFetcher(ppu *PPU) *Fetcher {
+	f := Fetcher{
+		fifo:   &ppu.FIFO,
+		lcdc:   &ppu.LCDC,
+		vRAM:   ppu.VRAM.RAM,
+		oamRAM: ppu.OAM.RAM,
+	}
+	return &f
 }
 
 // Start fetching a line of pixels from the given tile in the given tilemap
@@ -86,11 +99,12 @@ func (f *Fetcher) Tick() {
 			f.state = states.ReadTileID
 		}
 	case states.ReadSpriteID:
-		f.spriteID = f.vRAM.Read(f.sprite.Address + 2) // We already read X&Y
+		// Read directly from OAM RAM.
+		f.spriteID = f.oamRAM.Read(f.sprite.Address + 2) // We already read X&Y
 		f.state = states.ReadSpriteFlags
 
 	case states.ReadSpriteFlags:
-		f.spriteFlags = f.vRAM.Read(f.sprite.Address + 3)
+		f.spriteFlags = f.oamRAM.Read(f.sprite.Address + 3)
 		f.state = states.ReadSpriteData0
 
 	case states.ReadSpriteData0:
