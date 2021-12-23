@@ -4,7 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"image/color"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
+
+// Keymap associating an action name (joypad input, UI command...) to an input.
+type Keymap map[string]sdl.Keycode
 
 // Options structure grouping command line flags and config file values.
 type Options struct {
