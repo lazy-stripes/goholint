@@ -150,7 +150,6 @@ func New(config *options.Options) *GameBoy {
 	mmu := memory.NewMMU([]memory.Addressable{
 		boot,
 		g.APU,
-		g.APU.Wave.Pattern,
 		g.PPU,
 		wram,
 		ints,

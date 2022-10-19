@@ -74,7 +74,7 @@ const (
 // two generators for sterao sound, but in time, we'll mix the output of four of
 // those and the stereo channel they'll go to will be configurable as well.
 type APU struct {
-	memory.Registers
+	memory.MMU
 
 	Square1 SquareWave
 	Square2 SquareWave
@@ -86,7 +86,9 @@ type APU struct {
 func New() *APU {
 	a := APU{Wave: *NewWave()}
 
-	a.Registers = memory.Registers{
+	// Make APU an address space covering its registers and the Wave Pattern
+	// memory.
+	a.Add(memory.Registers{
 		AddrNR10: &a.Square1.NRx0,
 		AddrNR11: &a.Square1.NRx1,
 		AddrNR12: &a.Square1.NRx2,
@@ -105,7 +107,8 @@ func New() *APU {
 		AddrNR42: &a.Noise.NRx2,
 		AddrNR43: &a.Noise.NRx3,
 		AddrNR44: &a.Noise.NRx4,
-	}
+	})
+	a.Add(a.Wave.Pattern)
 
 	return &a
 }
@@ -113,7 +116,7 @@ func New() *APU {
 // Overrides to Read/Write methods because of masks and special cases.
 func (a *APU) Write(addr uint16, value uint8) {
 	// Do write the value anyway. TODO: masks. Ugh.
-	a.Registers.Write(addr, value)
+	a.MMU.Write(addr, value)
 
 	// Special case for some registers.
 	switch addr {
