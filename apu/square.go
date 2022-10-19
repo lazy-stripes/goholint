@@ -21,11 +21,21 @@ type SquareWave struct {
 
 	enabled bool // Only output silence if this is false
 
+	freq uint // Computed from NRx3 and NRx4
+
 	// Duty-related variables.
 	dutyStep uint // Sub-index into DutyCycles to set the signal high or low.
 	ticks    uint // Clock ticks counter for advancing duty step.
 
 	envelope VolumeEnvelope
+}
+
+// RecomputeFrequency updates our internal raw frequency value whenever NRx3 or
+// NRx4 change.
+func (s *SquareWave) RecomputeFrequency() {
+	// With `x` the 11-bit value in NR13/NR14, frequency is 131072/(2048-x) Hz.
+	rawFreq := ((uint(s.NRx4) & 7) << 8) | uint(s.NRx3)
+	s.freq = 131072 / (2048 - rawFreq)
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -40,13 +50,18 @@ func (s *SquareWave) SetNRx2(value uint8) {
 	}
 }
 
-// Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
-func (s *SquareWave) Tick() (sample uint8) {
+// SetNRx3 is called whenever the NRx3 register's value is written, so that it
+// can update the internal generator's frequency.
+func (s *SquareWave) SetNRx3(value uint8) {
+	s.RecomputeFrequency()
+}
+
+// SetNRx4 is called whenever the NRx4 register's value is written, so that it
+// can trigger the channel or update the internal generator's frequency.
+func (s *SquareWave) SetNRx4(value uint8) {
 	// Enable that signal if requested. NR14 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
-	if s.NRx4&NRx4RestartSound != 0 {
+	if value&NRx4RestartSound != 0 {
 		s.NRx4 &= ^NRx4RestartSound // Reset trigger bit
 		log.Debug("NR14 triggered")
 		s.enabled = true // It's fine if the signal is already enabled.
@@ -58,18 +73,23 @@ func (s *SquareWave) Tick() (sample uint8) {
 		s.envelope.Enable()
 	}
 
+	// TODO: bit 6 (length)
+
+	s.RecomputeFrequency()
+}
+
+// Tick produces a sample of the signal to generate based on the current value
+// in the signal generator's registers. We use a named return value, which is
+// conveniently set to zero (silence) by default.
+func (s *SquareWave) Tick() (sample uint8) {
 	if !s.enabled {
 		return
 	}
 
 	s.envelope.Tick()
 
-	// With `x` the 11-bit value in NR13/NR14, frequency is 131072/(2048-x) Hz.
-	rawFreq := ((uint(s.NRx4) & 7) << 8) | uint(s.NRx3)
-	freq := 131072 / (2048 - rawFreq)
-
 	// Advance duty step every 1/(8f) where f is the sound's real frequency.
-	stepRate := GameBoyRate / (freq * 8)
+	stepRate := GameBoyRate / (s.freq * 8)
 	steps := (s.ticks + SoundOutRate) / stepRate
 	s.ticks = (s.ticks + SoundOutRate) % stepRate
 

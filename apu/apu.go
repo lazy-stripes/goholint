@@ -38,6 +38,8 @@ const (
 	AddrNR50 = 0xff24
 	AddrNR51 = 0xff25
 	AddrNR52 = 0xff26
+
+	AddrWavePattern = 0xff30
 )
 
 // Audio settings for SDL.
@@ -119,13 +121,32 @@ func (a *APU) Write(addr uint16, value uint8) {
 	a.MMU.Write(addr, value)
 
 	// Special case for some registers.
+	// TODO: maybe a tiny CallbackRegister type, just for the APU?
 	switch addr {
 	case AddrNR12:
 		log.Debugf("NR12 = 0x%02x", value)
 		a.Square1.SetNRx2(value)
+	case AddrNR13:
+		log.Debugf("NR13 = 0x%02x", value)
+		a.Square1.SetNRx3(value)
+	case AddrNR14:
+		log.Debugf("NR14 = 0x%02x", value)
+		a.Square1.SetNRx4(value)
 	case AddrNR22:
 		log.Debugf("NR22 = 0x%02x", value)
 		a.Square2.SetNRx2(value)
+	case AddrNR23:
+		log.Debugf("NR23 = 0x%02x", value)
+		a.Square2.SetNRx3(value)
+	case AddrNR24:
+		log.Debugf("NR24 = 0x%02x", value)
+		a.Square2.SetNRx4(value)
+	case AddrNR33:
+		log.Debugf("NR33 = 0x%02x", value)
+		a.Wave.SetNRx3(value)
+	case AddrNR34:
+		log.Debugf("NR34 = 0x%02x", value)
+		a.Wave.SetNRx4(value)
 	case AddrNR42:
 		log.Debugf("NR42 = 0x%02x", value)
 		a.Noise.SetNRx2(value)
@@ -133,7 +154,8 @@ func (a *APU) Write(addr uint16, value uint8) {
 }
 
 // Tick advances the state machine of all signal generators to produce a single
-// stereo sample for the sound card. Note that the number of internal cycles happening on each signal generator depends on the output frequency.
+// stereo sample for the sound card. Note that the number of internal cycles
+// happening on each signal generator depends on the output frequency.
 func (a *APU) Tick() (left, right uint8) {
 	// Advance all signal generators a step. Right now we only have two but
 	// if we were to implement all four, we'd actually mix all their outputs
@@ -141,7 +163,8 @@ func (a *APU) Tick() (left, right uint8) {
 
 	// TODO: mix signals here according to the relevant registers.
 	// Because we're returning unsigned ints, the silence point is at 128.
-	left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
+	//left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
+	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick()
 	right = left
 
 	return

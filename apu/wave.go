@@ -24,6 +24,10 @@ type WaveTable struct {
 
 	Pattern *memory.RAM // Wave table pattern (32 4-bit samples)
 
+	length Length
+
+	freq uint // Computed from NRx3 and NRx4
+
 	enabled bool // Only output silence if this is false
 
 	sample       uint8 // Current sample to play
@@ -36,14 +40,33 @@ type WaveTable struct {
 // the MMU.
 func NewWave() *WaveTable {
 	// Create RAM Addressable to store samples.
-	w := &WaveTable{Pattern: memory.NewRAM(0xff30, 16)}
+	// TODO: "Wave RAM should only be accessed while CH3 is disabled (NR30 bit
+	// 7 reset), otherwise accesses will behave weirdly.
+	//
+	// On almost all models, the byte will be written at the offset CH3 is
+	// currently reading. On GBA, the write will simply be ignored."
+	// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#FF30-FF3F_-_Wave_Pattern_RAM
+	w := &WaveTable{Pattern: memory.NewRAM(AddrWavePattern, 16)}
 	return w
 }
 
-// Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
-func (w *WaveTable) Tick() (sample uint8) {
+// RecomputeFrequency updates our internal raw frequency value whenever NRx3 or
+// NRx4 change.
+func (w *WaveTable) RecomputeFrequency() {
+	// With `x` the 11-bit value in NR33/NR34, frequency is 65536/(2048-x) Hz.
+	rawFreq := ((uint(w.NRx4) & 7) << 8) | uint(w.NRx3)
+	w.freq = 65536 / (2048 - rawFreq)
+}
+
+// SetNRx3 is called whenever the NRx3 register's value is written, so that it
+// can update the internal generator's frequency.
+func (w *WaveTable) SetNRx3(value uint8) {
+	w.RecomputeFrequency()
+}
+
+// SetNRx4 is called whenever the NRx4 register's value is written, so that it
+// can trigger the channel or update the internal generator's frequency.
+func (w *WaveTable) SetNRx4(value uint8) {
 	// Enable that signal if requested. NR34 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
 	if w.NRx4&NRx4RestartSound != 0 {
@@ -51,11 +74,25 @@ func (w *WaveTable) Tick() (sample uint8) {
 		log.Debug("NR34 triggered")
 		w.enabled = true // It's fine if the signal is already enabled.
 
-		// "Restarting a pulse channel causes its "duty step timer" to reset."
+		// "When restarting CH3, it resumes playing the last 4-bit sample it
+		// read from wave RAM, or 0 if no sample has been read since APU reset.
+		// (Sample latching is independent of output level control in NR32.)
+		// After the latched sample completes, it starts with the second sample
+		// in wave RAM (low 4 bits of $FF30). The first sample (high 4 bits of
+		// $FF30) is played last."
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
 		w.ticks = 0
 	}
 
+	// TODO: bit 6 (length)
+
+	w.RecomputeFrequency()
+}
+
+// Tick produces a sample of the signal to generate based on the current value
+// in the signal generator's registers. We use a named return value, which is
+// conveniently set to zero (silence) by default.
+func (w *WaveTable) Tick() (sample uint8) {
 	if !w.enabled {
 		return
 	}
@@ -64,12 +101,10 @@ func (w *WaveTable) Tick() (sample uint8) {
 		return
 	}
 
-	// With `x` the 11-bit value in NR33/NR34, frequency is 65536/(2048-x) Hz.
-	rawFreq := ((uint(w.NRx4) & 7) << 8) | uint(w.NRx3)
-	freq := 65536 / (2048 - rawFreq)
+	w.length.Tick()
 
 	// Advance sample index every 1/(32f) where f is the sound's real frequency.
-	stepRate := GameBoyRate / (freq * 32)
+	stepRate := GameBoyRate / (w.freq * 32)
 	steps := (w.ticks + SoundOutRate) / stepRate
 	w.ticks = (w.ticks + SoundOutRate) % stepRate
 
