@@ -7,7 +7,7 @@ import (
 )
 
 // RAM as an array of R/W bytes at addresses starting from a given offset.
-// If dealing with a batter-backed RAM, this can also be saved to a file.
+// If dealing with a battery-backed RAM, this can also be saved to a file.
 type RAM struct {
 	Bytes []uint8
 	Start uint16

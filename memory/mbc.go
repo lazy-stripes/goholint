@@ -104,7 +104,9 @@ func (m *MBC1) Read(addr uint16) uint8 {
 	case addr >= 0x0000 && addr <= 0x3fff:
 		// [GEEKIO] 7.2. says BANK2 is used if RAM banking mode is enabled.
 		if m.BankingMode == RAMBanking {
-			return m.ROM.read(uint(m.ROMBank()&0x60)*0x4000 + uint(addr))
+			// TODO: Let ROM type check overflow on its own.
+			bank := (m.BankLow << 5) & (m.romBanks - 1)
+			return m.ROM.read(uint(bank)*0x4000 + uint(addr))
 		}
 		return m.ROM.Read(addr)
 
