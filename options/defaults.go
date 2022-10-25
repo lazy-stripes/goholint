@@ -6,14 +6,12 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// TODO: move defaults to defaults.go.
-
 const (
 	// DefaultConfigPath is the path to our config file in the user's home.
 	DefaultConfigPath = "~/.goholint/config.ini"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
-	// automatically if no config exists at run time. TODO: embed from file?
+	// automatically if no config exists at run time. TODO: template using our real default values?
 	DefaultConfig = `# Most of the flags (except, obviously, -config) can be overridden here with
 # the exact same name. See -help for details.
 

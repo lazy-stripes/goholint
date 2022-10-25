@@ -74,6 +74,7 @@ func (w *WaveTable) SetNRx4(value uint8) {
 		log.Debug("NR34 triggered")
 		w.enabled = true // It's fine if the signal is already enabled.
 
+		// TODO:
 		// "When restarting CH3, it resumes playing the last 4-bit sample it
 		// read from wave RAM, or 0 if no sample has been read since APU reset.
 		// (Sample latching is independent of output level control in NR32.)

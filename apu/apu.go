@@ -71,6 +71,34 @@ const (
 	NR43Width7 uint8 = 1 << 3
 )
 
+type APURegister struct {
+	Value uint8
+	Mask  uint8
+}
+
+type APURegisters map[uint16]APURegister
+
+func (a APURegisters) Contains(addr uint16) (present bool) {
+	_, present = a[addr]
+	return
+}
+
+func (a APURegisters) Read(addr uint16) uint8 {
+	if reg, ok := a[addr]; ok {
+		return reg.Value | reg.Mask
+	}
+	log.Warningf("Reading unknown APU register address %#4x", addr)
+	return 0xff
+}
+
+func (a APURegisters) Write(addr uint16, value uint8) {
+	if reg, ok := a[addr]; ok {
+		reg.Value = value
+	} else {
+		log.Warningf("Writing to unknown APU register address %#4x", addr)
+	}
+}
+
 // APU structure grouping all sound signal generators and keeping track of when
 // to actually output a sample for the sound card to play. For now we only use
 // two generators for sterao sound, but in time, we'll mix the output of four of
@@ -89,68 +117,30 @@ func New() *APU {
 	a := APU{Wave: *NewWave()}
 
 	// Make APU an address space covering its registers and the Wave Pattern
-	// memory.
-	a.Add(memory.Registers{
-		AddrNR10: &a.Square1.NRx0,
-		AddrNR11: &a.Square1.NRx1,
-		AddrNR12: &a.Square1.NRx2,
-		AddrNR13: &a.Square1.NRx3,
-		AddrNR14: &a.Square1.NRx4,
-		AddrNR21: &a.Square2.NRx1,
-		AddrNR22: &a.Square2.NRx2,
-		AddrNR23: &a.Square2.NRx3,
-		AddrNR24: &a.Square2.NRx4,
-		AddrNR30: &a.Wave.NRx0,
-		AddrNR31: &a.Wave.NRx1,
-		AddrNR32: &a.Wave.NRx2,
-		AddrNR33: &a.Wave.NRx3,
-		AddrNR34: &a.Wave.NRx4,
-		AddrNR41: &a.Noise.NRx1,
-		AddrNR42: &a.Noise.NRx2,
-		AddrNR43: &a.Noise.NRx3,
-		AddrNR44: &a.Noise.NRx4,
+	// memory. TODO: masks.
+	a.Add(memory.HookRegisters{
+		AddrNR10: {Ptr: &a.Square1.NRx0, Read: nil, Write: nil},
+		AddrNR11: {Ptr: &a.Square1.NRx1, Read: nil, Write: nil},
+		AddrNR12: {Ptr: &a.Square1.NRx2, Read: nil, Write: a.Square1.SetNRx2},
+		AddrNR13: {Ptr: &a.Square1.NRx3, Read: nil, Write: a.Square1.SetNRx3},
+		AddrNR14: {Ptr: &a.Square1.NRx4, Read: nil, Write: a.Square1.SetNRx4},
+		AddrNR21: {Ptr: &a.Square2.NRx1, Read: nil, Write: nil},
+		AddrNR22: {Ptr: &a.Square2.NRx2, Read: nil, Write: a.Square2.SetNRx2},
+		AddrNR23: {Ptr: &a.Square2.NRx3, Read: nil, Write: a.Square2.SetNRx3},
+		AddrNR24: {Ptr: &a.Square2.NRx4, Read: nil, Write: a.Square2.SetNRx4},
+		AddrNR30: {Ptr: &a.Wave.NRx0, Read: nil, Write: nil},
+		AddrNR31: {Ptr: &a.Wave.NRx1, Read: nil, Write: nil},
+		AddrNR32: {Ptr: &a.Wave.NRx2, Read: nil, Write: nil},
+		AddrNR33: {Ptr: &a.Wave.NRx3, Read: nil, Write: a.Wave.SetNRx3},
+		AddrNR34: {Ptr: &a.Wave.NRx4, Read: nil, Write: a.Wave.SetNRx4},
+		AddrNR41: {Ptr: &a.Noise.NRx1, Read: nil, Write: nil},
+		AddrNR42: {Ptr: &a.Noise.NRx2, Read: nil, Write: a.Noise.SetNRx2},
+		AddrNR43: {Ptr: &a.Noise.NRx3, Read: nil, Write: nil},
+		AddrNR44: {Ptr: &a.Noise.NRx4, Read: nil, Write: nil},
 	})
 	a.Add(a.Wave.Pattern)
 
 	return &a
-}
-
-// Overrides to Read/Write methods because of masks and special cases.
-func (a *APU) Write(addr uint16, value uint8) {
-	// Do write the value anyway. TODO: masks. Ugh.
-	a.MMU.Write(addr, value)
-
-	// Special case for some registers.
-	// TODO: maybe a tiny CallbackRegister type, just for the APU?
-	switch addr {
-	case AddrNR12:
-		log.Debugf("NR12 = 0x%02x", value)
-		a.Square1.SetNRx2(value)
-	case AddrNR13:
-		log.Debugf("NR13 = 0x%02x", value)
-		a.Square1.SetNRx3(value)
-	case AddrNR14:
-		log.Debugf("NR14 = 0x%02x", value)
-		a.Square1.SetNRx4(value)
-	case AddrNR22:
-		log.Debugf("NR22 = 0x%02x", value)
-		a.Square2.SetNRx2(value)
-	case AddrNR23:
-		log.Debugf("NR23 = 0x%02x", value)
-		a.Square2.SetNRx3(value)
-	case AddrNR24:
-		log.Debugf("NR24 = 0x%02x", value)
-		a.Square2.SetNRx4(value)
-	case AddrNR33:
-		log.Debugf("NR33 = 0x%02x", value)
-		a.Wave.SetNRx3(value)
-	case AddrNR34:
-		log.Debugf("NR34 = 0x%02x", value)
-		a.Wave.SetNRx4(value)
-	case AddrNR42:
-		log.Debugf("NR42 = 0x%02x", value)
-		a.Noise.SetNRx2(value)
-	}
 }
 
 // Tick advances the state machine of all signal generators to produce a single

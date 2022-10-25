@@ -277,7 +277,7 @@ func (g *GameBoy) Recover() {
 		pprof.StopCPUProfile()
 
 		// Still display stack trace for debugging.
-		fmt.Println("\nThe information below may help fix the problem:\n")
+		fmt.Print("\nThe information below may help fix the problem:\n\n")
 		debug.PrintStack()
 
 		// Bail. Bummer.
