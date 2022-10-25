@@ -71,34 +71,6 @@ const (
 	NR43Width7 uint8 = 1 << 3
 )
 
-type APURegister struct {
-	Value uint8
-	Mask  uint8
-}
-
-type APURegisters map[uint16]APURegister
-
-func (a APURegisters) Contains(addr uint16) (present bool) {
-	_, present = a[addr]
-	return
-}
-
-func (a APURegisters) Read(addr uint16) uint8 {
-	if reg, ok := a[addr]; ok {
-		return reg.Value | reg.Mask
-	}
-	log.Warningf("Reading unknown APU register address %#4x", addr)
-	return 0xff
-}
-
-func (a APURegisters) Write(addr uint16, value uint8) {
-	if reg, ok := a[addr]; ok {
-		reg.Value = value
-	} else {
-		log.Warningf("Writing to unknown APU register address %#4x", addr)
-	}
-}
-
 // APU structure grouping all sound signal generators and keeping track of when
 // to actually output a sample for the sound card to play. For now we only use
 // two generators for sterao sound, but in time, we'll mix the output of four of
@@ -117,26 +89,26 @@ func New() *APU {
 	a := APU{Wave: *NewWave()}
 
 	// Make APU an address space covering its registers and the Wave Pattern
-	// memory. TODO: masks.
-	a.Add(memory.HookRegisters{
-		AddrNR10: {Ptr: &a.Square1.NRx0, Read: nil, Write: nil},
-		AddrNR11: {Ptr: &a.Square1.NRx1, Read: nil, Write: nil},
-		AddrNR12: {Ptr: &a.Square1.NRx2, Read: nil, Write: a.Square1.SetNRx2},
-		AddrNR13: {Ptr: &a.Square1.NRx3, Read: nil, Write: a.Square1.SetNRx3},
-		AddrNR14: {Ptr: &a.Square1.NRx4, Read: nil, Write: a.Square1.SetNRx4},
-		AddrNR21: {Ptr: &a.Square2.NRx1, Read: nil, Write: nil},
-		AddrNR22: {Ptr: &a.Square2.NRx2, Read: nil, Write: a.Square2.SetNRx2},
-		AddrNR23: {Ptr: &a.Square2.NRx3, Read: nil, Write: a.Square2.SetNRx3},
-		AddrNR24: {Ptr: &a.Square2.NRx4, Read: nil, Write: a.Square2.SetNRx4},
-		AddrNR30: {Ptr: &a.Wave.NRx0, Read: nil, Write: nil},
-		AddrNR31: {Ptr: &a.Wave.NRx1, Read: nil, Write: nil},
-		AddrNR32: {Ptr: &a.Wave.NRx2, Read: nil, Write: nil},
-		AddrNR33: {Ptr: &a.Wave.NRx3, Read: nil, Write: a.Wave.SetNRx3},
-		AddrNR34: {Ptr: &a.Wave.NRx4, Read: nil, Write: a.Wave.SetNRx4},
-		AddrNR41: {Ptr: &a.Noise.NRx1, Read: nil, Write: nil},
-		AddrNR42: {Ptr: &a.Noise.NRx2, Read: nil, Write: a.Noise.SetNRx2},
-		AddrNR43: {Ptr: &a.Noise.NRx3, Read: nil, Write: nil},
-		AddrNR44: {Ptr: &a.Noise.NRx4, Read: nil, Write: nil},
+	// memory.
+	a.Add(APURegisters{
+		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80},
+		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f},
+		AddrNR12: {Ptr: &a.Square1.NRx2, Mask: 0x00, OnWrite: a.Square1.SetNRx2},
+		AddrNR13: {Ptr: &a.Square1.NRx3, Mask: 0xff, OnWrite: a.Square1.SetNRx3},
+		AddrNR14: {Ptr: &a.Square1.NRx4, Mask: 0xbf, OnWrite: a.Square1.SetNRx4},
+		AddrNR21: {Ptr: &a.Square2.NRx1, Mask: 0x3f},
+		AddrNR22: {Ptr: &a.Square2.NRx2, Mask: 0x00, OnWrite: a.Square2.SetNRx2},
+		AddrNR23: {Ptr: &a.Square2.NRx3, Mask: 0xff, OnWrite: a.Square2.SetNRx3},
+		AddrNR24: {Ptr: &a.Square2.NRx4, Mask: 0xbf, OnWrite: a.Square2.SetNRx4},
+		AddrNR30: {Ptr: &a.Wave.NRx0, Mask: 0x7f},
+		AddrNR31: {Ptr: &a.Wave.NRx1, Mask: 0xff},
+		AddrNR32: {Ptr: &a.Wave.NRx2, Mask: 0x9f},
+		AddrNR33: {Ptr: &a.Wave.NRx3, Mask: 0xff, OnWrite: a.Wave.SetNRx3},
+		AddrNR34: {Ptr: &a.Wave.NRx4, Mask: 0xbf, OnWrite: a.Wave.SetNRx4},
+		AddrNR41: {Ptr: &a.Noise.NRx1, Mask: 0xff},
+		AddrNR42: {Ptr: &a.Noise.NRx2, Mask: 0x00, OnWrite: a.Noise.SetNRx2},
+		AddrNR43: {Ptr: &a.Noise.NRx3, Mask: 0x00, OnWrite: nil},
+		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: nil},
 	})
 	a.Add(a.Wave.Pattern)
 
