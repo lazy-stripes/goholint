@@ -129,8 +129,8 @@ func (c *CPU) Tick() {
 	case states.InterruptWait1:
 		requested := c.IF & c.IE
 
-		// Doing this in a switch/case instead of a loop because I played too much EXAPUNKS...
-		// Unrolling is good for perfs, right?
+		// Doing this in a switch/case instead of a loop because I played too
+		// much EXAPUNKS... Unrolling is good for perfs, right?
 		switch {
 		case requested&interrupts.VBlank != 0:
 			c.interrupt = interrupts.VBlank
@@ -138,9 +138,12 @@ func (c *CPU) Tick() {
 			c.interrupt = interrupts.LCDStat
 		case requested&interrupts.Timer != 0:
 			c.interrupt = interrupts.Timer
-			// TODO: all other interrupts
+		case requested&interrupts.Serial != 0:
+			c.interrupt = interrupts.Serial
+		case requested&interrupts.Joypad != 0:
+			c.interrupt = interrupts.Joypad
 		default:
-			fmt.Printf(" !!! Unimplemented interrupt requested: 0x%02x\n", requested)
+			fmt.Printf(" !!! Unknown interrupt requested: 0x%02x\n", requested)
 		}
 
 		c.state = states.InterruptPushPCHigh

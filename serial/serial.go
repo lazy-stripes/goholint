@@ -3,6 +3,7 @@ package serial
 import (
 	"fmt"
 
+	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/logger"
 )
 
@@ -14,7 +15,8 @@ const (
 
 // Serial registers for game link. Used only for debug for now.
 type Serial struct {
-	SB, SC uint8
+	SB, SC     uint8
+	Interrupts *interrupts.Interrupts
 }
 
 // New instantiates a Serial addressable mapping to FF01 and FF02.
@@ -49,6 +51,9 @@ func (s *Serial) Write(addr uint16, value uint8) {
 
 			// For now, always assume no connection.
 			s.SB = 0xff
+
+			// Request Serial interrupt.
+			s.Interrupts.Request(interrupts.Serial)
 		}
 	}
 }

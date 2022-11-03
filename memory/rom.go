@@ -62,6 +62,7 @@ func (r *ROM) Write(addr uint16, value uint8) {
 
 // Internal read that doesn't conform to the Adressable interface, used for
 // ROMs with memory controllers, which can then have a size well over 0xffff.
+// FIXME: properly implement banking in RAM.
 func (r *ROM) read(addr uint) uint8 {
 	offset := addr - uint(r.Start)
 	if offset > uint(len(r.Bytes)) {

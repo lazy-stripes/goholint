@@ -84,6 +84,7 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 }
 
 // New just instantiates most of the emulator. No biggie.
+// TODO: try cleaning this mess up a little.
 func New(config *options.Options) *GameBoy {
 	g := GameBoy{config: config}
 
@@ -101,10 +102,13 @@ func New(config *options.Options) *GameBoy {
 		fmt.Printf("Saving GIF to %s\n", config.GIFPath)
 	}
 
+	// TODO: shouldn't we just pass Interrupts to New() functions?
 	g.PPU = ppu.New(g.Display)
 	g.PPU.Interrupts = ints
 
 	g.Serial = serial.New()
+	g.Serial.Interrupts = ints
+
 	g.Timer = timer.New()
 	g.Timer.Interrupts = ints
 

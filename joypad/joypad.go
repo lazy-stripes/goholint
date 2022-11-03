@@ -1,6 +1,7 @@
 package joypad
 
 import (
+	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/logger"
 )
 
@@ -39,7 +40,8 @@ type Input struct {
 
 // Joypad register and event manager for game inputs.
 type Joypad struct {
-	JOYP uint8
+	JOYP       uint8
+	Interrupts *interrupts.Interrupts
 
 	Up     Input
 	Down   Input
@@ -108,6 +110,10 @@ func (j *Joypad) Write(addr uint16, value uint8) {
 
 // KeyDown updates button states (if needed) when a key was pressed.
 func (j *Joypad) KeyDown(input *Input) {
+	// Request interrupt if state changed.
+	if !input.State && input.Selector&j.JOYP != 0 {
+		j.Interrupts.Request(interrupts.Joypad)
+	}
 	input.State = true
 }
 
