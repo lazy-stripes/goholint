@@ -67,6 +67,9 @@ const (
 	// NRx4 - Bit 7 - Initial (1=Restart Sound)
 	NRx4RestartSound uint8 = 1 << 7
 
+	// NRx4 - Bit 6 - Sound Length (1=Stop output when length in NR11 expires)
+	NRx4EnableLength uint8 = 1 << 6
+
 	// NR43 - Bit 3 - Counter Step/Width (0=15 bits, 1=7 bits)
 	NR43Width7 uint8 = 1 << 3
 )
@@ -93,11 +96,11 @@ func New() *APU {
 	a.Add(a.Wave.Pattern)
 	a.Add(APURegisters{
 		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80},
-		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f},
+		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f, OnWrite: a.Square1.SetNRx1},
 		AddrNR12: {Ptr: &a.Square1.NRx2, Mask: 0x00, OnWrite: a.Square1.SetNRx2},
 		AddrNR13: {Ptr: &a.Square1.NRx3, Mask: 0xff, OnWrite: a.Square1.SetNRx3},
 		AddrNR14: {Ptr: &a.Square1.NRx4, Mask: 0xbf, OnWrite: a.Square1.SetNRx4},
-		AddrNR21: {Ptr: &a.Square2.NRx1, Mask: 0x3f},
+		AddrNR21: {Ptr: &a.Square2.NRx1, Mask: 0x3f, OnWrite: a.Square2.SetNRx1},
 		AddrNR22: {Ptr: &a.Square2.NRx2, Mask: 0x00, OnWrite: a.Square2.SetNRx2},
 		AddrNR23: {Ptr: &a.Square2.NRx3, Mask: 0xff, OnWrite: a.Square2.SetNRx3},
 		AddrNR24: {Ptr: &a.Square2.NRx4, Mask: 0xbf, OnWrite: a.Square2.SetNRx4},
@@ -106,13 +109,13 @@ func New() *APU {
 		AddrNR32: {Ptr: &a.Wave.NRx2, Mask: 0x9f},
 		AddrNR33: {Ptr: &a.Wave.NRx3, Mask: 0xff, OnWrite: a.Wave.SetNRx3},
 		AddrNR34: {Ptr: &a.Wave.NRx4, Mask: 0xbf, OnWrite: a.Wave.SetNRx4},
-		AddrNR41: {Ptr: &a.Noise.NRx1, Mask: 0xff},
+		AddrNR41: {Ptr: &a.Noise.NRx1, Mask: 0xff, OnWrite: a.Noise.SetNRx1},
 		AddrNR42: {Ptr: &a.Noise.NRx2, Mask: 0x00, OnWrite: a.Noise.SetNRx2},
 		AddrNR43: {Ptr: &a.Noise.NRx3, Mask: 0x00, OnWrite: a.Noise.SetNRx3},
 		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: a.Noise.SetNRx4},
 	})
 
-	// Recompute default frequencies.
+	// Pre-compute default frequencies.
 	a.Square1.RecomputeFrequency()
 	a.Square2.RecomputeFrequency()
 	a.Wave.RecomputeFrequency()

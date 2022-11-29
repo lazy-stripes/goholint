@@ -66,6 +66,7 @@ type Noise struct {
 
 	ticks uint // Clock ticks counter for advancing duty step.
 
+	length   Length
 	envelope VolumeEnvelope
 }
 
@@ -74,6 +75,13 @@ func (n *Noise) RecomputeFrequency() {
 	shift := (n.NRx3 & 0xf0) >> 4 // Bit 7-4 - Clock shift
 	divider := n.NRx3 & 0x07      // Bit 2-0 - Clock divider code
 	n.freq = GameBoyRate / (Divisors[divider] << shift)
+}
+
+// SetNRx1 is called whenever the NRx1 register's value was changed, so that it
+// can update the length timer.
+// TODO: make this method common with SquareWave.
+func (n *Noise) SetNRx1(value uint8) {
+	n.length.Counter = value & 0x3f
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -114,7 +122,11 @@ func (n *Noise) SetNRx4(value uint8) {
 		n.envelope.Enable()
 	}
 
-	// TODO: bit 6 (length)
+	if value&NRx4EnableLength != 0 {
+		n.length.Enable()
+	} else {
+		n.length.Disable()
+	}
 
 }
 
@@ -123,6 +135,12 @@ func (n *Noise) SetNRx4(value uint8) {
 // conveniently set to zero (silence) by default.
 func (n *Noise) Tick() (sample uint8) {
 	if !n.enabled {
+		return
+	}
+
+	disabled := n.length.Tick()
+	if disabled {
+		n.enabled = false
 		return
 	}
 

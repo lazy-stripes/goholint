@@ -27,6 +27,7 @@ type SquareWave struct {
 	dutyStep uint // Sub-index into DutyCycles to set the signal high or low.
 	ticks    uint // Clock ticks counter for advancing duty step.
 
+	length   Length
 	envelope VolumeEnvelope
 }
 
@@ -36,6 +37,12 @@ func (s *SquareWave) RecomputeFrequency() {
 	// With `x` the 11-bit value in NR13/NR14, frequency is 131072/(2048-x) Hz.
 	rawFreq := ((uint(s.NRx4) & 7) << 8) | uint(s.NRx3)
 	s.freq = 131072 / (2048 - rawFreq)
+}
+
+// SetNRx1 is called whenever the NRx1 register's value was changed, so that it
+// can update the length timer.
+func (s *SquareWave) SetNRx1(value uint8) {
+	s.length.Counter = value & 0x3f
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -63,7 +70,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 	// each time it goes to 1 without worrying.
 	if value&NRx4RestartSound != 0 {
 		s.NRx4 &= ^NRx4RestartSound // Reset trigger bit
-		log.Debug("NR14 triggered")
+
 		s.enabled = true // It's fine if the signal is already enabled.
 
 		// "Restarting a pulse channel causes its "duty step timer" to reset."
@@ -73,7 +80,11 @@ func (s *SquareWave) SetNRx4(value uint8) {
 		s.envelope.Enable()
 	}
 
-	// TODO: bit 6 (length)
+	if value&NRx4EnableLength != 0 {
+		s.length.Enable()
+	} else {
+		s.length.Disable()
+	}
 
 	s.RecomputeFrequency()
 }
@@ -83,6 +94,12 @@ func (s *SquareWave) SetNRx4(value uint8) {
 // conveniently set to zero (silence) by default.
 func (s *SquareWave) Tick() (sample uint8) {
 	if !s.enabled {
+		return
+	}
+
+	disabled := s.length.Tick()
+	if disabled {
+		s.enabled = false
 		return
 	}
 
