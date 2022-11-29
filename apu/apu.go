@@ -90,6 +90,7 @@ func New() *APU {
 
 	// Make APU an address space covering its registers and the Wave Pattern
 	// memory.
+	a.Add(a.Wave.Pattern)
 	a.Add(APURegisters{
 		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80},
 		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f},
@@ -107,10 +108,15 @@ func New() *APU {
 		AddrNR34: {Ptr: &a.Wave.NRx4, Mask: 0xbf, OnWrite: a.Wave.SetNRx4},
 		AddrNR41: {Ptr: &a.Noise.NRx1, Mask: 0xff},
 		AddrNR42: {Ptr: &a.Noise.NRx2, Mask: 0x00, OnWrite: a.Noise.SetNRx2},
-		AddrNR43: {Ptr: &a.Noise.NRx3, Mask: 0x00, OnWrite: nil},
-		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: nil},
+		AddrNR43: {Ptr: &a.Noise.NRx3, Mask: 0x00, OnWrite: a.Noise.SetNRx3},
+		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: a.Noise.SetNRx4},
 	})
-	a.Add(a.Wave.Pattern)
+
+	// Recompute default frequencies.
+	a.Square1.RecomputeFrequency()
+	a.Square2.RecomputeFrequency()
+	a.Wave.RecomputeFrequency()
+	a.Noise.RecomputeFrequency()
 
 	return &a
 }
@@ -126,7 +132,7 @@ func (a *APU) Tick() (left, right uint8) {
 	// TODO: mix signals here according to the relevant registers.
 	// Because we're returning unsigned ints, the silence point is at 128.
 	//left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
-	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick()
+	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()
 	right = left
 
 	return

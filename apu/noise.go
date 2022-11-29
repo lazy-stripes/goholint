@@ -1,7 +1,8 @@
+// Source: https://gbdev.io/pandocs/Audio_details.html
 package apu
 
 // Divisors for the generator's frequency depending on NR43.
-var Divisors = map[uint8]int{
+var Divisors = map[uint8]uint{
 	0: 8,
 	1: 16,
 	2: 32,
@@ -12,23 +13,67 @@ var Divisors = map[uint8]int{
 	7: 112,
 }
 
+// LFSR contains the value of a 16-bit Linear Feed Shift Register and a boolean
+// defining whether "short mode" (reinjecting bit 7 during shifting) is enabled.
+type LFSR struct {
+	Value     uint16
+	ShortMode bool
+}
+
+// Tick advances the LFSR one step and returns its rightmost bit as a boolean.
+func (l *LFSR) Tick() bool {
+	// [https://gbdev.io/pandocs/Audio_details.html]
+	// CH4 revolves around an LFSR. The LFSR is 16-bit internally, but really
+	// acts as if it was 15-bit.
+	//
+	// When CH4 is ticked (at the frequency specified via NR43):
+	//  1. The result of ~(LFSR0 ⊕ LFSR1) (1 if bit 0 and bit 1 are identical, 0
+	//     otherwise) is written to bit 15.
+	//  2. If “short mode” was selected in NR43, then bit 15 is copied to bit 7
+	//     as well.
+	//  3. Finally, the entire LFSR is shifted right, and bit 0 selects between
+	//     0 and the chosen volume.
+
+	xor := (l.Value & 1) ^ ((l.Value & 2) >> 1)
+	xor = (^xor) & 1 // Invert XORed value
+
+	l.Value = l.Value & 0x7fff // Reset bit 15, put our XORed value there.
+	l.Value |= xor << 15
+
+	if l.ShortMode {
+		l.Value = l.Value & 0xff7f // Reset bit 7, put our XORed value there.
+		l.Value |= xor << 7
+	}
+
+	l.Value >>= 1
+
+	return l.Value&1 == 1 // Convert bit 0 to bool
+}
+
 // Noise structure implementing sound sample generation for the fourth signal
 // generator (A.k.a Sound4).
 type Noise struct {
 	NRx1 uint8 // Sound length
 	NRx2 uint8 // Volume envelope
-	NRx3 uint8 // Polynomial counter and frequency
+	NRx3 uint8 // Clock shift, Width mode of LFSR, Divisor code
 	NRx4 uint8 // Counter/consecutive; Inital
+
+	LFSR LFSR // 15-bit shift register
 
 	enabled bool // Only output silence if this is false
 
-	register uint16 // 15-bit shift register
-
-	output uint8 // Current output
+	freq uint // Computed from NRx3
 
 	ticks uint // Clock ticks counter for advancing duty step.
 
 	envelope VolumeEnvelope
+}
+
+// RecomputeFrequency updates our internal frequency whenever NRx3 changes.
+func (n *Noise) RecomputeFrequency() {
+	shift := (n.NRx3 & 0xf0) >> 4 // Bit 7-4 - Clock shift
+	divider := n.NRx3 & 0x07      // Bit 2-0 - Clock divider code
+	n.freq = GameBoyRate / (Divisors[divider] << shift)
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -44,78 +89,58 @@ func (n *Noise) SetNRx2(value uint8) {
 	}
 }
 
+// SetNRx3 is called whenever the NRx3 register's value is written, so that it
+// can update the internal generator's frequency.
+func (n *Noise) SetNRx3(value uint8) {
+	n.RecomputeFrequency()
+	n.LFSR.ShortMode = value&0x04 != 0 // Bit 3 - LFSR width (15 or 7 bits)
+}
+
+// SetNRx4 is called whenever the NRx4 register's value is written, so that it
+// can trigger the channel or enable the length counter.
+func (n *Noise) SetNRx4(value uint8) {
+	// Enable that signal if requested. NR14 being write-only, we can reset it
+	// each time it goes to 1 without worrying.
+	if value&NRx4RestartSound != 0 {
+		n.NRx4 &= ^NRx4RestartSound // Reset trigger bit
+		log.Debug("NR44 triggered")
+		n.enabled = true // It's fine if the signal is already enabled.
+
+		// The LFSR is set to 0 when (re)triggering the channel.
+		n.LFSR.Value = 0
+
+		n.ticks = 0
+
+		n.envelope.Enable()
+	}
+
+	// TODO: bit 6 (length)
+
+}
+
 // Tick produces a sample of the signal to generate based on the current value
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
 func (n *Noise) Tick() (sample uint8) {
-	// Enable that signal if requested. NR34 being write-only, we can reset it
-	// each time it goes to 1 without worrying.
-	if n.NRx4&NRx4RestartSound != 0 {
-		n.NRx4 &= ^NRx4RestartSound // Reset trigger bit
-		log.Debug("NR44 triggered")
-		n.enabled = true
-
-		// [AUDIO2] Trigger Event details:
-		// Frequency timer is reloaded with period. (TODO: do it that way instead of from 0)
-		// Noise channel's LFSR bits are all set to 1.
-		n.ticks = 0
-		n.register = 0x7fff // Keep 16th bit zero in prevision for shifting
-
-		log.Debugf("NR43=0x%02x", n.NRx3)
-		s := n.NRx3 >> 4
-		r := Divisors[n.NRx3&7]
-		divisor := r << s
-		log.Debugf("s=%d, r=%d, div=%d", r, s, divisor)
-		log.Debugf("1048576 / (r + 1) / (1 << (s + 1))=%d", 1048576/(r+1)/(1<<(s+1)))
-		log.Debugf("(1048576 / (r + 1)) / (1 << (s + 1))=%d", (1048576/(r+1))/(1<<(s+1)))
-
-	}
-
 	if !n.enabled {
 		return
 	}
 
 	n.envelope.Tick()
 
-	// [AUDIO1] Frequency = 524288 Hz / r / 2^(s+1) ;For r=0 assume r=0.5 instead
-	// [AUDIO2] More details about divisor code.
-	// [... reddit] Frequency = 1048576 Hz / (ratio * 2) / (2 ^ (shiftclockfreq + 1))
-	// GBSOUND.txt PRNG Frequency = (1048576 Hz / (ratio + 1)) / (2 ^ (shiftclockfreq + 1))
-	// TODO: pre-compute frequencies (in squarewave too). This is suboptimal. Also precomputing will be easier to debug.
-	s := n.NRx3 >> 4
-	r := Divisors[n.NRx3&7]
-	//r := uint(n.NRx3 & 7)
-	if r == 0 {
-		r = 1
-	}
-	rawFreq := 1048576 / (r + 1) / (1 << (s + 1))
-	if rawFreq > SamplingRate {
-		rawFreq = SamplingRate
-	}
-	freq := uint(rawFreq / 16)
+	// Advance LFSR at the frequency requested by NR43.
+	stepRate := GameBoyRate / n.freq
+	steps := (n.ticks + SoundOutRate) / stepRate
+	n.ticks = (n.ticks + SoundOutRate) % stepRate
 
-	// Update register at the required frequency. FIXME: why is this not working?
-	if n.ticks++; n.ticks >= freq {
-		// [AUDIO2] When clocked by the frequency timer, the low two bits (0 and
-		// 1) are XORed, all bits are shifted right by one, and the result of
-		// the XOR is put into the now-empty 15th bit. If width mode is 1
-		// (NR43), the XOR result is ALSO put into bit 6 AFTER the shift,
-		// resulting in a 7-bit LFSR. The waveform output is bit 0 of the LFSR,
-		// INVERTED.
-		xor := (n.register & 1) ^ ((n.register & 2) >> 1)
-		n.register >>= 1
-		n.register &= ^uint16(1<<14) & 0x7fff // Reset bit 14 in case xor is zero
-		n.register |= xor << 14
-		if n.NRx3&NR43Width7 != 0 {
-			n.register &= ^uint16(1<<6) & 0x7fff
-			n.register |= xor << 6
-		}
-		n.ticks = 0
-		n.output = uint8((^n.register) & 1)
-
-		log.Desperatef("LFSR=%16b", n.register)
-
+	// FIXME: try simplifying this instead of blindly ticking.
+	for i := uint(0); i < steps; i++ {
+		n.LFSR.Tick()
 	}
 
-	return n.output * n.envelope.Volume()
+	if n.LFSR.Value&1 != 0 {
+		sample = n.envelope.Volume()
+	}
+
+	return
 }
