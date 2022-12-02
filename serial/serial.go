@@ -51,9 +51,10 @@ func (s *Serial) Write(addr uint16, value uint8) {
 
 			// For now, always assume no connection.
 			s.SB = 0xff
+			s.SC = s.SC & 0x7f // Reset transfer flag
 
-			// Request Serial interrupt.
-			s.Interrupts.Request(interrupts.Serial)
+			// Request Serial interrupt. XXX: This breaks Tetris.
+			//s.Interrupts.Request(interrupts.Serial)
 		}
 	}
 }
