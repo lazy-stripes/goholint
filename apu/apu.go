@@ -119,7 +119,7 @@ func New() *APU {
 	a.Square1.RecomputeFrequency()
 	a.Square2.RecomputeFrequency()
 	a.Wave.RecomputeFrequency()
-	a.Noise.RecomputeFrequency()
+	a.Noise.RecomputeFrequency() // This makes sure divisor is not zero.
 
 	return &a
 }
@@ -133,6 +133,7 @@ func (a *APU) Tick() (left, right uint8) {
 	// together here (with various per-generator parameters to account for).
 
 	// TODO: mix signals here according to the relevant registers.
+	// TODO: use signed samples for proper addition.
 	// Because we're returning unsigned ints, the silence point is at 128.
 	//left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
 	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()

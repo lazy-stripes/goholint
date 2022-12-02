@@ -151,7 +151,6 @@ func (n *Noise) Tick() (sample uint8) {
 	steps := (n.ticks + SoundOutRate) / stepRate
 	n.ticks = (n.ticks + SoundOutRate) % stepRate
 
-	// FIXME: try simplifying this instead of blindly ticking.
 	for i := uint(0); i < steps; i++ {
 		n.LFSR.Tick()
 	}

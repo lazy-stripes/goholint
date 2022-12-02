@@ -17,13 +17,14 @@ func (l *Length) Enable() {
 	l.ticks = 0
 }
 
-// Disable is called whenever the corresponding channel is triggered without the length bit.
+// Disable is called whenever the corresponding channel is triggered without the
+// length bit.
 func (l *Length) Disable() {
 	l.enabled = false
 }
 
 // Tick advances the length one step. It will adjust the internal length value
-// every 1/256 seconds or <cpuFreq>/256 clocks. Returns whether the signal
+// every 1/256 seconds (i.e. <cpuFreq>/256 ticks). Returns whether the signal
 // generator should be disabled.
 // Source: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 func (l *Length) Tick() (disable bool) {
@@ -33,7 +34,7 @@ func (l *Length) Tick() (disable bool) {
 
 	// If the Counter hasn't maxed out yet, advance it.
 	if l.Counter < 64 {
-		// Advance length counter every <cpufreq>/256.
+		// Advance length counter every <cpufreq>/256 (256Hz).
 		stepRate := uint(GameBoyRate / 256)
 		steps := (l.ticks + SoundOutRate) / stepRate
 		l.ticks = (l.ticks + SoundOutRate) % stepRate
