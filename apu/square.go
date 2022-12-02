@@ -29,6 +29,28 @@ type SquareWave struct {
 
 	length   Length
 	envelope VolumeEnvelope
+	sweep    Sweep
+}
+
+// RawFrequency returns the base frequency value stored in NRx3 and NRx4, an
+// 11-bit value between 0 and 2047.
+func (s *SquareWave) RawFrequency() (rawFreq uint) {
+	return ((uint(s.NRx4) & 0x07) << 8) | uint(s.NRx3)
+}
+
+// SetRawFrequency sets the base frequency in NRx3 and NRx4 from the given value
+// between 0 and 2047. If the given value is larger, nothing happens.
+func (s *SquareWave) SetRawFrequency(rawFreq uint) {
+	if rawFreq > 2047 {
+		log.Warningf("invalid base frequency %d for square channel", rawFreq)
+		return
+	}
+
+	s.NRx3 = uint8(rawFreq)
+	s.NRx4 &= 0xf8
+	s.NRx4 |= uint8(rawFreq>>8) & 0x07
+
+	s.RecomputeFrequency()
 }
 
 // RecomputeFrequency updates our internal raw frequency value whenever NRx3 or
@@ -37,6 +59,14 @@ func (s *SquareWave) RecomputeFrequency() {
 	// With `x` the 11-bit value in NR13/NR14, frequency is 131072/(2048-x) Hz.
 	rawFreq := ((uint(s.NRx4) & 7) << 8) | uint(s.NRx3)
 	s.freq = 131072 / (2048 - rawFreq)
+}
+
+// SetNRx0 is called whenever the NRx0 register's value was changed, so that it
+// can update the sweep parameters.
+func (s *SquareWave) SetNRx0(value uint8) {
+	s.sweep.Sweep = (value & 0x70) >> 4
+	s.sweep.Increase = value&0x08 == 0
+	s.sweep.Shift = value & 0x07
 }
 
 // SetNRx1 is called whenever the NRx1 register's value was changed, so that it
@@ -66,6 +96,9 @@ func (s *SquareWave) SetNRx3(value uint8) {
 // SetNRx4 is called whenever the NRx4 register's value is written, so that it
 // can trigger the channel or update the internal generator's frequency.
 func (s *SquareWave) SetNRx4(value uint8) {
+	// Recompute frequency in case bits 0-3 changed.
+	s.RecomputeFrequency()
+
 	// Enable that signal if requested. NR14 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
 	if value&NRx4RestartSound != 0 {
@@ -78,6 +111,16 @@ func (s *SquareWave) SetNRx4(value uint8) {
 		s.ticks = 0
 
 		s.envelope.Enable()
+
+		// Enable sweep, see if a frequency change was already computed.
+		updated, newFreq, overflow := s.sweep.Enable(s.RawFrequency())
+		if updated {
+			if !overflow {
+				s.SetRawFrequency(newFreq)
+			} else {
+				s.enabled = false
+			}
+		}
 	}
 
 	if value&NRx4EnableLength != 0 {
@@ -85,8 +128,6 @@ func (s *SquareWave) SetNRx4(value uint8) {
 	} else {
 		s.length.Disable()
 	}
-
-	s.RecomputeFrequency()
 }
 
 // Tick produces a sample of the signal to generate based on the current value
@@ -95,6 +136,16 @@ func (s *SquareWave) SetNRx4(value uint8) {
 func (s *SquareWave) Tick() (sample uint8) {
 	if !s.enabled {
 		return
+	}
+
+	updated, newFreq, overflow := s.sweep.Tick()
+	if updated {
+		if !overflow {
+			s.SetRawFrequency(newFreq)
+		} else {
+			s.enabled = false
+			return
+		}
 	}
 
 	disabled := s.length.Tick()

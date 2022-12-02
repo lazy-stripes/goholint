@@ -95,7 +95,7 @@ func New() *APU {
 	// memory.
 	a.Add(a.Wave.Pattern)
 	a.Add(APURegisters{
-		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80},
+		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80, OnWrite: a.Square1.SetNRx0},
 		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f, OnWrite: a.Square1.SetNRx1},
 		AddrNR12: {Ptr: &a.Square1.NRx2, Mask: 0x00, OnWrite: a.Square1.SetNRx2},
 		AddrNR13: {Ptr: &a.Square1.NRx3, Mask: 0xff, OnWrite: a.Square1.SetNRx3},
