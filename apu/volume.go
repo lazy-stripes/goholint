@@ -10,8 +10,9 @@ type VolumeEnvelope struct {
 
 	enabled bool
 
-	volume int8 // Current calculated volume.
-	ticks  uint // Clock ticks counter.
+	volume     int8  // Current calculated volume.
+	ticks      uint  // Clock ticks counter.
+	sweepSteps uint8 // Sweep pace counter.
 
 }
 
@@ -20,6 +21,7 @@ func (v *VolumeEnvelope) Enable() {
 	v.volume = int8(v.Initial)
 	v.enabled = true
 	v.ticks = 0
+	v.sweepSteps = 0
 }
 
 // Disable is called whenever sound for the corresponding channel is disabled.
@@ -41,14 +43,21 @@ func (v *VolumeEnvelope) Tick() {
 		return
 	}
 
-	// Update volume every <sweep>×(<sample rate>/64) APU ticks.
-	v.ticks++
-	if v.ticks < uint(v.Sweep)*(SamplingRate/64) {
-		return
-	}
-	v.ticks = 0
+	// Update volume sweep step every <cpufreq>/64 (64Hz).
+	stepRate := uint(GameBoyRate / 64)
+	steps := (v.ticks + SoundOutRate) / stepRate
+	v.ticks = (v.ticks + SoundOutRate) % stepRate
 
-	v.volume += v.Direction
+	// FIXME: there's got to be a more elegant way to do this.
+	// The envelope is ticked at a rate such that we shouldn't have more than
+	// one step at a time.
+	for ; steps > 0; steps-- {
+		v.sweepSteps += 1
+		if v.sweepSteps >= v.Sweep {
+			v.volume += v.Direction
+			v.sweepSteps = 0
+		}
+	}
 }
 
 // Volume returns the latest computed volume if the envelope sweep is not zero,
