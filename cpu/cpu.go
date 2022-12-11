@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"runtime/pprof"
 
 	"github.com/lazy-stripes/goholint/cpu/states"
 	"github.com/lazy-stripes/goholint/interrupts"
@@ -87,8 +86,6 @@ func (c *CPU) Tick() {
 		if opcode == 0xcb { // Extended instruction set
 			c.state = states.FetchExtendedOpcode
 		} else {
-			defer instructionError(c, false)
-
 			c.instruction = LR35902InstructionSet[opcode]
 			if c.instruction.Execute(c) { // Instruction is done within the first 4 cycles.
 				c.state = states.FetchOpCode
@@ -99,7 +96,6 @@ func (c *CPU) Tick() {
 
 	case states.FetchExtendedOpcode:
 		opcode := c.NextByte()
-		defer instructionError(c, true)
 
 		c.instruction = LR35902ExtendedInstructionSet[opcode]
 		if c.instruction.Execute(c) { // Instruction is done within the first 8 cycles.
@@ -264,25 +260,5 @@ func (c *CPU) DumpRAM() {
 		}
 		f.Write(buf)
 		fmt.Println("RAM dumped to ram-dump.bin")
-	}
-}
-
-// For missing opcodses debugz.
-func instructionError(c *CPU, extended bool) {
-	if r := recover(); r != nil {
-		if extended {
-			fmt.Printf("Execute error at instruction %#04x (0xCB %#02x) (%v)\n",
-				c.PC-2, c.Memory.Read(c.PC-1), r)
-		} else {
-			fmt.Printf("Execute error at instruction %#04x (%#02x) (%v)\n",
-				c.PC-1, c.Memory.Read(c.PC-1), r)
-		}
-		fmt.Printf("CPU's final state:\n%s\n", c)
-		// Dump memory
-		c.DumpRAM()
-
-		// Manually stop profile here, since the Exit below will shortcut the deferred call in main.
-		pprof.StopCPUProfile()
-		os.Exit(255)
 	}
 }
