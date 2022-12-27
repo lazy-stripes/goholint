@@ -65,6 +65,9 @@ func (s *Sweep) UpdatedFrequency() (newFreq uint, overflow bool) {
 	if s.Increase {
 		newFreq = s.Shadow + step
 	} else {
+		if step > s.Shadow {
+			step = s.Shadow // Don't underflow our unsigned new frequency.
+		}
 		newFreq = s.Shadow - step
 	}
 	return newFreq, newFreq > 2047
