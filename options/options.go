@@ -84,8 +84,8 @@ var debugModules module
 var debugLevel = flag.String("level", "info", "Debug level (-level help for full list)")
 var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
 var gifPath = flag.String("gif", "", "Record gif file")
-var vSync = flag.Bool("vsync", false, "Force sync to VBlank")
 var romPath = flag.String("rom", "", "ROM file to load")
+var vSync = flag.Bool("vsync", false, "Force sync to VBlank")
 var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
 var zoomFactor = flag.Uint("zoom", 2, "Zoom factor (default is 2x)")
 
@@ -112,8 +112,8 @@ func Parse() *Options {
 		DebugLevel:   *debugLevel,
 		FastBoot:     *fastBoot,
 		GIFPath:      *gifPath,
-		VSync:        *vSync,
 		ROMPath:      *romPath,
+		VSync:        *vSync,
 		WaitKey:      *waitKey,
 		ZoomFactor:   *zoomFactor,
 	}

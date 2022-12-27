@@ -157,10 +157,10 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	apply(cfg, flags, "boot", &o.BootROM)
 	apply(cfg, flags, "cpuprofile", &o.CPUProfile)
 	// TODO: debug special format.
-	apply(cfg, flags, "level", &o.DebugLevel)
 	applyBool(cfg, flags, "fastboot", &o.FastBoot)
-	applyBool(cfg, flags, "nosync", &o.VSync)
+	apply(cfg, flags, "level", &o.DebugLevel)
 	applyBool(cfg, flags, "waitkey", &o.WaitKey)
+	applyBool(cfg, flags, "vsync", &o.VSync)
 	applyUint(cfg, flags, "zoom", &o.ZoomFactor)
 
 	// Ignoring flags that are not really interesting as a config, such as
