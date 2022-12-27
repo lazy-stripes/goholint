@@ -24,9 +24,6 @@ import (
 // Package-wide logger.
 var log = logger.New("gameboy", "interface-related logs")
 
-// DateFormat layout for generated file names.
-const DateFormat = "2006-01-02-15-04-05"
-
 // TickResult type to group return values from Tick.
 type TickResult struct {
 	Left, Right uint8

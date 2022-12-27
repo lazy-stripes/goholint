@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"image/color"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -31,6 +34,29 @@ type Options struct {
 	UIForeground color.RGBA     // From config.
 	WaitKey      bool           // -waitkey
 	ZoomFactor   uint           // -zoom <factor>
+}
+
+// CreateFileIn creates a new file with the requested suffix (which can be only
+// an extension, a timestamp + an extension, etc) in the requested subfolder.
+// The folder will be created under the configuration path if it doesn't already
+// exist.
+//
+// Returns an open file or an error.
+func CreateFileIn(subfolder, suffix string) (*os.File, error) {
+	// TODO: could be nice to add metadata to file name, like cartridge name.
+	folder := filepath.Join(expandHome(DefaultConfigDir), subfolder)
+	filename := fmt.Sprintf("goholint-%s%s", time.Now().Format(DateFormat), suffix)
+	path := filepath.Join(folder, filename)
+
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		fmt.Printf("Creating subfolder %s\n", folder)
+
+		if err := os.MkdirAll(folder, 0755); err != nil {
+			fmt.Printf("Can't create subfolder %s: %v\n", folder, err)
+			return nil, err
+		}
+	}
+	return os.Create(path)
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.

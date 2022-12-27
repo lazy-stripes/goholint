@@ -6,9 +6,16 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// DateFormat layout for generated file names.
+const DateFormat = "2006-01-02-15-04-05.000"
+
 const (
+	// DefaultConfigDir is the base folder where to store the emulator's config
+	// file and subfolders for saves/screenshots.
+	DefaultConfigDir = "~/.goholint/"
+
 	// DefaultConfigPath is the path to our config file in the user's home.
-	DefaultConfigPath = "~/.goholint/config.ini"
+	DefaultConfigPath = DefaultConfigDir + "config.ini"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
 	// automatically if no config exists at run time
