@@ -21,7 +21,7 @@ type SquareWave struct {
 
 	enabled bool // Only output silence if this is false
 
-	freq uint // Computed from NRx3 and NRx4
+	freq uint // Real signal frequency computed from NRx3 and NRx4
 
 	// Duty-related variables.
 	dutyStep uint // Sub-index into DutyCycles to set the signal high or low.

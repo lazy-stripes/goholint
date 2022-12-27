@@ -33,6 +33,8 @@ func (l *Length) Tick() (disable bool) {
 	}
 
 	// If the Counter hasn't maxed out yet, advance it.
+	// TODO: follow old GB wiki logic and load Counter with max value, then
+	//       decrement, so we can use the same struct for Wave too.
 	if l.Counter < 64 {
 		// Advance length counter every <cpufreq>/256 (256Hz).
 		stepRate := uint(GameBoyRate / 256)

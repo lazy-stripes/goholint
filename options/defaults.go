@@ -11,7 +11,9 @@ const (
 	DefaultConfigPath = "~/.goholint/config.ini"
 
 	// DefaultConfig contains a reasonable default config.ini that's used
-	// automatically if no config exists at run time. TODO: template using our real default values?
+	// automatically if no config exists at run time
+	//
+	// TODO: template using our real default values?
 	DefaultConfig = `# Most of the flags (except, obviously, -config) can be overridden here with
 # the exact same name. See -help for details.
 
