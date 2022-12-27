@@ -33,11 +33,16 @@ type Display interface {
 	Text(text string)
 	Message(text string, duration time.Duration)
 
-	Screenshot(filename string)
+	// Request a screenshot of the next full frame.
+	Screenshot()
 
-	Record(filename string)
+	// Start recording screen output to GIF.
+	StartRecord()
+
+	// Stop current recording.
 	StopRecord()
 
+	// Use the provided palette.
 	Palette(palette []color.RGBA)
 }
 

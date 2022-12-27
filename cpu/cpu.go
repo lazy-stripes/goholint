@@ -3,11 +3,11 @@ package cpu
 import (
 	"bytes"
 	"fmt"
-	"os"
 
 	"github.com/lazy-stripes/goholint/cpu/states"
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/memory"
+	"github.com/lazy-stripes/goholint/options"
 )
 
 // [GEKKIO] https://gekkio.fi/files/gb-docs/gbctr.pdf
@@ -248,9 +248,10 @@ func (c *CPU) Context() string {
 	return fmt.Sprintf("[PC=%04x, Cycle=%08x] ", c.PC, c.Cycle)
 }
 
-// DumpRAM writes current RAM values to a file. TODO: make filename configurable.
-func (c *CPU) DumpRAM() {
-	if f, err := os.Create("ram-dump.bin"); err == nil {
+// DumpMemory writes current RAM values to a file. TODO: make filename configurable.
+func (c *CPU) DumpMemory() {
+	suffix := fmt.Sprintf("-%d.memory", c.Cycle)
+	if f, err := options.CreateFileIn("debug", suffix); err == nil {
 		defer func() {
 			f.Close()
 		}()
@@ -259,6 +260,6 @@ func (c *CPU) DumpRAM() {
 			buf[addr] = c.Memory.Read(addr)
 		}
 		f.Write(buf)
-		fmt.Println("RAM dumped to ram-dump.bin")
+		fmt.Printf("Memory dumped to %s\n", f.Name())
 	}
 }

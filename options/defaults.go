@@ -26,8 +26,6 @@ const (
 
 #boot = path/to/dmg_rom.bin
 #cpuprofile = path/to/cpuprofile.pprof
-#savedir = path/to/savedir/
-#mediadir = path/to/mediadir/
 #level = debug
 #fastboot = 1
 #vsync = 1
@@ -69,7 +67,7 @@ b      = d         # B Button
 select = BACKSPACE # Select Button
 start  = RETURN    # Start Button
 
-screenshot = F12   # Save a screenshot in the current directory
+screenshot = F12   # Save a screenshot
 
 recordgif = g      # Start/stop recording video output to GIF
 

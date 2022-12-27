@@ -1,9 +1,6 @@
 package gameboy
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -57,13 +54,7 @@ func (g *GameBoy) Screenshot(eventType uint32) {
 		return
 	}
 
-	// Build a nice enough filename. TODO: configurable path.
-	filename := fmt.Sprintf("goholint-%s-%d.png", time.Now().Format(DateFormat),
-		g.CPU.Cycle)
-
-	// Saving the current frame should really be up to the display (so it can
-	// wait until VBlank for instance.)
-	g.Display.Screenshot(filename)
+	g.Display.Screenshot()
 }
 
 // StartStopRecord starts recording video output to GIF and closes the file
@@ -74,15 +65,12 @@ func (g *GameBoy) StartStopRecord(eventType uint32) {
 		return
 	}
 
-	if g.recording {
+	if g.recording { // TODO: query directly from screen?
 		g.Display.StopRecord()
 		g.recording = false
 	} else {
-		// Build a nice enough filename. TODO: configurable path.
-		filename := fmt.Sprintf("goholint-%s-%d.gif", time.Now().Format(DateFormat),
-			g.CPU.Cycle)
 		g.recording = true
-		g.Display.Record(filename)
+		g.Display.StartRecord()
 	}
 }
 

@@ -86,7 +86,7 @@ func handleSIGINT(c chan os.Signal, gb *gameboy.GameBoy) {
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
 	fmt.Print(gb.CPU)
 	fmt.Print(gb.PPU)
-	gb.CPU.DumpRAM()
+	gb.CPU.DumpMemory()
 
 	// Force stopping CPU profiling.
 	pprof.StopCPUProfile()

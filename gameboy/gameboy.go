@@ -171,11 +171,7 @@ func New(config *options.Options) *GameBoy {
 		// specified by the user.
 		savePath := config.SavePath
 		if savePath == "" {
-			// The user could also just specify a path to a save folder.
-			prefix := config.SaveDir
-			if prefix == "" {
-				prefix = filepath.Dir(config.ROMPath)
-			}
+			prefix := filepath.Dir(config.ROMPath)
 			suffix := filepath.Base(config.ROMPath)
 			savePath = prefix + "/" + suffix + ".sav"
 		}
@@ -272,7 +268,7 @@ func (g *GameBoy) Recover() {
 		fmt.Println(g.PPU)
 
 		// Dump memory
-		g.CPU.DumpRAM()
+		g.CPU.DumpMemory()
 
 		// Force-close CPU-profile if any.
 		pprof.StopCPUProfile()

@@ -160,7 +160,6 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	apply(cfg, flags, "level", &o.DebugLevel)
 	applyBool(cfg, flags, "fastboot", &o.FastBoot)
 	applyBool(cfg, flags, "nosync", &o.VSync)
-	// TODO: savedir (and just ditch savepath altogether)
 	applyBool(cfg, flags, "waitkey", &o.WaitKey)
 	applyUint(cfg, flags, "zoom", &o.ZoomFactor)
 

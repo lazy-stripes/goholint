@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 
 	"github.com/veandco/go-sdl2/img"
@@ -34,12 +35,11 @@ type SDL struct {
 	zoom       int // Zoom factor applied to the 144×160 screen.
 	screenRect image.Rectangle
 
-	// Set this to non-empty to save the next frame. Will be reset at VBlank.
-	screenshotPath string
+	// Set this to true to save the next frame. Will be reset at VBlank.
+	screenshotRequested bool
 
 	// GIF recorder. TODO: record video with sound too.
 	gif            *GIF
-	recordPath     string
 	startRecording bool
 	stopRecording  bool
 	recordTime     time.Time
@@ -233,11 +233,17 @@ func (s *SDL) VBlank() {
 
 	// Create GIF here if requested.
 	if s.startRecording {
-		s.startRecording = false
-		s.recordTime = time.Now()
-		s.UI.Text("•REC [00:00]")
-		//s.UI.Message(s.recordPath, 2)
-		s.gif.Open(s.recordPath, s.palette)
+		f, err := options.CreateFileIn("gifs", ".gif")
+		if err == nil {
+			s.startRecording = false
+			s.recordTime = time.Now()
+			s.UI.Text("•REC [00:00]")
+			s.gif.New(f, s.palette)
+
+			fmt.Printf("Recording GIF to %s\n", f.Name())
+		} else {
+			log.Warningf("creating gif file failed: %v", err)
+		}
 	}
 
 	if s.stopRecording {
@@ -245,7 +251,6 @@ func (s *SDL) VBlank() {
 		s.gif.Close()
 		s.UI.Text("")
 		s.UI.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
-		s.recordPath = ""
 	}
 
 	// UI overlay.
@@ -256,10 +261,15 @@ func (s *SDL) VBlank() {
 
 	s.renderer.Present()
 
-	if s.screenshotPath != "" {
-		// Reset screenshotPath for next call.
-		path := s.screenshotPath
-		s.screenshotPath = ""
+	if s.screenshotRequested {
+		s.screenshotRequested = false
+
+		f, err := options.CreateFileIn("screenshots", ".png")
+		if err != nil {
+			log.Warningf("creating screenshot file failed: %v", err)
+			return
+		}
+		defer f.Close()
 
 		// Populate image from buffer, taking zoom into account.
 		img := image.NewRGBA(s.screenRect)
@@ -278,21 +288,13 @@ func (s *SDL) VBlank() {
 			}
 		}
 
-		f, err := os.Create(path)
-
-		if err != nil {
-			log.Warningf("creating screenshot file failed: %v", err)
-			return
-		}
-		defer f.Close()
-
 		if err := png.Encode(f, img); err != nil {
 			log.Warningf("saving screenshot failed: %v", err)
 			return
 		}
 
 		s.Message("Screenshot saved", 2)
-		fmt.Printf("screenshot saved to %s\n", path)
+		fmt.Printf("Screenshot saved to %s\n", f.Name())
 	}
 
 	if s.newPalette != nil {
@@ -307,19 +309,19 @@ func (s *SDL) Dump() {
 }
 
 // Screenshot will make the display dump the next frame to file.
-func (s *SDL) Screenshot(filename string) {
-	s.screenshotPath = filename
+func (s *SDL) Screenshot() {
+	s.screenshotRequested = true
 }
 
-// Record will create a GIF file and output frames until StopRecord is called.
+// StartRecord will create a new GIF file and output frames into it until
+// StopRecord is called.
+//
 // We only just raise a flag here, recording should start and stop in VBlank.
-func (s *SDL) Record(filename string) {
-	if s.recordPath != "" {
-		log.Warningf("can't create %s, recording to %s already in progress",
-			filename, s.recordPath)
+func (s *SDL) StartRecord() {
+	if s.gif.IsOpen() {
+		log.Warningf("recording to %s already in progress", s.gif.Filename)
 		return
 	}
-	s.recordPath = filename
 	s.startRecording = true
 }
 

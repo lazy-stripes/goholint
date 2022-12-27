@@ -28,7 +28,6 @@ type Options struct {
 	Keymap       Keymap         // From config.
 	VSync        bool           // -vsync
 	ROMPath      string         // -rom <path>
-	SaveDir      string         // -savedir <path>
 	SavePath     string         // -save <full path>
 	UIBackground color.RGBA     // From config.
 	UIForeground color.RGBA     // From config.

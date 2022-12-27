@@ -92,21 +92,15 @@ func (g *GIF) IsOpen() bool {
 	return g.fd != nil
 }
 
-// Open creates a new GIF file and starts recording screen output. This should
+// New starts recording a new GIF file to the provided descriptor and starts recording screen output. This should
 // be called at VBlank time to prevent incomplete frames.
-func (g *GIF) Open(filename string, palette []color.RGBA) {
+func (g *GIF) New(file *os.File, palette []color.RGBA) {
 	if g.IsOpen() {
 		log.Sub("gif").Warning("GIF recording already in progress, closing it.")
 		g.Close()
 	}
 
-	fd, err := os.Create(filename)
-	if err != nil {
-		log.Sub("gif").Warningf("creating GIF failed: %s", err)
-		return
-	}
-
-	log.Sub("gif").Infof("recording to %s", filename)
+	log.Sub("gif").Infof("recording to %s", file.Name())
 
 	// Convert the current palette's RGBA array to Color interface slice.
 	g.palette = []color.Color{palette[0], palette[1], palette[2], palette[3]}
@@ -125,8 +119,8 @@ func (g *GIF) Open(filename string, palette []color.RGBA) {
 	g.GIF = gif.GIF{Config: gifConfig}
 	g.frame = image.NewPaletted(FrameBounds, g.palette)
 	g.lastFrame = nil
-	g.Filename = filename
-	g.fd = fd
+	g.Filename = file.Name()
+	g.fd = file
 	g.offset = 0
 }
 

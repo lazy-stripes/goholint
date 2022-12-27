@@ -72,10 +72,11 @@ Action                       | Key
 **Previous palette**         | Page Up
 **Next palette**             | Page Down
 
-All screenshots/GIF files are created in the current folder. GIF animations only
+All screenshots/GIF files are created in the `~/.goholint/` folder, in the
+`screenshots` and `gif` subfolders, respectively. GIF animations only
 use the palette that was active when the recording started.
 
-You can customize all controls by modifying the `~/.goholint/config.ini` file 
+You can customize all controls by modifying the `~/.goholint/config.ini` file
 in your home folder (it should be created automatically if it doesn't exist yet)
 of by providing your own with `-config`.
 
