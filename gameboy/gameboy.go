@@ -26,7 +26,7 @@ var log = logger.New("gameboy", "interface-related logs")
 
 // TickResult type to group return values from Tick.
 type TickResult struct {
-	Left, Right uint8
+	Left, Right int8
 	Play, Quit  bool
 }
 

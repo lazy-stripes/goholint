@@ -133,7 +133,7 @@ func (n *Noise) SetNRx4(value uint8) {
 // Tick produces a sample of the signal to generate based on the current value
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
-func (n *Noise) Tick() (sample uint8) {
+func (n *Noise) Tick() (sample int8) {
 	if !n.enabled {
 		return
 	}
@@ -157,6 +157,8 @@ func (n *Noise) Tick() (sample uint8) {
 
 	if n.LFSR.Value&1 != 0 {
 		sample = n.envelope.Volume()
+	} else {
+		sample = -n.envelope.Volume()
 	}
 
 	return

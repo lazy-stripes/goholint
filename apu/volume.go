@@ -62,9 +62,9 @@ func (v *VolumeEnvelope) Tick() {
 
 // Volume returns the latest computed volume if the envelope sweep is not zero,
 // or the initial volume if it is.
-func (v *VolumeEnvelope) Volume() uint8 {
+func (v *VolumeEnvelope) Volume() int8 {
 	if v.Sweep > 0 {
-		return uint8(v.volume)
+		return v.volume
 	}
-	return v.Initial
+	return int8(v.Initial)
 }
