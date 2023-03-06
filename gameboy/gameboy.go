@@ -71,6 +71,10 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 		"recordgif":       g.StartStopRecord,
 		"nextpalette":     g.NextPalette,
 		"previouspalette": g.PreviousPalette,
+		"togglevoice1":    g.ToggleVoice1,
+		"togglevoice2":    g.ToggleVoice2,
+		"togglevoice3":    g.ToggleVoice3,
+		"togglevoice4":    g.ToggleVoice4,
 	}
 
 	g.Controls = make(map[sdl.Keycode]Action)
@@ -203,7 +207,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 					if action := g.Controls[keyCode]; action != nil {
 						action(eventType)
 					} else {
-						log.Infof("unknown key code %v", keyCode)
+						log.Infof("unknown key code 0x%x", keyCode)
 					}
 
 				// Window-closing event
@@ -254,7 +258,7 @@ func (g *GameBoy) Stop() {
 		fmt.Println(g.PPU)
 
 		// Dump memory
-		//g.CPU.DumpRAM()
+		//g.CPU.DumpMemory()
 	}
 }
 

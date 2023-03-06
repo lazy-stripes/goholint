@@ -75,6 +75,12 @@ recordgif = g      # Start/stop recording video output to GIF
 nexpalette      = PAGEDOWN
 previouspalette = PAGEUP
 
+# Enable or disable audio voices.
+togglevoice1 = 1
+togglevoice2 = 2
+togglevoice3 = 3
+togglevoice4 = 4
+
 # TODO: quit, reset, snapshot...
 `
 )
@@ -93,6 +99,10 @@ var DefaultKeymap = Keymap{
 	"recordgif":       sdl.K_g,
 	"nextpalette":     sdl.K_PAGEDOWN,
 	"previouspalette": sdl.K_PAGEUP,
+	"togglevoice1":    sdl.K_1,
+	"togglevoice2":    sdl.K_2,
+	"togglevoice3":    sdl.K_3,
+	"togglevoice4":    sdl.K_4,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL

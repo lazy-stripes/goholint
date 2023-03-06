@@ -1,6 +1,8 @@
 package gameboy
 
 import (
+	"fmt"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -101,6 +103,48 @@ func (g *GameBoy) PreviousPalette(eventType uint32) {
 	}
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
 	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
+}
+
+// Helper string to format UI messages.
+var mutedStr = map[bool]string{
+	false: "enabled",
+	true:  "muted",
+}
+
+// ToggleVoice1 mutes or unmutes the first audio generator (Square 1).
+func (g *GameBoy) ToggleVoice1(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.APU.Muted[0] = !g.APU.Muted[0]
+	g.Display.Message(fmt.Sprintf("Square 1 %s", mutedStr[g.APU.Muted[0]]), 2)
+}
+
+// ToggleVoice2 mutes or unmutes the second audio generator (Square 2).
+func (g *GameBoy) ToggleVoice2(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.APU.Muted[1] = !g.APU.Muted[1]
+	g.Display.Message(fmt.Sprintf("Square 2 %s", mutedStr[g.APU.Muted[1]]), 2)
+}
+
+// ToggleVoice3 mutes or unmutes the third audio generator (Wave).
+func (g *GameBoy) ToggleVoice3(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.APU.Muted[2] = !g.APU.Muted[2]
+	g.Display.Message(fmt.Sprintf("Wave %s", mutedStr[g.APU.Muted[2]]), 2)
+}
+
+// ToggleVoice4 mutes or unmutes the fourth audio generator (Noise).
+func (g *GameBoy) ToggleVoice4(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.APU.Muted[3] = !g.APU.Muted[3]
+	g.Display.Message(fmt.Sprintf("Noise %s", mutedStr[g.APU.Muted[3]]), 2)
 }
 
 // TODO: so many things! Save states, toggle features...

@@ -171,9 +171,15 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	for key := range o.Keymap {
 		// Key() will return the empty string if it doesn't exist, it's fine.
 		keyName := keySection.Key(key).String()
+		if keyName == "" {
+			continue
+		}
+
 		keySym := sdl.GetKeyFromName(keyName)
 		if keySym != sdl.K_UNKNOWN {
 			o.Keymap[key] = keySym
+		} else {
+			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, key)
 		}
 	}
 

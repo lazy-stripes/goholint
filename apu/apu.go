@@ -120,6 +120,8 @@ type APU struct {
 	Wave    WaveTable
 	Noise   Noise
 
+	Muted [4]bool // Channels muted manually by the user
+
 	NR50 uint8 // FF24 - Channel control / ON-OFF / Volume (R/W)
 	NR51 uint8 // FF25 - Selection of Sound output terminal (R/W)
 }
@@ -173,7 +175,22 @@ func (a *APU) Tick() (left, right int8) {
 	wave := a.Wave.Tick()
 	noise := a.Noise.Tick()
 
-	// TODO: action to mute channels, I always wanted to!
+	// Suppress output for channels the user manually muted.
+	if a.Muted[0] {
+		square1 = 0
+	}
+
+	if a.Muted[1] {
+		square2 = 0
+	}
+
+	if a.Muted[2] {
+		wave = 0
+	}
+
+	if a.Muted[3] {
+		noise = 0
+	}
 
 	// Each channel can return a sample from -15 to +15. Even at those maxima,
 	// adding the four values should not overflow an int8.
