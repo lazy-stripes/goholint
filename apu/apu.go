@@ -47,8 +47,18 @@ const (
 const (
 	SamplingRate    = 22050 // How many sample frames to send per second.
 	FramesPerBuffer = 1024  // Number of sample frames fitting the audio buffer.
-	Volume          = 63    // 25% volume for unsigned 8-bit samples.
 )
+
+// Values to multiply with the final volume if not maximum (7) or zero.
+var VolumeFactors = [7]float32{
+	0.0,
+	0.14285714285714285, // Volume 1
+	0.2857142857142857,  // Volume 2
+	0.42857142857142855, // Volume 3
+	0.5714285714285714,  // Volume 4
+	0.7142857142857143,  // Volume 5
+	0.8571428571428571,  // Volume 6
+}
 
 // GameBoyRate is the main CPU frequence to be used in so many divisions.
 const GameBoyRate = 4 * 1024 * 1024 // 4194304Hz or 4MiHz
@@ -72,6 +82,30 @@ const (
 
 	// NR43 - Bit 3 - Counter Step/Width (0=15 bits, 1=7 bits)
 	NR43Width7 uint8 = 1 << 3
+
+	// NR51 - Bit 7 - Output sound 4 to SO2 terminal
+	NR51Output4Right uint8 = 1 << 7
+
+	// NR51 - Bit 6 - Output sound 3 to SO2 terminal
+	NR51Output3Right uint8 = 1 << 6
+
+	// NR51 - Bit 5 - Output sound 2 to SO2 terminal
+	NR51Output2Right uint8 = 1 << 5
+
+	// NR51 - Bit 4 - Output sound 1 to SO2 terminal
+	NR51Output1Right uint8 = 1 << 4
+
+	// NR51 - Bit 3 - Output sound 4 to SO1 terminal
+	NR51Output4Left uint8 = 1 << 3
+
+	// NR51 - Bit 2 - Output sound 3 to SO1 terminal
+	NR51Output3Left uint8 = 1 << 2
+
+	// NR51 - Bit 1 - Output sound 2 to SO1 terminal
+	NR51Output2Left uint8 = 1 << 1
+
+	// NR51 - Bit 0 - Output sound 1 to SO1 terminal
+	NR51Output1Left uint8 = 1
 )
 
 // APU structure grouping all sound signal generators and keeping track of when
@@ -85,6 +119,9 @@ type APU struct {
 	Square2 SquareWave
 	Wave    WaveTable
 	Noise   Noise
+
+	NR50 uint8 // FF24 - Channel control / ON-OFF / Volume (R/W)
+	NR51 uint8 // FF25 - Selection of Sound output terminal (R/W)
 }
 
 // New APU instance. So many registers.
@@ -113,6 +150,8 @@ func New() *APU {
 		AddrNR42: {Ptr: &a.Noise.NRx2, Mask: 0x00, OnWrite: a.Noise.SetNRx2},
 		AddrNR43: {Ptr: &a.Noise.NRx3, Mask: 0x00, OnWrite: a.Noise.SetNRx3},
 		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: a.Noise.SetNRx4},
+		AddrNR50: {Ptr: &a.NR50},
+		AddrNR51: {Ptr: &a.NR51},
 	})
 
 	// Pre-compute default frequencies.
@@ -128,9 +167,64 @@ func New() *APU {
 // stereo sample for the sound card. Note that the number of internal cycles
 // happening on each signal generator depends on the output frequency.
 func (a *APU) Tick() (left, right int8) {
-	// TODO: mix signals here according to the relevant registers.
-	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()
-	right = left
+	// TODO: enabled (NR52)
+	square1 := a.Square1.Tick()
+	square2 := a.Square2.Tick()
+	wave := a.Wave.Tick()
+	noise := a.Noise.Tick()
+
+	// TODO: action to mute channels, I always wanted to!
+
+	// Each channel can return a sample from -15 to +15. Even at those maxima,
+	// adding the four values should not overflow an int8.
+	if a.NR51&NR51Output1Left != 0 {
+		left += square1
+	}
+
+	if a.NR51&NR51Output2Left != 0 {
+		left += square2
+	}
+
+	if a.NR51&NR51Output3Left != 0 {
+		left += wave
+	}
+
+	if a.NR51&NR51Output4Left != 0 {
+		left += noise
+	}
+
+	if a.NR51&NR51Output1Right != 0 {
+		right += square1
+	}
+
+	if a.NR51&NR51Output2Right != 0 {
+		right += square2
+	}
+
+	if a.NR51&NR51Output3Right != 0 {
+		right += wave
+	}
+
+	if a.NR51&NR51Output4Right != 0 {
+		right += noise
+	}
+
+	volumeLeft := a.NR50 & 0x07
+	volumeRight := (a.NR50 & 0x70) >> 4
+
+	// Adjust global volume for each channel.
+	// XXX: should we just use floats for samples?
+	if volumeLeft == 0 {
+		left = 0
+	} else if volumeLeft < 7 {
+		left = int8(float32(left) * VolumeFactors[volumeLeft])
+	}
+
+	if volumeRight == 0 {
+		right = 0
+	} else if volumeRight < 7 {
+		right = int8(float32(right) * VolumeFactors[volumeRight])
+	}
 
 	return
 }
