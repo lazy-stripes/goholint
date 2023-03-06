@@ -133,7 +133,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 // Tick produces a sample of the signal to generate based on the current value
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
-func (s *SquareWave) Tick() (sample uint8) {
+func (s *SquareWave) Tick() (sample int8) {
 	if !s.enabled {
 		return
 	}
@@ -165,6 +165,8 @@ func (s *SquareWave) Tick() (sample uint8) {
 
 	if DutyCycles[s.NRx1>>6][s.dutyStep] {
 		sample = s.envelope.Volume()
+	} else {
+		sample = -s.envelope.Volume()
 	}
 
 	return

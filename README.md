@@ -81,6 +81,17 @@ in your home folder (it should be created automatically if it doesn't exist yet)
 of by providing your own with `-config`.
 
 
+## TODO
+
+- Fix compatibility bugs (obv.)
+- Signed sound samples
+- Sound mixing (with mutable channels)
+- Save states
+- Embedded assets (icons, font...)
+- Cheat codes
+- UI improvements
+
+
 ## Acknowledgements
 
 UI font is [Press Start 2P Font](https://www.fontspace.com/press-start-2p-font-f11591)

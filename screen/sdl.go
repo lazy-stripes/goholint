@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+	"unsafe"
 
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
@@ -204,7 +205,9 @@ func (s *SDL) HBlank() {}
 // buffer should be ready to display.
 func (s *SDL) VBlank() {
 	if s.enabled {
-		s.texture.Update(nil, s.buffer, ScreenWidth*4)
+		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
+		rawPixels := unsafe.Pointer(&s.buffer[0])
+		s.texture.Update(nil, rawPixels, ScreenWidth*4)
 
 		if s.offset != ScreenWidth*ScreenHeight*4 {
 			log.Warning("MISSING PIXELS!")

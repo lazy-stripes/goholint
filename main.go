@@ -8,8 +8,8 @@ package main
 // The point is that the C-like comments below will make the Uint8 SDL type
 // and our callback function usable as if they were part of a "C" package.
 
-// typedef unsigned char Uint8;
-// void mainLoopCallback(void *userdata, Uint8 *stream, int len);
+// typedef unsigned char Int8;
+// void mainLoopCallback(void *userdata, Int8 *stream, int len);
 import "C"
 
 import (
@@ -48,14 +48,14 @@ var gb *gameboy.GameBoy
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
 //
 //export mainLoopCallback
-func mainLoopCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
+func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	// We've reached the limits of the Go bindings. In order to access the
 	// audio buffer, we have to jump through rather ugly conversion hoops
 	// between C and Go. Note that the three lines of code below were in the
 	// SDL example program. I couldn't have come up with that myself.
 	n := int(len)
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
-	buffer := *(*[]C.Uint8)(unsafe.Pointer(&hdr))
+	buffer := *(*[]C.Int8)(unsafe.Pointer(&hdr))
 
 	defer gb.Recover()
 
@@ -68,8 +68,8 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Uint8, len C.int) {
 		}
 
 		if res.Play {
-			buffer[i] = C.Uint8(res.Left)
-			buffer[i+1] = C.Uint8(res.Right)
+			buffer[i] = C.Int8(res.Left)
+			buffer[i+1] = C.Int8(res.Right)
 			i += 2
 		}
 	}
@@ -163,7 +163,7 @@ func run() {
 		// such as the audio buffer size.
 		spec := sdl.AudioSpec{
 			Freq:     apu.SamplingRate,
-			Format:   sdl.AUDIO_U8,
+			Format:   sdl.AUDIO_S8,
 			Channels: 2,
 			Samples:  apu.FramesPerBuffer,
 			Callback: sdl.AudioCallback(C.mainLoopCallback),

@@ -30,9 +30,8 @@ type WaveTable struct {
 
 	enabled bool // Only output silence if this is false
 
-	sample       uint8 // Current sample to play
-	sampleOffset uint  // Sub-index of the current sample into the wave table
-	ticks        uint  // Clock ticks counter for advancing sample index
+	sampleOffset uint // Sub-index of the current sample into the wave table
+	ticks        uint // Clock ticks counter for advancing sample index
 }
 
 // NewWave returns a WaveTable instance and is also kinda funny as a function
@@ -93,7 +92,7 @@ func (w *WaveTable) SetNRx4(value uint8) {
 // Tick produces a sample of the signal to generate based on the current value
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
-func (w *WaveTable) Tick() (sample uint8) {
+func (w *WaveTable) Tick() (sample int8) {
 	if !w.enabled {
 		return
 	}
@@ -115,10 +114,10 @@ func (w *WaveTable) Tick() (sample uint8) {
 	// output the proper nibble.
 	sampleByte := w.sampleOffset / 2
 	sampleShift := 4 - ((w.sampleOffset % 2) * 4) // Upper nibble first
-	w.sample = (w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf
+	sample = int8((w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf)
 
 	// Adjust for volume.
-	w.sample >>= OutputShift[(w.NRx2&0x60)>>5]
+	sample >>= OutputShift[(w.NRx2&0x60)>>5]
 
-	return w.sample
+	return sample
 }

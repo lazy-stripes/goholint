@@ -119,7 +119,7 @@ func New() *APU {
 	a.Square1.RecomputeFrequency()
 	a.Square2.RecomputeFrequency()
 	a.Wave.RecomputeFrequency()
-	a.Noise.RecomputeFrequency() // This makes sure divisor is not zero.
+	a.Noise.RecomputeFrequency() // This ensures divisor is not zero.
 
 	return &a
 }
@@ -127,15 +127,8 @@ func New() *APU {
 // Tick advances the state machine of all signal generators to produce a single
 // stereo sample for the sound card. Note that the number of internal cycles
 // happening on each signal generator depends on the output frequency.
-func (a *APU) Tick() (left, right uint8) {
-	// Advance all signal generators a step. Right now we only have two but
-	// if we were to implement all four, we'd actually mix all their outputs
-	// together here (with various per-generator parameters to account for).
-
+func (a *APU) Tick() (left, right int8) {
 	// TODO: mix signals here according to the relevant registers.
-	// TODO: use signed samples for proper addition.
-	// Because we're returning unsigned ints, the silence point is at 128.
-	//left = 128 + a.Square1.Tick() - a.Square2.Tick() + a.Wave.Tick()// - a.Noise.Tick()
 	left = a.Square1.Tick() + a.Square2.Tick() + a.Wave.Tick() + a.Noise.Tick()
 	right = left
 
