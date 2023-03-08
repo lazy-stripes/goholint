@@ -95,7 +95,7 @@ func New(config *options.Options) *GameBoy {
 	g.CPU = cpu.New(nil)
 	ints := interrupts.New(&g.CPU.IF, &g.CPU.IE)
 
-	g.APU = apu.New()
+	g.APU = apu.New(config.Mono)
 
 	g.Display = screen.NewSDL(config)
 	if config.GIFPath != "" {

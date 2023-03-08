@@ -26,8 +26,9 @@ const (
 
 #boot = path/to/dmg_rom.bin
 #cpuprofile = path/to/cpuprofile.pprof
-#level = debug
 #fastboot = 1
+#level = debug
+#mono = 1
 #vsync = 1
 #waitkey = 1
 #zoom = 1

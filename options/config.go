@@ -159,8 +159,9 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	// TODO: debug special format.
 	applyBool(cfg, flags, "fastboot", &o.FastBoot)
 	apply(cfg, flags, "level", &o.DebugLevel)
-	applyBool(cfg, flags, "waitkey", &o.WaitKey)
+	applyBool(cfg, flags, "mono", &o.Mono)
 	applyBool(cfg, flags, "vsync", &o.VSync)
+	applyBool(cfg, flags, "waitkey", &o.WaitKey)
 	applyUint(cfg, flags, "zoom", &o.ZoomFactor)
 
 	// Ignoring flags that are not really interesting as a config, such as

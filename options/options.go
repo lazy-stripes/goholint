@@ -22,15 +22,16 @@ type Options struct {
 	DebugModules module         // -debug <module>
 	Duration     uint           // -cycles <amount>
 	FastBoot     bool           // -fastboot
-	Palettes     [][]color.RGBA // From config.
-	PaletteNames []string       // From config, same order.
 	GIFPath      string         // -gif <path>
 	Keymap       Keymap         // From config.
-	VSync        bool           // -vsync
+	Mono         bool           // -mono
+	Palettes     [][]color.RGBA // From config.
+	PaletteNames []string       // From config, same order.
 	ROMPath      string         // -rom <path>
 	SavePath     string         // -save <full path>
 	UIBackground color.RGBA     // From config.
 	UIForeground color.RGBA     // From config.
+	VSync        bool           // -vsync
 	WaitKey      bool           // -waitkey
 	ZoomFactor   uint           // -zoom <factor>
 }
@@ -84,6 +85,7 @@ var debugModules module
 var debugLevel = flag.String("level", "info", "Debug level (-level help for full list)")
 var fastBoot = flag.Bool("fastboot", false, "Bypass boot ROM execution")
 var gifPath = flag.String("gif", "", "Record gif file")
+var monoSound = flag.Bool("mono", false, "Disable stereo panning")
 var romPath = flag.String("rom", "", "ROM file to load")
 var vSync = flag.Bool("vsync", false, "Force sync to VBlank")
 var waitKey = flag.Bool("waitkey", false, "Wait for keypress to start CPU (to help with screen captures)")
@@ -112,6 +114,7 @@ func Parse() *Options {
 		DebugLevel:   *debugLevel,
 		FastBoot:     *fastBoot,
 		GIFPath:      *gifPath,
+		Mono:         *monoSound,
 		ROMPath:      *romPath,
 		VSync:        *vSync,
 		WaitKey:      *waitKey,

@@ -120,6 +120,7 @@ type APU struct {
 	Wave    WaveTable
 	Noise   Noise
 
+	Mono  bool
 	Muted [4]bool // Channels muted manually by the user
 
 	NR50 uint8 // FF24 - Channel control / ON-OFF / Volume (R/W)
@@ -127,8 +128,10 @@ type APU struct {
 }
 
 // New APU instance. So many registers.
-func New() *APU {
+func New(mono bool) *APU {
 	a := APU{Wave: *NewWave()}
+
+	a.Mono = mono
 
 	// Make APU an address space covering its registers and the Wave Pattern
 	// memory.
@@ -194,35 +197,35 @@ func (a *APU) Tick() (left, right int8) {
 
 	// Each channel can return a sample from -15 to +15. Even at those maxima,
 	// adding the four values should not overflow an int8.
-	if a.NR51&NR51Output1Left != 0 {
+	if a.NR51&NR51Output1Left != 0 || a.Mono {
 		left += square1
 	}
 
-	if a.NR51&NR51Output2Left != 0 {
+	if a.NR51&NR51Output2Left != 0 || a.Mono {
 		left += square2
 	}
 
-	if a.NR51&NR51Output3Left != 0 {
+	if a.NR51&NR51Output3Left != 0 || a.Mono {
 		left += wave
 	}
 
-	if a.NR51&NR51Output4Left != 0 {
+	if a.NR51&NR51Output4Left != 0 || a.Mono {
 		left += noise
 	}
 
-	if a.NR51&NR51Output1Right != 0 {
+	if a.NR51&NR51Output1Right != 0 || a.Mono {
 		right += square1
 	}
 
-	if a.NR51&NR51Output2Right != 0 {
+	if a.NR51&NR51Output2Right != 0 || a.Mono {
 		right += square2
 	}
 
-	if a.NR51&NR51Output3Right != 0 {
+	if a.NR51&NR51Output3Right != 0 || a.Mono {
 		right += wave
 	}
 
-	if a.NR51&NR51Output4Right != 0 {
+	if a.NR51&NR51Output4Right != 0 || a.Mono {
 		right += noise
 	}
 
