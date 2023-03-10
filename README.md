@@ -71,6 +71,10 @@ Action                       | Key
 **Start/stop GIF recording** | G
 **Previous palette**         | Page Up
 **Next palette**             | Page Down
+**Mute Voice 1**             | 1
+**Mute Voice 2**             | 2
+**Mute Voice 3**             | 3
+**Mute Voice 4**             | 4
 
 All screenshots/GIF files are created in the `~/.goholint/` folder, in the
 `screenshots` and `gif` subfolders, respectively. GIF animations only
@@ -84,8 +88,6 @@ of by providing your own with `-config`.
 ## TODO
 
 - Fix compatibility bugs (obv.)
-- Signed sound samples
-- Sound mixing (with mutable channels)
 - Save states
 - Embedded assets (icons, font...)
 - Cheat codes
