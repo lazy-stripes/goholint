@@ -1,6 +1,6 @@
 module github.com/lazy-stripes/goholint
 
-go 1.13
+go 1.16
 
 require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect

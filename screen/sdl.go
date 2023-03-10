@@ -10,6 +10,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 
@@ -59,8 +60,7 @@ func NewSDL(config *options.Options) *SDL {
 		return nil // TODO: result, err
 	}
 
-	// FIXME: embed assets.
-	icon, err := img.Load("assets/icon.png")
+	icon, err := img.LoadRW(assets.WindowIcon, true)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load icon: %s\n", err)
 	} else {

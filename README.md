@@ -89,7 +89,7 @@ of by providing your own with `-config`.
 
 - Fix compatibility bugs (obv.)
 - Save states
-- Embedded assets (icons, font...)
+- Fast boot (embed end-of-boot state?)
 - Cheat codes
 - UI improvements
 

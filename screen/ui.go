@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/options"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -37,7 +38,7 @@ type UI struct {
 
 // Return a UI instance given a renderer to create the overlay texture.
 func NewUI(renderer *sdl.Renderer, config *options.Options) *UI {
-	font, err := ttf.OpenFont("assets/ui.ttf", int(8*config.ZoomFactor))
+	font, err := ttf.OpenFontRW(assets.UIFont, 1, int(8*config.ZoomFactor))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to open font: %s\n", err)
 		return nil // TODO: result, err
