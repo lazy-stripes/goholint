@@ -3,6 +3,7 @@ package screen
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/lazy-stripes/goholint/assets"
@@ -111,7 +112,14 @@ func (u *UI) repaint() {
 
 	// TODO: stack messages
 	if u.message != "" {
-		u.renderText(u.message, row)
+		// Allow messages to have several lines. However, we need to iterate in
+		// reverse as we render text from the bottom up.
+		lines := strings.Split(u.message, "\n")
+		for i := range lines {
+			line := lines[len(lines)-1-i]
+			u.renderText(line, row)
+			row++
+		}
 	}
 
 	// Disable if there's nothing to display.
@@ -149,7 +157,7 @@ func (u *UI) Text(text string) {
 // Clear temporary message and repaint texture.
 func (u *UI) clearMessage() {
 	// Make sure to execute in the UI thread in case we were called from a
-	// timer thread. TODO: sdl.Do()
+	// timer thread.
 	u.message = ""
 	sdl.Do(u.repaint)
 }
