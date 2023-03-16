@@ -8,7 +8,7 @@ package main
 // The point is that the C-like comments below will make the Uint8 SDL type
 // and our callback function usable as if they were part of a "C" package.
 
-// typedef unsigned char Int8;
+// typedef signed char Int8;
 // void mainLoopCallback(void *userdata, Int8 *stream, int len);
 import "C"
 
