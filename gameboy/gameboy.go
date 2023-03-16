@@ -44,7 +44,7 @@ type GameBoy struct {
 	Timer   *timer.Timer
 	JPad    *joypad.Joypad
 
-	Controls map[sdl.Keycode]Action
+	Controls map[options.KeyStroke]Action
 
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
@@ -81,9 +81,9 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 		"quit":            g.Quit,
 	}
 
-	g.Controls = make(map[sdl.Keycode]Action)
-	for label, keyCode := range keymap {
-		g.Controls[keyCode] = actions[label]
+	g.Controls = make(map[options.KeyStroke]Action)
+	for label, keyStroke := range keymap {
+		g.Controls[keyStroke] = actions[label]
 	}
 	return nil
 }
@@ -209,12 +209,17 @@ func (g *GameBoy) Tick() (res TickResult) {
 				// Button presses and UI keys
 				case sdl.KEYDOWN, sdl.KEYUP:
 					keyEvent := event.(*sdl.KeyboardEvent)
-					keyCode := keyEvent.Keysym.Sym
-
-					if action := g.Controls[keyCode]; action != nil {
+					keyStroke := options.KeyStroke{
+						Code: keyEvent.Keysym.Sym,
+						Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
+					}
+					if action := g.Controls[keyStroke]; action != nil {
 						action(eventType)
 					} else {
-						log.Infof("unknown key code 0x%x", keyCode)
+						if eventType == sdl.KEYDOWN {
+							log.Infof("unknown key code: 0x%x", keyStroke.Code)
+							log.Infof("        modifier: 0x%x", sdl.GetModState())
+						}
 					}
 
 				// Window-closing event

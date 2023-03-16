@@ -82,28 +82,32 @@ togglevoice2 = 2
 togglevoice3 = 3
 togglevoice4 = 4
 
-# TODO: quit, reset, snapshot...
+# Cleanly exit the program.
+quit = CTRL+q
+
+# TODO: reset, snapshot...
 `
 )
 
 // DefaultKeymap is a reasonable default mapping for QWERTY/AZERTY layouts.
 var DefaultKeymap = Keymap{
-	"up":              sdl.K_UP,
-	"down":            sdl.K_DOWN,
-	"left":            sdl.K_LEFT,
-	"right":           sdl.K_RIGHT,
-	"a":               sdl.K_s,
-	"b":               sdl.K_d,
-	"select":          sdl.K_BACKSPACE,
-	"start":           sdl.K_RETURN,
-	"screenshot":      sdl.K_F12,
-	"recordgif":       sdl.K_g,
-	"nextpalette":     sdl.K_PAGEDOWN,
-	"previouspalette": sdl.K_PAGEUP,
-	"togglevoice1":    sdl.K_1,
-	"togglevoice2":    sdl.K_2,
-	"togglevoice3":    sdl.K_3,
-	"togglevoice4":    sdl.K_4,
+	"up":              KeyStroke{Code: sdl.K_UP},
+	"down":            KeyStroke{Code: sdl.K_DOWN},
+	"left":            KeyStroke{Code: sdl.K_LEFT},
+	"right":           KeyStroke{Code: sdl.K_RIGHT},
+	"a":               KeyStroke{Code: sdl.K_s},
+	"b":               KeyStroke{Code: sdl.K_d},
+	"select":          KeyStroke{Code: sdl.K_BACKSPACE},
+	"start":           KeyStroke{Code: sdl.K_RETURN},
+	"screenshot":      KeyStroke{Code: sdl.K_F12},
+	"recordgif":       KeyStroke{Code: sdl.K_g},
+	"nextpalette":     KeyStroke{Code: sdl.K_PAGEDOWN},
+	"previouspalette": KeyStroke{Code: sdl.K_PAGEUP},
+	"togglevoice1":    KeyStroke{Code: sdl.K_1},
+	"togglevoice2":    KeyStroke{Code: sdl.K_2},
+	"togglevoice3":    KeyStroke{Code: sdl.K_3},
+	"togglevoice4":    KeyStroke{Code: sdl.K_4},
+	"quit":            KeyStroke{Code: sdl.K_q, Mod: sdl.KMOD_LCTRL},
 }
 
 // Default palette colors with separate RGB components for easier use with SDL

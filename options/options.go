@@ -11,8 +11,17 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// ModMask only keeps the keyboard modifiers we allow in keymaps.
+const ModMask = sdl.KMOD_CTRL | sdl.KMOD_SHIFT
+
+// KeyStroke describes a single keyboard input, including potential modifiers.
+type KeyStroke struct {
+	Code sdl.Keycode
+	Mod  sdl.Keymod
+}
+
 // Keymap associating an action name (joypad input, UI command...) to an input.
-type Keymap map[string]sdl.Keycode
+type Keymap map[string]KeyStroke
 
 // Options structure grouping command line flags and config file values.
 type Options struct {

@@ -1,5 +1,7 @@
 package options
 
+// Here is where we read and parse stuff from config files.
+
 import (
 	"fmt"
 	"image/color"
@@ -138,6 +140,17 @@ func createDefaultConfig() {
 	}
 }
 
+// Quick mapping of key modifiers as found in the config to their SDL
+// counterpart.
+var keyModNames = map[string]sdl.Keymod{
+	"CTRL":   sdl.KMOD_LCTRL, // Alias for LCTRL
+	"LCTRL":  sdl.KMOD_LCTRL,
+	"RCTRL":  sdl.KMOD_RCTRL,
+	"SHIFT":  sdl.KMOD_LSHIFT, // Alias for LSHIFT
+	"LSHIFT": sdl.KMOD_LSHIFT,
+	"RSHIFT": sdl.KMOD_RSHIFT,
+}
+
 // Update reads all parameters from a given configuration file and updates the
 // Options instance with those values, skipping all options that may already
 // have been set on the command-line.
@@ -176,9 +189,22 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 			continue
 		}
 
-		keySym := sdl.GetKeyFromName(keyName)
+		// Separate modifiers and key along the lines of [<mod>+]key, with an
+		// arbitrary number of modifiers.
+		var modifiers sdl.Keymod
+		strokes := strings.Split(keyName, "+")
+		for i := 0; i < len(strokes)-1; i++ {
+			if mod, ok := keyModNames[strokes[i]]; ok {
+				modifiers |= mod
+			} else {
+				fmt.Printf("Unknown key modifier '%s' for action '%s'.\n",
+					strokes[i], key)
+			}
+		}
+		keySym := sdl.GetKeyFromName(strokes[len(strokes)-1])
+
 		if keySym != sdl.K_UNKNOWN {
-			o.Keymap[key] = keySym
+			o.Keymap[key] = KeyStroke{Code: keySym, Mod: modifiers}
 		} else {
 			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, key)
 		}
