@@ -27,7 +27,7 @@ var log = logger.New("gameboy", "interface-related logs")
 // TickResult type to group return values from Tick.
 type TickResult struct {
 	Left, Right int8
-	Play, Quit  bool
+	Play        bool
 }
 
 // GameBoy structure grouping all our state machines to tick them together.
@@ -45,6 +45,9 @@ type GameBoy struct {
 	JPad    *joypad.Joypad
 
 	Controls map[sdl.Keycode]Action
+
+	// Send true to this channel to quit the program.
+	QuitChan chan bool
 
 	// Current palette.
 	paletteIndex int
@@ -75,6 +78,7 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 		"togglevoice2":    g.ToggleVoice2,
 		"togglevoice3":    g.ToggleVoice3,
 		"togglevoice4":    g.ToggleVoice4,
+		"quit":            g.Quit,
 	}
 
 	g.Controls = make(map[sdl.Keycode]Action)
@@ -87,7 +91,10 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 // New just instantiates most of the emulator. No biggie.
 // TODO: try cleaning this mess up a little.
 func New(config *options.Options) *GameBoy {
-	g := GameBoy{config: config}
+	g := GameBoy{
+		config:   config,
+		QuitChan: make(chan bool),
+	}
 
 	g.SetControls(config.Keymap)
 
@@ -212,7 +219,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 
 				// Window-closing event
 				case sdl.QUIT:
-					res.Quit = true
+					g.QuitChan <- true
 				}
 			}
 		})

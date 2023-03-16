@@ -63,10 +63,6 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	for i := 0; i < n; {
 		res := gb.Tick()
 
-		if res.Quit {
-			quit <- true
-		}
-
 		if res.Play {
 			buffer[i] = C.Int8(res.Left)
 			buffer[i+1] = C.Int8(res.Right)
@@ -180,7 +176,7 @@ func run() {
 
 	defer gb.Stop()
 
-	<-quit // Wait for the callback to signal us.
+	<-gb.QuitChan // Wait for the callback or an action to signal us.
 
 	sdl.CloseAudio()
 }

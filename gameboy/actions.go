@@ -168,4 +168,12 @@ func (g *GameBoy) ToggleVoice4(eventType uint32) {
 	g.Display.Message(g.voiceStatusMsg(3), 2)
 }
 
+// Quit cleanly quits the program.
+func (g *GameBoy) Quit(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.QuitChan <- true
+}
+
 // TODO: so many things! Save states, toggle features...
