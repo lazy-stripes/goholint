@@ -165,6 +165,23 @@ func (s *SDL) Close() {
 	s.window.Destroy()
 }
 
+// Repaint unconditionally updates the rendering. Called from the Home screen.
+func (s *SDL) Repaint() {
+	sdl.Do(s.repaint)
+}
+
+func (s *SDL) repaint() {
+	// Emulator screen.
+	s.renderer.Copy(s.texture, nil, nil)
+
+	// UI overlay.
+	if s.UI.Enabled {
+		//s.UI.texture.SetBlendMode(sdl.BLENDMODE_ADD)
+		s.renderer.Copy(s.UI.texture, nil, nil)
+	}
+	s.renderer.Present()
+}
+
 // Enable turns on the display. Pixels will be drawn to our texture and showed at VBlank time.
 func (s *SDL) Enable() {
 	s.enabled = true
@@ -204,6 +221,9 @@ func (s *SDL) HBlank() {}
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *SDL) VBlank() {
+	// Make sure to update windows contents in the end.
+	defer s.repaint()
+
 	if s.enabled {
 		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
 		rawPixels := unsafe.Pointer(&s.buffer[0])
@@ -221,7 +241,6 @@ func (s *SDL) VBlank() {
 		s.renderer.SetRenderTarget(nil)
 
 	}
-	s.renderer.Copy(s.texture, nil, nil)
 
 	// Update GIF frame if recording. We do this before checking startRecording
 	// otherwise the call to SaveFrame will always insert a "disabled" frame in
@@ -255,14 +274,6 @@ func (s *SDL) VBlank() {
 		s.UI.Text("")
 		s.UI.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
 	}
-
-	// UI overlay.
-	if s.UI.Enabled {
-		//s.UI.texture.SetBlendMode(sdl.BLENDMODE_ADD)
-		s.renderer.Copy(s.UI.texture, nil, nil)
-	}
-
-	s.renderer.Present()
 
 	if s.screenshotRequested {
 		s.screenshotRequested = false

@@ -108,6 +108,7 @@ var DefaultKeymap = Keymap{
 	"togglevoice3":    KeyStroke{Code: sdl.K_3},
 	"togglevoice4":    KeyStroke{Code: sdl.K_4},
 	"quit":            KeyStroke{Code: sdl.K_q, Mod: sdl.KMOD_LCTRL},
+	"home":            KeyStroke{Code: sdl.K_ESCAPE},
 }
 
 // Default palette colors with separate RGB components for easier use with SDL

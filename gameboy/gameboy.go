@@ -24,6 +24,9 @@ import (
 // Package-wide logger.
 var log = logger.New("gameboy", "interface-related logs")
 
+// VBlankRate represents ticks to wait before refreshing the Home screen.
+const VBlankRate = apu.GameBoyRate / 60
+
 // TickResult type to group return values from Tick.
 type TickResult struct {
 	Left, Right int8
@@ -38,7 +41,7 @@ type GameBoy struct {
 	APU     *apu.APU
 	CPU     *cpu.CPU
 	PPU     *ppu.PPU
-	Display screen.Display // Interface, not pointer.
+	Display *screen.SDL
 	DMA     *memory.DMA
 	Serial  *serial.Serial
 	Timer   *timer.Timer
@@ -54,6 +57,9 @@ type GameBoy struct {
 
 	// For GIF record toggle.
 	recording bool
+
+	// For showing "home screen".
+	home bool
 }
 
 // SetControls validates and sets the given control map for the emulator.
@@ -79,6 +85,7 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 		"togglevoice3":    g.ToggleVoice3,
 		"togglevoice4":    g.ToggleVoice4,
 		"quit":            g.Quit,
+		"home":            g.Home,
 	}
 
 	g.Controls = make(map[options.KeyStroke]Action)
@@ -213,6 +220,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 						Code: keyEvent.Keysym.Sym,
 						Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
 					}
+					// TODO: home menu actions
 					if action := g.Controls[keyStroke]; action != nil {
 						action(eventType)
 					} else {
@@ -228,6 +236,15 @@ func (g *GameBoy) Tick() (res TickResult) {
 				}
 			}
 		})
+	}
+
+	// Emulation is paused while home screen is active.
+	if g.home {
+		// Refresh windows now and then.
+		if g.ticks%VBlankRate == 0 {
+			g.Display.Repaint()
+		}
+		return
 	}
 
 	// DMA ticks occur every 4 machine ticks.

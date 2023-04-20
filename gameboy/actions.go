@@ -176,4 +176,20 @@ func (g *GameBoy) Quit(eventType uint32) {
 	g.QuitChan <- true
 }
 
+// Home stops the emulation to display some kind of home menu. Clearing it
+// should be done from the UI itself. Which, in itself, is going to be another
+// whole thing.
+//
+// Doing this should pave the way for high-level stuff the emulator should do on
+// VBlank like saving or loading states and suchlike.
+func (g *GameBoy) Home(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	g.home = !g.home
+	if g.home {
+		g.Display.Message("HOME", 2)
+	}
+}
+
 // TODO: so many things! Save states, toggle features...
