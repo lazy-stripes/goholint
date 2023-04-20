@@ -67,14 +67,15 @@ Goholint also support the following actions:
 
 Action                       | Key
 ---                          | ---
+**Quit**                     | CTRL+Q
 **Screenshot**               | F12
 **Start/stop GIF recording** | G
 **Previous palette**         | Page Up
 **Next palette**             | Page Down
-**Mute Voice 1**             | 1
-**Mute Voice 2**             | 2
-**Mute Voice 3**             | 3
-**Mute Voice 4**             | 4
+**Toggle Voice 1**           | 1
+**Toggle Voice 2**           | 2
+**Toggle Voice 3**           | 3
+**Toggle Voice 4**           | 4
 
 All screenshots/GIF files are created in the `~/.goholint/` folder, in the
 `screenshots` and `gif` subfolders, respectively. GIF animations only

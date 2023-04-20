@@ -7,7 +7,9 @@ import (
 )
 
 // Embedded assets (window icon, UI font...) so we can just distribute a single
-// binary file. Thanks to Go >= 1.16 we can now do that pretty much natively.
+// binary file. Thanks to Go >= 1.16 we can now do that pretty much natively
+// using the embed package and the //go:embed directive. See the embed package
+// documentation for details.
 
 //go:embed icon.png
 var icon []byte // Raw bytes for the window's icon.

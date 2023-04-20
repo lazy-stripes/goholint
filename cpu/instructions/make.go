@@ -251,7 +251,7 @@ func main() {
 		{Opcode: 0xc8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "Z"},
 		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
 		{Opcode: 0xca, Template: "calljp", Instruction: "JP", Operator: "=", Flag: "Z"},
-		// CB is prefix for extended instruction set.
+		// CB is used as prefix for the extended instruction set.
 		{Opcode: 0xcc, Template: "calljp", Instruction: "CALL", Operator: "=", Flag: "Z"},
 		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
 		{Opcode: 0xce, Template: "adcaddr"},
