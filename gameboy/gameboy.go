@@ -60,6 +60,9 @@ type GameBoy struct {
 
 	// For showing "home screen".
 	home bool
+
+	// Memory scanner (TODO: Game Genie feature)
+	scanner *memory.Scanner // TODO: map[string]*Subsystem
 }
 
 // SetControls validates and sets the given control map for the emulator.

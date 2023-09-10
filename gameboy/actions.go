@@ -1,8 +1,13 @@
 package gameboy
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
+	"github.com/lazy-stripes/goholint/memory"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -189,7 +194,98 @@ func (g *GameBoy) Home(eventType uint32) {
 	g.home = !g.home
 	if g.home {
 		g.Display.Message("HOME", 2)
+
+		// TODO: stop audio callback, start waiting on SDL Events, use our own set of UI Actions.
+
+		// TEMPORARY
+		// Display Scanner menu. This will keep the emulator halted. I'll want
+		// to integrate everything into the main loop in the end anyway.
+		g.ScannerMenu()
 	}
+}
+
+// TODO: ui.go or somewhere in ui package.
+// Oh boy delegating events is gonna be so fun isn't it.
+func (g *GameBoy) ScannerMenu() {
+	if g.scanner == nil {
+		// Capture initial state.
+		g.scanner = memory.NewScanner(g.CPU.Memory)
+	}
+
+	// No implementing CLI logic, this is a quick and dirty test, I promise.
+	// Also printing out a menu takes me back. So, so far.
+
+	searchResults := g.scanner.Haystack
+	reader := bufio.NewReader(os.Stdin)
+	choice := ""
+	for choice != "s" && choice != "q" {
+		fmt.Printf("\nScanner state: %d values\n\n", len(searchResults))
+
+		// Did we find something?
+		if len(searchResults) < 5 {
+			for addr, val := range searchResults {
+				fmt.Printf(" %#4x: %#2x\n", addr, val)
+			}
+			fmt.Println()
+		}
+
+		fmt.Println(" 0-255 - Look up value")
+
+		// Comparison operators need at least one initial haystack.
+		if len(g.scanner.Haystack) > 0 {
+			fmt.Println(" g     - Larger values")
+			fmt.Println(" l     - Smaller values")
+			fmt.Println(" e     - Equal (unchanged) values")
+		}
+
+		fmt.Println(" c     - Clear state")
+		fmt.Println(" s     - Save results and close")
+		//fmt.Println(" f     - Force memory value") // TODO: memory.Overlay
+		fmt.Println(" q     - Discard results and close")
+		fmt.Print("\n > ")
+
+		choice, _ = reader.ReadString('\n')
+		choice = strings.TrimSpace(choice)
+		choice = strings.ToLower(choice)
+
+		// Weed out invalid commands.
+		if len(g.scanner.Haystack) == 0 && strings.Contains("gle", choice) {
+			fmt.Println("Needs at least one result set. Try 's' instead.")
+			continue
+		}
+
+		switch choice {
+		case "g":
+			searchResults = g.scanner.LookUpLarger()
+
+		case "l":
+			searchResults = g.scanner.LookUpSmaller()
+
+		case "e":
+			searchResults = g.scanner.LookUpEqual()
+
+		case "c":
+			g.scanner.Clear()
+
+		case "s":
+			g.scanner.Haystack = searchResults
+
+		case "q":
+			// exit through loop condition
+			continue
+
+		default:
+			// Try converting choice into a lookup value.
+			value, err := strconv.Atoi(choice)
+			if err != nil || value > 255 {
+				fmt.Println("Please enter a value between 0 and 255")
+				continue
+			}
+			searchResults = g.scanner.LookUp(uint8(value))
+		}
+	}
+
+	g.home = false
 }
 
 // TODO: so many things! Save states, toggle features...
