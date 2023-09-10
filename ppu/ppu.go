@@ -71,7 +71,7 @@ type PPU struct {
 	OAM        *OAM
 	Interrupts *interrupts.Interrupts
 	Cycle      int
-	LCD        screen.Display
+	LCD        *screen.Screen
 	LCDC       uint8
 	STAT       uint8
 	SCY, SCX   uint8
@@ -96,7 +96,7 @@ type PPU struct {
 }
 
 // New PPU instance.
-func New(display screen.Display) *PPU {
+func New(display *screen.Screen) *PPU {
 	p := PPU{MMU: memory.NewEmptyMMU(), LCD: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,
@@ -305,7 +305,6 @@ func (p *PPU) Tick() {
 		p.x += p.Pop()
 		if p.x == 160 {
 			p.window = false
-			p.LCD.HBlank()
 			p.state = states.HBlank
 			p.RequestLCDInterrupt(interrupts.STATMode0)
 

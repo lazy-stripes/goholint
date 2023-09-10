@@ -85,7 +85,7 @@ func (g *GameBoy) NextPalette(eventType uint32) {
 
 	g.paletteIndex = (g.paletteIndex + 1) % len(g.config.Palettes)
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping
@@ -102,7 +102,7 @@ func (g *GameBoy) PreviousPalette(eventType uint32) {
 		g.paletteIndex = len(g.config.Palettes) - 1
 	}
 	g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	g.Display.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // Helper strings to format UI messages.
@@ -138,7 +138,7 @@ func (g *GameBoy) ToggleVoice1(eventType uint32) {
 		return
 	}
 	g.APU.Muted[0] = !g.APU.Muted[0]
-	g.Display.Message(g.voiceStatusMsg(0), 2)
+	g.UI.Message(g.voiceStatusMsg(0), 2)
 }
 
 // ToggleVoice2 mutes or unmutes the second audio generator (Square 2).
@@ -147,7 +147,7 @@ func (g *GameBoy) ToggleVoice2(eventType uint32) {
 		return
 	}
 	g.APU.Muted[1] = !g.APU.Muted[1]
-	g.Display.Message(g.voiceStatusMsg(1), 2)
+	g.UI.Message(g.voiceStatusMsg(1), 2)
 }
 
 // ToggleVoice3 mutes or unmutes the third audio generator (Wave).
@@ -156,7 +156,7 @@ func (g *GameBoy) ToggleVoice3(eventType uint32) {
 		return
 	}
 	g.APU.Muted[2] = !g.APU.Muted[2]
-	g.Display.Message(g.voiceStatusMsg(2), 2)
+	g.UI.Message(g.voiceStatusMsg(2), 2)
 }
 
 // ToggleVoice4 mutes or unmutes the fourth audio generator (Noise).
@@ -165,7 +165,7 @@ func (g *GameBoy) ToggleVoice4(eventType uint32) {
 		return
 	}
 	g.APU.Muted[3] = !g.APU.Muted[3]
-	g.Display.Message(g.voiceStatusMsg(3), 2)
+	g.UI.Message(g.voiceStatusMsg(3), 2)
 }
 
 // Quit cleanly quits the program.
@@ -188,7 +188,7 @@ func (g *GameBoy) Home(eventType uint32) {
 	}
 	g.home = !g.home
 	if g.home {
-		g.Display.Message("HOME", 2)
+		g.UI.Message("HOME", 2)
 	}
 }
 

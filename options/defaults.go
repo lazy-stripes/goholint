@@ -10,6 +10,11 @@ import (
 const DateFormat = "2006-01-02-15-04-05.000"
 
 const (
+	ScreenWidth  = 160
+	ScreenHeight = 144
+)
+
+const (
 	// DefaultConfigDir is the base folder where to store the emulator's config
 	// file and subfolders for saves/screenshots.
 	DefaultConfigDir = "~/.goholint/"

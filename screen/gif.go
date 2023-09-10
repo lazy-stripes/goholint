@@ -11,6 +11,8 @@ import (
 	"github.com/lazy-stripes/goholint/options"
 )
 
+// TODO: this could probably also be moved to its own package.
+
 // FrameDelay is the time each GIF frame lasts, given that the Gameboy's screen
 // is refreshed at 59.7Hz. In 100ths of a second (which is about 1.7 but we
 // might add that up before we round it to integer).
@@ -19,8 +21,10 @@ import (
 const FrameDelay = (1 / 59.7) * 100
 
 // FrameBounds holds fixed bounds for each frame.
-var FrameBounds = image.Rectangle{Min: image.Point{0, 0},
-	Max: image.Point{X: ScreenWidth, Y: ScreenHeight}}
+var FrameBounds = image.Rectangle{
+	Min: image.Point{0, 0},
+	Max: image.Point{X: options.ScreenWidth, Y: options.ScreenHeight},
+}
 
 // GIF recorder generating animated images on the fly.
 type GIF struct {
@@ -112,8 +116,8 @@ func (g *GIF) New(file *os.File, palette []color.RGBA) {
 	// Dimensions and colors for generated GIF file.
 	gifConfig := image.Config{
 		ColorModel: g.disabled.ColorModel(),
-		Width:      ScreenWidth,
-		Height:     ScreenHeight,
+		Width:      options.ScreenWidth,
+		Height:     options.ScreenHeight,
 	}
 
 	g.GIF = gif.GIF{Config: gifConfig}

@@ -18,6 +18,8 @@ import (
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/serial"
 	"github.com/lazy-stripes/goholint/timer"
+	"github.com/lazy-stripes/goholint/ui"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -37,11 +39,13 @@ type TickResult struct {
 type GameBoy struct {
 	config *options.Options
 
+	UI *ui.UI
+
 	ticks   uint64
 	APU     *apu.APU
 	CPU     *cpu.CPU
 	PPU     *ppu.PPU
-	Display *screen.SDL
+	Display *screen.Screen
 	DMA     *memory.DMA
 	Serial  *serial.Serial
 	Timer   *timer.Timer
@@ -105,13 +109,17 @@ func New(config *options.Options) *GameBoy {
 
 	g.SetControls(config.Keymap)
 
+	// Maybe instantiate SDL window right here and pass renderer to UI and Screen.
+
+	g.UI = ui.New(config)
+
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
 	ints := interrupts.New(&g.CPU.IF, &g.CPU.IE)
 
 	g.APU = apu.New(config.Mono)
 
-	g.Display = screen.NewSDL(config)
+	g.Display = screen.New(g.UI, config)
 	if config.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)
 		fmt.Printf("Saving GIF to %s\n", config.GIFPath)
@@ -242,7 +250,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 	if g.home {
 		// Refresh windows now and then.
 		if g.ticks%VBlankRate == 0 {
-			g.Display.Repaint()
+			sdl.Do(g.UI.Repaint)
 		}
 		return
 	}
