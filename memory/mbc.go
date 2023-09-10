@@ -89,7 +89,7 @@ func (m *MBC1) RAMBank() (bank uint8) {
 // Contains returns true if the requested address is anywhere in ROM or RAM.
 func (m *MBC1) Contains(addr uint16) bool {
 	switch {
-	case addr >= 0x0000 && addr <= 0x7fff:
+	case addr <= 0x7fff:
 		return true
 	case addr >= 0xa000 && addr <= 0xbfff:
 		return true
@@ -101,7 +101,7 @@ func (m *MBC1) Contains(addr uint16) bool {
 // Read returns the byte at requested address in current ROM or RAM bank.
 func (m *MBC1) Read(addr uint16) uint8 {
 	switch {
-	case addr >= 0x0000 && addr <= 0x3fff:
+	case addr <= 0x3fff:
 		// [GEEKIO] 7.2. says BANK2 is used if RAM banking mode is enabled.
 		if m.BankingMode == RAMBanking {
 			// TODO: Let ROM type check overflow on its own.
@@ -127,7 +127,7 @@ func (m *MBC1) Read(addr uint16) uint8 {
 func (m *MBC1) Write(addr uint16, value uint8) {
 	switch {
 	// 0000-1FFF - RAM Enable
-	case addr >= 0x0000 && addr <= 0x1fff:
+	case addr <= 0x1fff:
 		m.RAMEnabled = (value&0x0a == 0x0a)
 
 	// 2000-3FFF - ROM Bank Number

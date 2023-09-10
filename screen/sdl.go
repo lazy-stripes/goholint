@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"github.com/lazy-stripes/goholint/assets"
-	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 
 	"github.com/veandco/go-sdl2/img"

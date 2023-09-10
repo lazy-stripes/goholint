@@ -2,6 +2,14 @@ package memory
 
 import "github.com/lazy-stripes/goholint/logger"
 
+// Useful addresses and sizes.
+const (
+	RAMOffset  = 0xc000
+	RAMSize    = 0x2000
+	HRAMOffset = 0xff80
+	HRAMSize   = 0x7e
+)
+
 // Addressable interface provides functions to read/write bytes in a given
 // 16-bit address space.
 type Addressable interface {
