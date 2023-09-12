@@ -7,12 +7,10 @@ import (
 	"image/png"
 	"io/ioutil"
 	"time"
-	"unsafe"
 
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ui"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 // Package-wide logger.
@@ -38,7 +36,6 @@ type Screen struct {
 	newPalette []color.RGBA // Store new value until next frame
 
 	enabled   bool
-	texture   *sdl.Texture
 	buffer    []byte // Texture buffer for each frame
 	blank     []byte // Static texture buffer for "blank screen" frames
 	offset    int
@@ -58,14 +55,13 @@ type Screen struct {
 // New returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
 func New(ui *ui.UI, config *options.Options) *Screen {
-	// Request a texture from UI, which will be used to draw the emulator's
+	// Request a buffer from UI, which will be used to draw the emulator's
 	// output.
-	texture := ui.ScreenTexture()
+	buffer := ui.ScreenBuffer()
 
 	// Go bindings use byte slices but SDL thinks in terms of uint32
 	screenLen := options.ScreenWidth * options.ScreenHeight * 4
-	buffer := make([]byte, screenLen)
-	blank := make([]byte, screenLen)
+	blank := make([]byte, screenLen) // TODO: phase out, use a single buffer, redraw blank if/when needed.
 
 	// Keep computed screen size for screenshots.
 	screenRect := image.Rectangle{
@@ -79,7 +75,6 @@ func New(ui *ui.UI, config *options.Options) *Screen {
 	s := Screen{
 		config:    config,
 		palette:   config.Palettes[0],
-		texture:   texture,
 		ui:        ui,
 		buffer:    buffer,
 		blank:     blank,
@@ -109,9 +104,11 @@ func (s *Screen) makeBlank() {
 	}
 }
 
-// Close frees all resources created by SDL.
+// Close frees allocated resources.
 func (s *Screen) Close() {
-	s.texture.Destroy()
+	if s.gif.IsOpen() {
+		s.gif.Close()
+	}
 }
 
 // Enable turns on the display. Pixels will be drawn to our texture and showed
@@ -152,27 +149,20 @@ func (s *Screen) Write(colorIndex uint8) {
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *Screen) VBlank() {
-	// Make sure to update windows contents with all potential calls to Message.
+	// Refresh UI at the end of this function, which will draw the GameBoy
+	// screen and whatever text overlays we use here.
 	defer s.ui.Repaint()
 
 	if s.enabled {
-		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
-		rawPixels := unsafe.Pointer(&s.buffer[0])
-		s.texture.Update(nil, rawPixels, options.ScreenWidth*4)
-
-		if s.offset != options.ScreenWidth*options.ScreenHeight*4 {
-			log.Warning("MISSING PIXELS!")
-		}
+		// Reset offset for drawing the next frame.
 		s.offset = 0
-	} else {
-		rawPixels := unsafe.Pointer(&s.blank[0])
-		s.texture.Update(nil, rawPixels, options.ScreenWidth*4)
 	}
 
 	// Update GIF frame if recording. We do this before checking startRecording
 	// otherwise the call to SaveFrame will always insert a "disabled" frame in
 	// first position (since we haven't yet had time to build a full frame in
 	// that specific case).
+	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package.
 	if s.gif.IsOpen() {
 		d := time.Since(s.recordTime)
 		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)

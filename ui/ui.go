@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/logger"
@@ -37,13 +38,14 @@ type UI struct {
 
 	// TODO: root *Widget
 
-	renderer   *sdl.Renderer
-	texture    *sdl.Texture // UI texture
-	screen     *sdl.Texture // Gameboy screen texture
-	screenRect *sdl.Rect
-
-	font     *ttf.Font
-	fontZoom uint
+	renderer     *sdl.Renderer
+	background   *sdl.Texture // UI texture (background)
+	texture      *sdl.Texture // UI texture (foreground)
+	screen       *sdl.Texture // GameBoy screen texture
+	screenBuffer []byte       // GameBoy screen pixels
+	screenRect   *sdl.Rect
+	font         *ttf.Font
+	zoomFactor   int // From -zoom to compute offsets in various textures
 
 	fg sdl.Color // TODO: make it configurable
 	bg sdl.Color // TODO: make it configurable
@@ -111,8 +113,15 @@ func New(config *options.Options) *UI {
 		return nil // TODO: result, err
 	}
 
-	// Scale font up with screen size.
-	fontZoom := config.ZoomFactor // TODO: smaller fontZoom for higher zoom.
+	// We set background to full UI texture size for higher-def blurring when we get there.
+	background, err := renderer.CreateTexture(
+		sdl.PIXELFORMAT_ABGR8888,
+		sdl.TEXTUREACCESS_TARGET,
+		options.ScreenWidth*int32(config.ZoomFactor),
+		options.ScreenHeight*int32(config.ZoomFactor))
+	if err != nil {
+		panic(err)
+	}
 
 	// Background transparency.
 	texture.SetBlendMode(sdl.BLENDMODE_BLEND)
@@ -141,11 +150,12 @@ func New(config *options.Options) *UI {
 
 	ui := &UI{
 		QuitChan:   make(chan bool),
-		texture:    texture,
+		background: background,
+		texture:    texture, // TODO: rename to foreground?
 		renderer:   renderer,
 		screenRect: screenRect,
 		font:       font,
-		fontZoom:   fontZoom,
+		zoomFactor: int(config.ZoomFactor),
 		fg:         fg,
 		bg:         bg,
 	}
@@ -168,9 +178,11 @@ func (u *UI) Hide() {
 	u.Enabled = false
 }
 
-// ScreenTexture returns a new SDL texture suitable to use for the emulator's
-// screen, and stores it internally to use it during repaints.
-func (u *UI) ScreenTexture() (texture *sdl.Texture) {
+// ScreenBuffer creates a new SDL texture suitable to use for the emulator's
+// screen, and a pixel buffer that it returns, which the screen should write
+// into. This lets us do funny stuff with the GameBoy display's pixels that
+// we couldn't easily do if we only had access to a texture.
+func (u *UI) ScreenBuffer() (buffer []byte) {
 	texture, err := u.renderer.CreateTexture(
 		sdl.PIXELFORMAT_ABGR8888,
 		sdl.TEXTUREACCESS_STATIC,
@@ -184,14 +196,15 @@ func (u *UI) ScreenTexture() (texture *sdl.Texture) {
 	// Save texture for repaints.
 	u.screen = texture
 
-	return texture
+	// Return buffer for the screen to render into.
+	u.screenBuffer = make([]byte, options.ScreenWidth*options.ScreenHeight*4)
+
+	return u.screenBuffer
 }
 
 // SetControls validates and sets the given control map for the emulator's UI.
 func (u *UI) SetControls(keymap options.Keymap) (err error) {
-	// Intermediate mapping between labels and actual actions. This feels
-	// unnecessarily complicated, but should make sense when I start translating
-	// these from a config file. I hope.
+	// Intermediate mapping between labels and actual actions.
 	actions := map[string]Action{
 		"quit": u.Quit,
 		"home": u.Home,
@@ -240,17 +253,7 @@ func (u *UI) Repaint() {
 	u.renderer.Clear()
 	u.renderer.SetRenderTarget(nil)
 
-	// Gameboy screen in the background.
-	if u.screen != nil {
-		u.renderer.Copy(u.screen, nil, nil)
-	}
-
-	// Messages. I'm leaving them in the background for now.
-	if u.text != "" || u.message != "" {
-		u.repaintText()
-		u.renderer.Copy(u.texture, nil, nil)
-	}
-
+	// TODO: if enabled, use frozen/blurred screen as background.
 	// Display an overlay when emulation is stopped.
 	if u.Enabled {
 		// TODO: widgets. Gameboy screen may well be one too!
@@ -263,6 +266,22 @@ func (u *UI) Repaint() {
 		u.renderer.FillRect(u.screenRect)
 		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.texture, nil, nil)
+
+		// TODO: render root widget to foreground texture. Those words scare me.
+
+	} else {
+
+		// Gameboy screen in the background.
+		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
+		rawPixels := unsafe.Pointer(&u.screenBuffer[0])
+		u.screen.Update(nil, rawPixels, options.ScreenWidth*4)
+		u.renderer.Copy(u.screen, nil, nil)
+
+		// Messages. I'm leaving them in the background for now.
+		if u.text != "" || u.message != "" {
+			u.repaintText()
+			u.renderer.Copy(u.texture, nil, nil)
+		}
 	}
 
 	u.renderer.Present()
@@ -298,7 +317,7 @@ func (u *UI) repaintText() {
 // Refresh UI texture with permanent text and current message (if any).
 func (u *UI) renderText(text string, row int) {
 	// Instantiate text with an outline effect. There's probably an easier way.
-	outlineWidth := int(u.fontZoom)
+	outlineWidth := int(u.zoomFactor)
 	u.font.SetOutline(outlineWidth)
 	outline, _ := u.font.RenderUTF8Solid(text, u.bg)
 	u.font.SetOutline(0)
@@ -318,7 +337,7 @@ func (u *UI) renderText(text string, row int) {
 		nil,
 		&sdl.Rect{
 			X: Margin,
-			Y: y - int32(u.fontZoom),
+			Y: y - int32(u.zoomFactor),
 			W: outline.W,
 			H: outline.H,
 		})
@@ -327,7 +346,7 @@ func (u *UI) renderText(text string, row int) {
 	u.renderer.Copy(msgTexture,
 		nil,
 		&sdl.Rect{
-			X: Margin + int32(u.fontZoom),
+			X: Margin + int32(u.zoomFactor),
 			Y: y,
 			W: msg.W,
 			H: msg.H,
