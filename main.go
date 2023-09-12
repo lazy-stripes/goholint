@@ -176,7 +176,7 @@ func run() {
 
 	defer gb.Stop()
 
-	<-gb.QuitChan // Wait for the callback or an action to signal us.
+	<-gb.UI.QuitChan // Wait for the callback or an action to signal us.
 
 	sdl.CloseAudio()
 }

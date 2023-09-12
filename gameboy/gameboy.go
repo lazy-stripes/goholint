@@ -53,9 +53,6 @@ type GameBoy struct {
 
 	Controls map[options.KeyStroke]Action
 
-	// Send true to this channel to quit the program.
-	QuitChan chan bool
-
 	// Current palette.
 	paletteIndex int
 
@@ -103,8 +100,7 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 // TODO: try cleaning this mess up a little.
 func New(config *options.Options) *GameBoy {
 	g := GameBoy{
-		config:   config,
-		QuitChan: make(chan bool),
+		config: config,
 	}
 
 	g.SetControls(config.Keymap)
@@ -208,6 +204,34 @@ func New(config *options.Options) *GameBoy {
 	return &g
 }
 
+func (g *GameBoy) ProcessEvents() {
+	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		eventType := event.GetType()
+		switch eventType {
+
+		// Button presses and UI keys
+		case sdl.KEYDOWN, sdl.KEYUP:
+			keyEvent := event.(*sdl.KeyboardEvent)
+			keyStroke := options.KeyStroke{
+				Code: keyEvent.Keysym.Sym,
+				Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
+			}
+			if action := g.Controls[keyStroke]; action != nil {
+				action(eventType)
+			} else {
+				if eventType == sdl.KEYDOWN {
+					log.Infof("unknown key code: 0x%x", keyStroke.Code)
+					log.Infof("        modifier: 0x%x", sdl.GetModState())
+				}
+			}
+
+		// Window-closing event
+		case sdl.QUIT:
+			g.UI.QuitChan <- true
+		}
+	}
+}
+
 // Tick advances the whole emulator one step at a theoretical 4MHz. Since we're
 // using SDL audio for timing this, we also return the current value of audio
 // samples for each stereo channel as well as whether they should be played now.
@@ -216,42 +240,17 @@ func (g *GameBoy) Tick() (res TickResult) {
 
 	// Poll events 1000 times per second.
 	if g.ticks%4000 == 0 {
-		sdl.Do(func() {
-			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				eventType := event.GetType()
-				switch eventType {
-
-				// Button presses and UI keys
-				case sdl.KEYDOWN, sdl.KEYUP:
-					keyEvent := event.(*sdl.KeyboardEvent)
-					keyStroke := options.KeyStroke{
-						Code: keyEvent.Keysym.Sym,
-						Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
-					}
-					// TODO: home menu actions
-					if action := g.Controls[keyStroke]; action != nil {
-						action(eventType)
-					} else {
-						if eventType == sdl.KEYDOWN {
-							log.Infof("unknown key code: 0x%x", keyStroke.Code)
-							log.Infof("        modifier: 0x%x", sdl.GetModState())
-						}
-					}
-
-				// Window-closing event
-				case sdl.QUIT:
-					g.QuitChan <- true
-				}
-			}
-		})
+		if g.UI.Enabled {
+			sdl.Do(g.UI.ProcessEvents)
+		} else {
+			sdl.Do(g.ProcessEvents)
+		}
 	}
 
 	// Emulation is paused while home screen is active.
-	if g.home {
-		// Refresh windows now and then.
-		if g.ticks%VBlankRate == 0 {
-			sdl.Do(g.UI.Repaint)
-		}
+	if g.UI.Enabled {
+		// Still output a silence sample when needed.
+		res.Play = g.ticks%apu.SoundOutRate == 0
 		return
 	}
 

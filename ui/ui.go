@@ -30,6 +30,9 @@ type UI struct {
 
 	Screen *sdl.Texture // Gameboy screen texture
 
+	// Send true to this channel to quit the program.
+	QuitChan chan bool
+
 	message string // Temporary text on timer
 	text    string // Permanent text
 
@@ -126,6 +129,7 @@ func New(config *options.Options) *UI {
 
 	ui := &UI{
 		texture:  texture,
+		QuitChan:   make(chan bool),
 		Renderer: renderer,
 		font:     font,
 		fontZoom: fontZoom,
@@ -136,7 +140,19 @@ func New(config *options.Options) *UI {
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
 	// interface. I can't wait.
 
+	ui.SetControls(config.Keymap)
+
 	return ui
+}
+
+func (u *UI) Show() {
+	// TODO: background blur, top menu
+	u.Enabled = true
+	u.Repaint()
+}
+
+func (u *UI) Hide() {
+	u.Enabled = false
 }
 
 // ScreenTexture returns a new SDL texture suitable to use for the emulator's
@@ -156,6 +172,53 @@ func (u *UI) ScreenTexture() (texture *sdl.Texture) {
 	u.Screen = texture
 
 	return texture
+}
+
+// SetControls validates and sets the given control map for the emulator's UI.
+func (u *UI) SetControls(keymap options.Keymap) (err error) {
+	// Intermediate mapping between labels and actual actions. This feels
+	// unnecessarily complicated, but should make sense when I start translating
+	// these from a config file. I hope.
+	actions := map[string]Action{
+		"quit": u.Quit,
+		"home": u.Home,
+	}
+
+	u.Controls = make(map[options.KeyStroke]Action)
+	for label, keyStroke := range keymap {
+		u.Controls[keyStroke] = actions[label]
+	}
+	return nil
+}
+
+func (u *UI) ProcessEvents() {
+	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		eventType := event.GetType()
+		switch eventType {
+
+		// Button presses and UI keys
+		case sdl.KEYDOWN, sdl.KEYUP:
+			keyEvent := event.(*sdl.KeyboardEvent)
+			keyStroke := options.KeyStroke{
+				Code: keyEvent.Keysym.Sym,
+				Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
+			}
+			// TODO: home menu actions
+			// TODO: now starts the propagation fun. How to send events down the widget tree?
+			if action := u.Controls[keyStroke]; action != nil {
+				action(eventType)
+			} else {
+				if eventType == sdl.KEYDOWN {
+					log.Infof("unknown key code: 0x%x", keyStroke.Code)
+					log.Infof("        modifier: 0x%x", sdl.GetModState())
+				}
+			}
+
+		// Window-closing event
+		case sdl.QUIT:
+			u.QuitChan <- true
+		}
+	}
 }
 
 func (u *UI) Repaint() {

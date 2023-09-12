@@ -173,7 +173,7 @@ func (g *GameBoy) Quit(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	g.QuitChan <- true
+	g.UI.QuitChan <- true
 }
 
 // Home stops the emulation to display some kind of home menu. Clearing it
@@ -186,10 +186,7 @@ func (g *GameBoy) Home(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	g.home = !g.home
-	if g.home {
-		g.UI.Message("HOME", 2)
-	}
+	g.UI.Show()
 }
 
 // TODO: so many things! Save states, toggle features...
