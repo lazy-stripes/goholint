@@ -25,10 +25,9 @@ var log = logger.New("ui", "UI-related messages")
 
 // UI structure to manage user commands and overlay.
 type UI struct {
-	Enabled  bool
-	Renderer *sdl.Renderer
+	Enabled bool
 
-	Screen *sdl.Texture // Gameboy screen texture
+	Controls map[options.KeyStroke]Action
 
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
@@ -36,7 +35,12 @@ type UI struct {
 	message string // Temporary text on timer
 	text    string // Permanent text
 
-	texture *sdl.Texture // UI texture
+	// TODO: root *Widget
+
+	renderer   *sdl.Renderer
+	texture    *sdl.Texture // UI texture
+	screen     *sdl.Texture // Gameboy screen texture
+	screenRect *sdl.Rect
 
 	font     *ttf.Font
 	fontZoom uint
@@ -113,6 +117,14 @@ func New(config *options.Options) *UI {
 	// Background transparency.
 	texture.SetBlendMode(sdl.BLENDMODE_BLEND)
 
+	// Keep computed screen size for drawing.
+	screenRect := &sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: options.ScreenWidth * int32(config.ZoomFactor),
+		H: options.ScreenHeight * int32(config.ZoomFactor),
+	}
+
 	// Colors from config.
 	fg := sdl.Color{
 		R: config.UIForeground.R,
@@ -128,13 +140,14 @@ func New(config *options.Options) *UI {
 	}
 
 	ui := &UI{
-		texture:  texture,
 		QuitChan:   make(chan bool),
-		Renderer: renderer,
-		font:     font,
-		fontZoom: fontZoom,
-		fg:       fg,
-		bg:       bg,
+		texture:    texture,
+		renderer:   renderer,
+		screenRect: screenRect,
+		font:       font,
+		fontZoom:   fontZoom,
+		fg:         fg,
+		bg:         bg,
 	}
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
@@ -158,7 +171,7 @@ func (u *UI) Hide() {
 // ScreenTexture returns a new SDL texture suitable to use for the emulator's
 // screen, and stores it internally to use it during repaints.
 func (u *UI) ScreenTexture() (texture *sdl.Texture) {
-	texture, err := u.Renderer.CreateTexture(
+	texture, err := u.renderer.CreateTexture(
 		sdl.PIXELFORMAT_ABGR8888,
 		sdl.TEXTUREACCESS_STATIC,
 		options.ScreenWidth,
@@ -169,7 +182,7 @@ func (u *UI) ScreenTexture() (texture *sdl.Texture) {
 	}
 
 	// Save texture for repaints.
-	u.Screen = texture
+	u.screen = texture
 
 	return texture
 }
@@ -222,25 +235,44 @@ func (u *UI) ProcessEvents() {
 }
 
 func (u *UI) Repaint() {
-	// Gameboy screen.
-	if u.Screen != nil {
-		u.Renderer.Copy(u.Screen, nil, nil)
+	u.renderer.SetRenderTarget(u.texture)
+	u.renderer.SetDrawColor(0, 0, 0, 0)
+	u.renderer.Clear()
+	u.renderer.SetRenderTarget(nil)
+
+	// Gameboy screen in the background.
+	if u.screen != nil {
+		u.renderer.Copy(u.screen, nil, nil)
 	}
 
-	// UI overlay.
+	// Messages. I'm leaving them in the background for now.
 	if u.text != "" || u.message != "" {
-		//u.Texture.SetBlendMode(sdl.BLENDMODE_ADD)
-		u.Renderer.Copy(u.texture, nil, nil)
+		u.repaintText()
+		u.renderer.Copy(u.texture, nil, nil)
 	}
-	u.Renderer.Present()
+
+	// Display an overlay when emulation is stopped.
+	if u.Enabled {
+		// TODO: widgets. Gameboy screen may well be one too!
+		//       Widgets are probably gonna need a renderer.
+		//u.root.Texture()
+
+		// FIXME: might be easier with a dedicated background texture mimicking the frozen screen.
+		u.renderer.SetRenderTarget(u.texture)
+		u.renderer.SetDrawColor(0, 0, 0, 0x8f)
+		u.renderer.FillRect(u.screenRect)
+		u.renderer.SetRenderTarget(nil)
+		u.renderer.Copy(u.texture, nil, nil)
+	}
+
+	u.renderer.Present()
 }
 
 // Refresh UI texture with permanent text and current message (if any).
 func (u *UI) repaintText() {
 	// Reset texture.
-	u.Renderer.SetRenderTarget(u.texture)
-	u.Renderer.SetDrawColor(0, 0, 0, 0)
-	u.Renderer.Clear()
+	u.renderer.SetRenderTarget(u.texture)
+	u.renderer.SetDrawColor(0, 0, 0, 0)
 
 	row := 1
 	if u.text != "" {
@@ -260,33 +292,52 @@ func (u *UI) repaintText() {
 		}
 	}
 
-	u.Renderer.SetRenderTarget(nil)
+	u.renderer.SetRenderTarget(nil)
 }
 
 // Refresh UI texture with permanent text and current message (if any).
 func (u *UI) renderText(text string, row int) {
 	// Instantiate text with an outline effect. There's probably an easier way.
-	u.font.SetOutline(int(u.fontZoom))
+	outlineWidth := int(u.fontZoom)
+	u.font.SetOutline(outlineWidth)
 	outline, _ := u.font.RenderUTF8Solid(text, u.bg)
 	u.font.SetOutline(0)
 	msg, _ := u.font.RenderUTF8Solid(text, u.fg)
 
 	// Position vertically. Bottom row is row number 1.
 	_, _, _, h, _ := u.texture.Query()
-	y := h - int32(u.font.Height()*row) - Margin // TODO: FontSize config
+	y := h - int32((u.font.Height())*row) - Margin // TODO: FontSize config
 
-	outlineTexture, _ := u.Renderer.CreateTextureFromSurface(outline)
-	u.Renderer.Copy(outlineTexture, nil, &sdl.Rect{X: Margin, Y: y - int32(u.fontZoom), W: outline.W, H: outline.H})
+	// Add margin between successive rows.
+	if row > 1 {
+		y -= Margin * int32(outlineWidth) * 2
+	}
 
-	msgTexture, _ := u.Renderer.CreateTextureFromSurface(msg)
-	u.Renderer.Copy(msgTexture, nil, &sdl.Rect{X: Margin + int32(u.fontZoom), Y: y, W: msg.W, H: msg.H})
+	outlineTexture, _ := u.renderer.CreateTextureFromSurface(outline)
+	u.renderer.Copy(outlineTexture,
+		nil,
+		&sdl.Rect{
+			X: Margin,
+			Y: y - int32(u.fontZoom),
+			W: outline.W,
+			H: outline.H,
+		})
+
+	msgTexture, _ := u.renderer.CreateTextureFromSurface(msg)
+	u.renderer.Copy(msgTexture,
+		nil,
+		&sdl.Rect{
+			X: Margin + int32(u.fontZoom),
+			Y: y,
+			W: msg.W,
+			H: msg.H,
+		})
 }
 
 // Set permanent text (useful for persistent UI). Call with empty string to
 // clear.
 func (u *UI) Text(text string) {
 	u.text = text
-	u.repaintText()
 }
 
 // Clear temporary message and repaint texture.
@@ -308,5 +359,4 @@ func (u *UI) Message(text string, duration time.Duration) {
 	}
 	u.message = text
 	u.msgTimer = time.AfterFunc(time.Second*duration, u.clearMessage)
-	u.repaintText()
 }

@@ -37,13 +37,13 @@ type Screen struct {
 	palette    []color.RGBA
 	newPalette []color.RGBA // Store new value until next frame
 
-	enabled    bool
-	texture    *sdl.Texture
-	buffer     []byte // Texture buffer for each frame
-	blank      []byte // Static texture buffer for "blank screen" frames
-	offset     int
-	zoom       int // Zoom factor applied to the 144×160 screen.
-	screenRect image.Rectangle
+	enabled   bool
+	texture   *sdl.Texture
+	buffer    []byte // Texture buffer for each frame
+	blank     []byte // Static texture buffer for "blank screen" frames
+	offset    int
+	zoom      int // Zoom factor applied to the 144×160 screen.
+	Rectangle image.Rectangle
 
 	// Set this to true to save the next frame. Will be reset at VBlank.
 	screenshotRequested bool
@@ -77,15 +77,15 @@ func New(ui *ui.UI, config *options.Options) *Screen {
 	}
 
 	s := Screen{
-		config:     config,
-		palette:    config.Palettes[0],
-		texture:    texture,
-		ui:         ui,
-		buffer:     buffer,
-		blank:      blank,
-		zoom:       int(config.ZoomFactor),
-		screenRect: screenRect,
-		gif:        NewGIF(config),
+		config:    config,
+		palette:   config.Palettes[0],
+		texture:   texture,
+		ui:        ui,
+		buffer:    buffer,
+		blank:     blank,
+		zoom:      int(config.ZoomFactor),
+		Rectangle: screenRect,
+		gif:       NewGIF(config),
 	}
 
 	// Pre-instantiate texture buffer for when the scren is off.
@@ -213,7 +213,7 @@ func (s *Screen) VBlank() {
 		defer f.Close()
 
 		// Populate image from buffer, taking zoom into account.
-		img := image.NewRGBA(s.screenRect)
+		img := image.NewRGBA(s.Rectangle)
 		for x := 0; x < img.Rect.Dx(); x++ {
 			for y := 0; y < img.Rect.Dy(); y++ {
 				srcX := x / s.zoom
