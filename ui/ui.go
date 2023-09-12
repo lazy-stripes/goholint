@@ -171,11 +171,53 @@ func New(config *options.Options) *UI {
 func (u *UI) Show() {
 	// TODO: background blur, top menu
 	u.Enabled = true
+	u.freezeBackground()
 	u.Repaint()
 }
 
 func (u *UI) Hide() {
 	u.Enabled = false
+}
+
+func (u *UI) freezeBackground() {
+	// We need the screen buffer here. This tightly couples UI and screen.
+	// I'm sure it's fine.
+
+	// Convert background to greyscale.
+
+	// FIXME: I'm already doing this for screenshots.
+	_, _, w, h, _ := u.background.Query()
+	buf := make([]byte, w*h*4)
+
+	width := int(w)
+	height := int(h)
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			//r, g, b, _ := oldPixel.RGBA()
+			//lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
+			//pixel := color.Gray{uint8(lum / 256)}
+			srcX := x / u.zoomFactor
+			srcY := y / u.zoomFactor
+			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
+			dstOffset := (y * width * 4) + (x * 4)
+
+			// Compute greyscale. Screen buffer is ABGR for reasons I no longer
+			// remember.
+			r := u.screenBuffer[srcOffset+0]
+			g := u.screenBuffer[srcOffset+1]
+			b := u.screenBuffer[srcOffset+2]
+			a := u.screenBuffer[srcOffset+3]
+			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
+			grey := uint8(lum)
+
+			buf[dstOffset+0] = grey // a
+			buf[dstOffset+1] = grey // b
+			buf[dstOffset+2] = grey // g
+			buf[dstOffset+3] = a    // r
+		}
+	}
+	rawPixels := unsafe.Pointer(&buf[0])
+	u.background.Update(nil, rawPixels, width*4)
 }
 
 // ScreenBuffer creates a new SDL texture suitable to use for the emulator's
@@ -260,10 +302,14 @@ func (u *UI) Repaint() {
 		//       Widgets are probably gonna need a renderer.
 		//u.root.Texture()
 
-		// FIXME: might be easier with a dedicated background texture mimicking the frozen screen.
+		// Greyscale background.
+		u.renderer.Copy(u.background, nil, nil)
+
+		// Overlay.
 		u.renderer.SetRenderTarget(u.texture)
-		u.renderer.SetDrawColor(0, 0, 0, 0x8f)
-		u.renderer.FillRect(u.screenRect)
+		u.background.SetBlendMode(sdl.BLENDMODE_BLEND)
+		u.renderer.SetDrawColor(0xff, 0xff, 0xff, 0x80)
+		u.renderer.FillRect(u.screenRect) // FIXME: rename things to remove ambiguity between GB display (160×144) and UI screen (same but zoomed).
 		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.texture, nil, nil)
 
