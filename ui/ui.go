@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"os"
 	"strings"
 	"time"
@@ -181,30 +183,102 @@ func (u *UI) Hide() {
 	u.Enabled = false
 }
 
+func averagePixels(pixels []color.RGBA) (avg color.RGBA) {
+	var sumR, sumG, sumB int
+	for _, pixel := range pixels {
+		sumR += int(pixel.R)
+		sumG += int(pixel.G)
+		sumB += int(pixel.B)
+	}
+
+	avg = color.RGBA{
+		uint8(sumR / len(pixels)),
+		uint8(sumG / len(pixels)),
+		uint8(sumB / len(pixels)),
+		0xff,
+	}
+
+	return avg
+}
+
+// blur returns a copy of the image after applying the box blur algorithm to it.
+// Image has to be at least 2px×2px, or you will have a bad time.
+func blur(img *image.RGBA) (blurred *image.RGBA) {
+	blurred = image.NewRGBA(img.Bounds())
+
+	// Apply blur to inner pixels (radius is 1 pixel).
+	w := img.Bounds().Dx()
+	h := img.Bounds().Dy()
+	for x := 1; x < w-1; x++ {
+		for y := 1; y < h-1; y++ {
+			neighbors := []color.RGBA{
+				img.RGBAAt(x-1, y+1), // Top left
+				img.RGBAAt(x+0, y+1), // Top center
+				img.RGBAAt(x+1, y+1), // Top right
+				img.RGBAAt(x-1, y+0), // Mid left
+				img.RGBAAt(x+0, y+0), // Current pixel
+				img.RGBAAt(x+1, y+0), // Mid right
+				img.RGBAAt(x-1, y-1), // Low left
+				img.RGBAAt(x+0, y-1), // Low center
+				img.RGBAAt(x+1, y-1), // Low right
+			}
+
+			avg := averagePixels(neighbors)
+			blurred.SetRGBA(x, y, avg)
+
+			// Duplicate left column of blurred pixels.
+			if x == 1 {
+				blurred.SetRGBA(0, y, avg)
+			}
+
+			// Duplicate right column of blurred pixels.
+			if x == w-2 {
+				blurred.SetRGBA(w-1, y, avg)
+			}
+
+			// Duplicate top row of blurred pixels.
+			if y == 1 {
+				blurred.SetRGBA(x, 0, avg)
+			}
+
+			// Duplicate bottom row of blurred pixels.
+			if y == h-2 {
+				blurred.SetRGBA(x, h-1, avg)
+			}
+		}
+	}
+
+	// Copy corner pixels.
+	blurred.SetRGBA(0, 0, img.RGBAAt(0, 0))
+	blurred.SetRGBA(w, 0, img.RGBAAt(w, 0))
+	blurred.SetRGBA(0, h, img.RGBAAt(0, h))
+	blurred.SetRGBA(w, h, img.RGBAAt(w, h))
+
+	return blurred
+}
+
+// freezeBackground takes a copy of the current GameBoy screen and turns it to
+// blurred greyscale for use as a background in the main UI.
 func (u *UI) freezeBackground() {
 	// We need the screen buffer here. This tightly couples UI and screen.
 	// I'm sure it's fine.
 
-	// Convert background to greyscale.
-
-	// FIXME: I'm already doing this for screenshots.
+	// Dimensions of UI screen.
 	_, _, w, h, _ := u.background.Query()
-	buf := make([]byte, w*h*4)
-
 	width := int(w)
 	height := int(h)
+
+	// Intermediate image for easier blurring.
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
-			//r, g, b, _ := oldPixel.RGBA()
-			//lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
-			//pixel := color.Gray{uint8(lum / 256)}
+			// Map source offset (in 160×144 space) to the current UI pixel.
 			srcX := x / u.zoomFactor
 			srcY := y / u.zoomFactor
 			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
-			dstOffset := (y * width * 4) + (x * 4)
 
-			// Compute greyscale. Screen buffer is ABGR for reasons I no longer
-			// remember.
+			// Extract RGB, compute greyscale, strore in work image.
 			r := u.gbScreenBuffer[srcOffset+0]
 			g := u.gbScreenBuffer[srcOffset+1]
 			b := u.gbScreenBuffer[srcOffset+2]
@@ -212,19 +286,19 @@ func (u *UI) freezeBackground() {
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
 
-			buf[dstOffset+0] = grey // a
-			buf[dstOffset+1] = grey // b
-			buf[dstOffset+2] = grey // g
-			buf[dstOffset+3] = a    // r
+			img.SetRGBA(x, y, color.RGBA{grey, grey, grey, a})
 		}
 	}
-	rawPixels := unsafe.Pointer(&buf[0])
+	// Blur the background. Apply enough times for sufficient effect.
+	// TODO: ... I could make the iterations and overlay configurable I guess?
+	img = blur(blur(blur(img)))
+	rawPixels := unsafe.Pointer(&img.Pix[0])
 	u.background.Update(nil, rawPixels, width*4)
 }
 
 // ScreenBuffer creates a new SDL texture suitable to use for the emulator's
-// screen, and a pixel buffer that it returns, which the screen should write
-// into. This lets us do funny stuff with the GameBoy display's pixels that
+// screen, and a pixel buffer that it returns, which the PPU should write into.
+// This lets us do funny stuff with the GameBoy display's pixels in the UI that
 // we couldn't easily do if we only had access to a texture.
 func (u *UI) ScreenBuffer() (buffer []byte) {
 	texture, err := u.renderer.CreateTexture(
@@ -310,16 +384,16 @@ func (u *UI) Repaint() {
 		// Overlay.
 		u.renderer.SetRenderTarget(u.texture)
 		u.background.SetBlendMode(sdl.BLENDMODE_BLEND)
-		u.renderer.SetDrawColor(0xff, 0xff, 0xff, 0x80)
-		u.renderer.FillRect(u.screenRect) // FIXME: rename things to remove ambiguity between GB display (160×144) and UI screen (same but zoomed).
+		u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
+		u.renderer.FillRect(u.screenRect)
 		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.texture, nil, nil)
 
 		// TODO: render root widget to foreground texture. Those words scare me.
 
 	} else {
+		// GameBoy screen and text/message.
 
-		// Gameboy screen in the background.
 		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
 		rawPixels := unsafe.Pointer(&u.gbScreenBuffer[0])
 		u.gbScreen.Update(nil, rawPixels, options.ScreenWidth*4)
