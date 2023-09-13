@@ -39,7 +39,7 @@ type UI struct {
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
-	// TODO: root *Widget
+	root Widget
 
 	zoomFactor int // From -zoom to compute offsets in various textures
 
@@ -59,6 +59,7 @@ type UI struct {
 
 // Return a UI instance given a renderer to create the overlay texture.
 func New(config *options.Options) *UI {
+
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		options.ScreenWidth*int32(config.ZoomFactor),
@@ -69,7 +70,7 @@ func New(config *options.Options) *UI {
 		return nil // TODO: result, err
 	}
 
-	icon, err := img.LoadRW(assets.WindowIcon, true)
+	icon, err := img.LoadRW(assets.WindowIcon, false)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load icon: %s\n", err)
 	} else {
@@ -95,6 +96,8 @@ func New(config *options.Options) *UI {
 
 	if info, err := renderer.GetInfo(); err == nil {
 		log.Info("SDL_RENDERER info:")
+		w, h, _ := renderer.GetOutputSize()
+		log.Infof("RESOLUTION: %d×%d", w, h)
 		log.Infof("SOFTWARE: %t", info.Flags&sdl.RENDERER_SOFTWARE != 0)
 		log.Infof("ACCELERATED: %t", info.Flags&sdl.RENDERER_ACCELERATED != 0)
 		log.Infof("PRESENTVSYNC: %t", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
@@ -117,7 +120,7 @@ func New(config *options.Options) *UI {
 		return nil // TODO: result, err
 	}
 
-	// We set background to full UI texture size for higher-def blurring when we get there.
+	// We set background to full UI texture size for higher-def blurring.
 	background, err := renderer.CreateTexture(
 		sdl.PIXELFORMAT_ABGR8888,
 		sdl.TEXTUREACCESS_TARGET,
@@ -162,6 +165,11 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
+		root: NewRootWidget(renderer, &UIOptions{
+			zoom: int(config.ZoomFactor),
+			bg:   bg,
+			fg:   fg,
+		}),
 	}
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
@@ -382,12 +390,13 @@ func (u *UI) Repaint() {
 		u.renderer.Copy(u.background, nil, nil)
 
 		// Overlay.
-		u.renderer.SetRenderTarget(u.texture)
-		u.background.SetBlendMode(sdl.BLENDMODE_BLEND)
-		u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
-		u.renderer.FillRect(u.screenRect)
-		u.renderer.SetRenderTarget(nil)
-		u.renderer.Copy(u.texture, nil, nil)
+		//u.renderer.SetRenderTarget(u.texture)
+		//u.background.SetBlendMode(sdl.BLENDMODE_BLEND)
+		//u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
+		//u.renderer.FillRect(u.screenRect)
+		//u.renderer.SetRenderTarget(nil)
+		u.root.Repaint()
+		u.renderer.Copy(u.root.Texture(), nil, nil)
 
 		// TODO: render root widget to foreground texture. Those words scare me.
 
@@ -437,6 +446,7 @@ func (u *UI) repaintText() {
 }
 
 // Refresh UI texture with permanent text and current message (if any).
+// TODO: widgets.Label
 func (u *UI) renderText(text string, row int) {
 	// Instantiate text with an outline effect. There's probably an easier way.
 	outlineWidth := int(u.zoomFactor)
