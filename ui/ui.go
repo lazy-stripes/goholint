@@ -33,24 +33,26 @@ type UI struct {
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
 
-	message string // Temporary text on timer
-	text    string // Permanent text
+	msgTimer *time.Timer // Timer for clearing messages
+	message  string      // Temporary text on timer
+	text     string      // Permanent text
 
 	// TODO: root *Widget
 
-	renderer     *sdl.Renderer
-	background   *sdl.Texture // UI texture (background)
-	texture      *sdl.Texture // UI texture (foreground)
-	screen       *sdl.Texture // GameBoy screen texture
-	screenBuffer []byte       // GameBoy screen pixels
-	screenRect   *sdl.Rect
-	font         *ttf.Font
-	zoomFactor   int // From -zoom to compute offsets in various textures
+	zoomFactor int // From -zoom to compute offsets in various textures
 
-	fg sdl.Color // TODO: make it configurable
-	bg sdl.Color // TODO: make it configurable
+	renderer   *sdl.Renderer
+	background *sdl.Texture // UI texture (background)
+	texture    *sdl.Texture // UI texture (foreground)
+	screenRect *sdl.Rect    // Screen dimensions (accounting for zoom factor)
+	font       *ttf.Font
 
-	msgTimer *time.Timer
+	gbScreen       *sdl.Texture // GameBoy screen texture
+	gbScreenBuffer []byte       // GameBoy screen pixels
+
+	fgColor sdl.Color // Text color
+	bgColor sdl.Color // Text outline color
+
 }
 
 // Return a UI instance given a renderer to create the overlay texture.
@@ -156,8 +158,8 @@ func New(config *options.Options) *UI {
 		screenRect: screenRect,
 		font:       font,
 		zoomFactor: int(config.ZoomFactor),
-		fg:         fg,
-		bg:         bg,
+		fgColor:    fg,
+		bgColor:    bg,
 	}
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
@@ -203,10 +205,10 @@ func (u *UI) freezeBackground() {
 
 			// Compute greyscale. Screen buffer is ABGR for reasons I no longer
 			// remember.
-			r := u.screenBuffer[srcOffset+0]
-			g := u.screenBuffer[srcOffset+1]
-			b := u.screenBuffer[srcOffset+2]
-			a := u.screenBuffer[srcOffset+3]
+			r := u.gbScreenBuffer[srcOffset+0]
+			g := u.gbScreenBuffer[srcOffset+1]
+			b := u.gbScreenBuffer[srcOffset+2]
+			a := u.gbScreenBuffer[srcOffset+3]
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
 
@@ -236,12 +238,12 @@ func (u *UI) ScreenBuffer() (buffer []byte) {
 	}
 
 	// Save texture for repaints.
-	u.screen = texture
+	u.gbScreen = texture
 
 	// Return buffer for the screen to render into.
-	u.screenBuffer = make([]byte, options.ScreenWidth*options.ScreenHeight*4)
+	u.gbScreenBuffer = make([]byte, options.ScreenWidth*options.ScreenHeight*4)
 
-	return u.screenBuffer
+	return u.gbScreenBuffer
 }
 
 // SetControls validates and sets the given control map for the emulator's UI.
@@ -319,9 +321,9 @@ func (u *UI) Repaint() {
 
 		// Gameboy screen in the background.
 		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
-		rawPixels := unsafe.Pointer(&u.screenBuffer[0])
-		u.screen.Update(nil, rawPixels, options.ScreenWidth*4)
-		u.renderer.Copy(u.screen, nil, nil)
+		rawPixels := unsafe.Pointer(&u.gbScreenBuffer[0])
+		u.gbScreen.Update(nil, rawPixels, options.ScreenWidth*4)
+		u.renderer.Copy(u.gbScreen, nil, nil)
 
 		// Messages. I'm leaving them in the background for now.
 		if u.text != "" || u.message != "" {
@@ -365,9 +367,9 @@ func (u *UI) renderText(text string, row int) {
 	// Instantiate text with an outline effect. There's probably an easier way.
 	outlineWidth := int(u.zoomFactor)
 	u.font.SetOutline(outlineWidth)
-	outline, _ := u.font.RenderUTF8Solid(text, u.bg)
+	outline, _ := u.font.RenderUTF8Solid(text, u.bgColor)
 	u.font.SetOutline(0)
-	msg, _ := u.font.RenderUTF8Solid(text, u.fg)
+	msg, _ := u.font.RenderUTF8Solid(text, u.fgColor)
 
 	// Position vertically. Bottom row is row number 1.
 	_, _, _, h, _ := u.texture.Query()
@@ -413,15 +415,14 @@ func (u *UI) clearMessage() {
 	sdl.Do(u.Repaint)
 }
 
-// Message creates a new UI texture with the given message, enables UI and
-// starts a timer that will hide the UI when it's done. Takes a text string and
-// a duration (in seconds).
-func (u *UI) Message(text string, duration time.Duration) {
+// Message shows a temporary message that will be cleared after the given
+// duration (in seconds). This message stacks with permanent text set with Text().
+func (u *UI) Message(text string, seconds time.Duration) {
 	// Stop reset timer, a new one will be started.
-	// TODO: stack messages
+	// TODO: stack messages (up to, like, 3 or something)
 	if u.msgTimer != nil {
 		u.msgTimer.Stop()
 	}
 	u.message = text
-	u.msgTimer = time.AfterFunc(time.Second*duration, u.clearMessage)
+	u.msgTimer = time.AfterFunc(time.Second*seconds, u.clearMessage)
 }
