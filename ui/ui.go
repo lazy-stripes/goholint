@@ -12,6 +12,7 @@ import (
 	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ui/widgets"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -39,7 +40,7 @@ type UI struct {
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
-	root Widget
+	root widgets.Widget
 
 	zoomFactor int // From -zoom to compute offsets in various textures
 
@@ -158,11 +159,7 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
-		root: NewRootWidget(renderer, &UIOptions{
-			zoom: int(config.ZoomFactor),
-			bg:   bg,
-			fg:   fg,
-		}),
+		root:       widgets.NewHome(renderer, screenRect),
 	}
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
