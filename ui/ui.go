@@ -66,22 +66,18 @@ func New(config *options.Options) *UI {
 		options.ScreenHeight*int32(config.ZoomFactor),
 		sdl.WINDOW_SHOWN)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
-		return nil // TODO: result, err
+		panic(err)
 	}
 
 	icon, err := img.LoadRW(assets.WindowIcon, false)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load icon: %s\n", err)
-	} else {
-		window.SetIcon(icon)
+		panic(err)
 	}
+	window.SetIcon(icon)
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
-		window.Destroy()
-		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
-		return nil // TODO: result, err
+		panic(err)
 	}
 
 	if config.VSync {
@@ -105,8 +101,7 @@ func New(config *options.Options) *UI {
 
 	font, err := ttf.OpenFontRW(assets.UIFont, 1, int(8*config.ZoomFactor))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to open font: %s\n", err)
-		return nil // TODO: result, err
+		panic(err)
 	}
 
 	texture, err := renderer.CreateTexture(
@@ -115,9 +110,7 @@ func New(config *options.Options) *UI {
 		options.ScreenWidth*int32(config.ZoomFactor),
 		options.ScreenHeight*int32(config.ZoomFactor))
 	if err != nil {
-		font.Close()
-		fmt.Fprintf(os.Stderr, "Failed to create UI texture: %s\n", err)
-		return nil // TODO: result, err
+		panic(err)
 	}
 
 	// We set background to full UI texture size for higher-def blurring.
