@@ -346,8 +346,8 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 func (u *UI) ProcessEvents() {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		eventType := event.GetType()
-		switch eventType {
 
+		switch eventType {
 		// Button presses and UI keys
 		case sdl.KEYDOWN, sdl.KEYUP:
 			keyEvent := event.(*sdl.KeyboardEvent)
@@ -365,6 +365,10 @@ func (u *UI) ProcessEvents() {
 					log.Infof("        modifier: 0x%x", sdl.GetModState())
 				}
 			}
+
+		// Window redraw events
+		case sdl.WINDOWEVENT:
+			u.Repaint()
 
 		// Window-closing event
 		case sdl.QUIT:
