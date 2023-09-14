@@ -6,10 +6,10 @@ import (
 )
 
 // Properties stores useful configuration variables to be passed to all widgets
-// at creation time
+// at creation time.
 type Properties struct {
 	Font      *ttf.Font
-	TitleFont *ttf.Font // Initialized from `font`
+	TitleFont *ttf.Font
 
 	BgColor sdl.Color
 	FgColor sdl.Color
