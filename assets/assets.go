@@ -19,16 +19,31 @@ var font []byte // Raw bytes for the UI's TTF font.
 
 // Publicly accessible SDL buffers with our embedded assets.
 
-var WindowIcon *sdl.RWops // Embedded buffer containing window icon.
-var UIFont *sdl.RWops     // Embedded buffer containing TTF font for UI.
+var iconRW *sdl.RWops // Embedded buffer containing window icon.
+var fontRW *sdl.RWops // Embedded buffer containing TTF font for UI.
 
 // Init converts the raw embedded files into RW buffers that SDL can use.
 func init() {
 	var err error
-	if WindowIcon, err = sdl.RWFromMem(icon); err != nil {
+	if iconRW, err = sdl.RWFromMem(icon); err != nil {
 		panic(err)
 	}
-	if UIFont, err = sdl.RWFromMem(font); err != nil {
+	if fontRW, err = sdl.RWFromMem(font); err != nil {
 		panic(err)
 	}
+}
+
+// WindowIconRW returns an RW buffer to the window icon that is ready and safe
+// to use.
+func WindowIconRW() *sdl.RWops {
+	// Seek back to start first, in case it's been read before.
+	iconRW.Seek(0, sdl.RW_SEEK_SET)
+	return iconRW
+}
+
+// UIFontRW returns an RW buffer to the UI font that is ready and safe to use.
+func UIFontRW() *sdl.RWops {
+	// Seek back to start first, in case it's been read before.
+	fontRW.Seek(0, sdl.RW_SEEK_SET)
+	return fontRW
 }

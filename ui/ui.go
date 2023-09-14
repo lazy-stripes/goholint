@@ -69,7 +69,7 @@ func New(config *options.Options) *UI {
 		panic(err)
 	}
 
-	icon, err := img.LoadRW(assets.WindowIcon, false)
+	icon, err := img.LoadRW(assets.WindowIconRW(), false)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +99,7 @@ func New(config *options.Options) *UI {
 		log.Infof("PRESENTVSYNC: %t", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 
-	font, err := ttf.OpenFontRW(assets.UIFont, 1, int(8*config.ZoomFactor))
+	font, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(8*config.ZoomFactor))
 	if err != nil {
 		panic(err)
 	}
