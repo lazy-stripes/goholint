@@ -104,6 +104,10 @@ func New(config *options.Options) *UI {
 	if err != nil {
 		panic(err)
 	}
+	titleFont, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(12*config.ZoomFactor))
+	if err != nil {
+		panic(err)
+	}
 
 	texture, err := renderer.CreateTexture(
 		sdl.PIXELFORMAT_RGBA8888,
@@ -148,6 +152,17 @@ func New(config *options.Options) *UI {
 		B: config.UIBackground.B,
 		A: config.UIBackground.A,
 	}
+
+	// Store common widget properties and preinstantiated fonts in the widget
+	// package namespace. Maybe someday this could be called dynamically to
+	// change the UI palette or theme.
+	widgets.SetProperties(&widgets.Properties{
+		Font:      font,
+		TitleFont: titleFont,
+		BgColor:   bg,
+		FgColor:   fg,
+		Zoom:      int(config.ZoomFactor),
+	})
 
 	ui := &UI{
 		QuitChan:   make(chan bool),
