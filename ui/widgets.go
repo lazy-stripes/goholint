@@ -9,7 +9,7 @@ import (
 
 type Widget interface {
 	ProcessEvent(*sdl.Event)
-	Repaint()
+	Repaint() // This is probably not needed and should be internal.
 	Texture() *sdl.Texture
 }
 
@@ -32,7 +32,7 @@ type UIOptions struct {
 	bg, fg sdl.Color
 }
 
-// TODO: UIOptions struct for all parameters.
+// TODO: global UIOptions struct for widgets.
 func NewRootWidget(renderer *sdl.Renderer, opts *UIOptions) *RootWidget {
 	widget := &RootWidget{
 		renderer: renderer,
@@ -71,21 +71,21 @@ func (w *RootWidget) Repaint() {
 	_, _, titleW, titleH, _ := title.Query()
 	w.renderer.SetRenderTarget(w.texture)
 	w.texture.SetBlendMode(sdl.BLENDMODE_BLEND)
-	w.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
+	w.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90) // TODO: overlay-color config while I'm at it.
 	w.renderer.Clear()
 
 	title.SetBlendMode(sdl.BLENDMODE_BLEND)
 	w.renderer.Copy(title, nil, &sdl.Rect{
-		X: (w.width - titleW) / 2,
-		Y: (w.height - titleH - iconH) / 2,
+		X: (w.width - titleW - iconW) / 2,
+		Y: (w.height - titleH) / 2,
 		W: titleW,
 		H: titleH,
 	})
 
 	icon.SetBlendMode(sdl.BLENDMODE_BLEND)
 	w.renderer.Copy(icon, nil, &sdl.Rect{
-		X: (w.width - iconW) / 2,
-		Y: ((w.height - iconH + titleH) / 2),
+		X: (w.width - iconW + titleW) / 2,
+		Y: (w.height - iconH) / 2,
 		W: iconW,
 		H: iconH,
 	})
@@ -142,23 +142,3 @@ func (w *RootWidget) renderText(text string) *sdl.Texture {
 
 	return labelTexture
 }
-
-//utlineTexture, _ := u.renderer.CreateTextureFromSurface(outline)
-// .renderer.Copy(outlineTexture,
-//	nil,
-//	&sdl.Rect{
-//		X: Margin,
-//		Y: y - int32(u.zoomFactor),
-//		W: outline.W,
-//		H: outline.H,
-//	})
-//
-//sgTexture, _ := u.renderer.CreateTextureFromSurface(msg)
-//.renderer.Copy(msgTexture,
-//	nil,
-//	&sdl.Rect{
-//		X: Margin + int32(u.zoomFactor),
-//		Y: y,
-//		W: msg.W,
-//		H: msg.H,
-//	})
