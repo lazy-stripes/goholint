@@ -174,8 +174,15 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
-		root:       widgets.NewHome(renderer, screenRect),
+		//root:       widgets.NewHome(renderer, screenRect),
 	}
+
+	choices := []widgets.MenuChoice{
+		{"Resume", nil},
+		{"Quit", nil},
+	}
+	ui.root = widgets.NewMenu(renderer, screenRect, choices)
+	//ui.root = widgets.NewHome(renderer, screenRect)
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
 	// interface. I can't wait.
@@ -393,9 +400,12 @@ func (u *UI) Repaint() {
 	if u.Enabled {
 		// TODO: widgets. Gameboy screen may well be one too!
 		//       Widgets are probably gonna need a renderer.
-		//u.root.Texture()
+
+		// TODO: try to copy directly to window?
 
 		// Greyscale background.
+		//u.renderer.SetRenderTarget(u.texture)
+		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.background, nil, nil)
 
 		// Overlay.
@@ -404,8 +414,14 @@ func (u *UI) Repaint() {
 		//u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
 		//u.renderer.FillRect(u.screenRect)
 		//u.renderer.SetRenderTarget(nil)
-		u.root.Repaint()
-		u.renderer.Copy(u.root.Texture(), nil, nil)
+		root := u.root.Texture()
+		root.SetBlendMode(sdl.BLENDMODE_BLEND)
+		//u.renderer.SetRenderTarget(u.texture)
+		u.renderer.SetRenderTarget(nil)
+		u.renderer.Copy(root, nil, nil)
+
+		//u.renderer.SetRenderTarget(nil)
+		//u.renderer.Copy(u.texture, nil, nil)
 
 		// TODO: render root widget to foreground texture. Those words scare me.
 
@@ -420,6 +436,7 @@ func (u *UI) Repaint() {
 		// Messages. I'm leaving them in the background for now.
 		if u.text != "" || u.message != "" {
 			u.repaintText()
+			u.renderer.SetRenderTarget(nil)
 			u.renderer.Copy(u.texture, nil, nil)
 		}
 	}
@@ -456,13 +473,17 @@ func (u *UI) repaintText() {
 
 // Refresh UI texture with permanent text and current message (if any).
 // TODO: widgets.Label
-func (u *UI) renderText(text string, row int) {
+func (u *UI) renderText(s string, row int) {
 	// Instantiate text with an outline effect. There's probably an easier way.
 	outlineWidth := int(u.zoomFactor)
 	u.font.SetOutline(outlineWidth)
-	outline, _ := u.font.RenderUTF8Solid(text, u.bgColor)
+
+	outline, _ := u.font.RenderUTF8Solid(s, u.bgColor)
+	defer outline.Free()
+
 	u.font.SetOutline(0)
-	msg, _ := u.font.RenderUTF8Solid(text, u.fgColor)
+	text, _ := u.font.RenderUTF8Solid(s, u.fgColor)
+	defer text.Free()
 
 	// Position vertically. Bottom row is row number 1.
 	_, _, _, h, _ := u.texture.Query()
@@ -474,6 +495,7 @@ func (u *UI) renderText(text string, row int) {
 	}
 
 	outlineTexture, _ := u.renderer.CreateTextureFromSurface(outline)
+	defer outlineTexture.Destroy()
 	u.renderer.Copy(outlineTexture,
 		nil,
 		&sdl.Rect{
@@ -483,14 +505,15 @@ func (u *UI) renderText(text string, row int) {
 			H: outline.H,
 		})
 
-	msgTexture, _ := u.renderer.CreateTextureFromSurface(msg)
+	msgTexture, _ := u.renderer.CreateTextureFromSurface(text)
+	defer msgTexture.Destroy()
 	u.renderer.Copy(msgTexture,
 		nil,
 		&sdl.Rect{
 			X: Margin + int32(u.zoomFactor),
 			Y: y,
-			W: msg.W,
-			H: msg.H,
+			W: text.W,
+			H: text.H,
 		})
 }
 

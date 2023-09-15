@@ -11,35 +11,81 @@ type Home struct {
 	*widget
 
 	// Testing some centered logo.
+	viewport *sdl.Rect
+
 	// TODO: children widgets, layouts, overengineering...
 }
 
 func NewHome(renderer *sdl.Renderer, size *sdl.Rect) *Home {
-	return &Home{new(renderer, size)}
+	h := &Home{
+		widget: new(renderer, size),
+	}
+
+	// Compute viewport size. It'd be easier to render once and get it from
+	// title texture size.
+	headerHeight := h.drawHeader()
+	h.viewport = &sdl.Rect{
+		W: h.width,
+		H: h.height - headerHeight,
+		X: 0,
+		Y: headerHeight,
+	}
+
+	// TODO: set next from UI.
+	choices := []MenuChoice{
+		{"Resume", nil},
+		{"Quit", nil},
+	}
+	h.next = NewMenu(h.renderer, h.viewport, choices)
+
+	h.repaint()
+
+	return h
 }
 
 func (h *Home) ProcessEvent(e *sdl.Event) {
 	// TODO
 }
 
-func (h *Home) Repaint() {
+func (h *Home) repaint() {
+	// TODO: widget.renderNext(&viewport) should be feasible.
+	if h.next != nil {
+		t := h.next.Texture()
+		t.SetBlendMode(sdl.BLENDMODE_BLEND)
+		h.renderer.SetRenderTarget(h.texture)
+		h.renderer.Copy(t, nil, h.viewport)
+
+		//h.renderer.SetDrawColor(0xff, 0, 0x80, 128)
+		//h.renderer.DrawRect(h.viewport)
+
+		h.renderer.SetRenderTarget(nil)
+	}
+}
+
+func (h *Home) drawHeader() (height int32) {
 	icon, err := img.LoadTextureRW(h.renderer, assets.WindowIconRW(), false)
 	if err != nil {
 		panic(err)
 	}
+	defer icon.Destroy()
 	_, _, iconW, iconH, _ := icon.Query()
 
 	title := h.renderText("Goholint")
+	defer title.Destroy()
+
 	_, _, titleW, titleH, _ := title.Query()
 	h.renderer.SetRenderTarget(h.texture)
+	//h.renderer.SetRenderTarget(nil)
 	h.texture.SetBlendMode(sdl.BLENDMODE_BLEND)
 	h.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90) // TODO: overlay-color config while I'm at it.
 	h.renderer.Clear()
 
+	// Show name and logo as a header.
+	margin := 8 * int32(properties.Zoom)
 	title.SetBlendMode(sdl.BLENDMODE_BLEND)
 	h.renderer.Copy(title, nil, &sdl.Rect{
 		X: (h.width - titleW - iconW) / 2,
-		Y: (h.height - titleH) / 2,
+		Y: margin,
 		W: titleW,
 		H: titleH,
 	})
@@ -47,60 +93,22 @@ func (h *Home) Repaint() {
 	icon.SetBlendMode(sdl.BLENDMODE_BLEND)
 	h.renderer.Copy(icon, nil, &sdl.Rect{
 		X: (h.width - iconW + titleW) / 2,
-		Y: (h.height - iconH) / 2,
+		Y: (titleH-iconH)/2 + margin, // Aligned with title center
 		W: iconW,
 		H: iconH,
 	})
 
 	h.renderer.SetRenderTarget(nil)
+
+	// Return height to compute viewport size. Height is max(titleH, iconH).
+	if titleH > iconH {
+		return titleH + margin
+	}
+	return iconH + margin
 }
 
 func (h *Home) Texture() *sdl.Texture {
-	// TODO: repaint if needed.
+	// No need to repaint, this is a static widget.
+	//h.repaint()
 	return h.texture
-}
-
-// TODO: widgets.Label. For now just render text to a texture.
-// TODO: find out where to store font size and outline width
-func (h *Home) renderText(text string) *sdl.Texture {
-	// Instantiate text with an outline effect. There's probably an easier way.
-	// TODO: shouldn't we freeing most of this?
-	properties.TitleFont.SetOutline(properties.Zoom)
-	outline, _ := properties.TitleFont.RenderUTF8Solid(text, properties.BgColor)
-	properties.TitleFont.SetOutline(0)
-	msg, _ := properties.TitleFont.RenderUTF8Solid(text, properties.FgColor)
-
-	// I can't draw the text directly on the outline as CreateTextureFromSurface
-	// creates static textures. Bummer.
-	outlineTexture, _ := h.renderer.CreateTextureFromSurface(outline)
-	msgTexture, _ := h.renderer.CreateTextureFromSurface(msg)
-
-	labelTexture, _ := h.renderer.CreateTexture(
-		sdl.PIXELFORMAT_RGBA8888,
-		sdl.TEXTUREACCESS_TARGET,
-		outline.W,
-		outline.H,
-	)
-
-	h.renderer.SetRenderTarget(labelTexture)
-	h.renderer.Copy(outlineTexture,
-		nil,
-		&sdl.Rect{
-			X: 0,
-			Y: 0,
-			W: outline.W,
-			H: outline.H,
-		})
-	h.renderer.Copy(msgTexture,
-		nil,
-		&sdl.Rect{
-			// Render text on top of outline, offset by outline width.
-			X: int32(properties.Zoom),
-			Y: int32(properties.Zoom),
-			W: msg.W,
-			H: msg.H,
-		})
-	h.renderer.SetRenderTarget(nil)
-
-	return labelTexture
 }
