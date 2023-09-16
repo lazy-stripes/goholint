@@ -5,7 +5,7 @@ import (
 )
 
 type Widget interface {
-	ProcessEvent(*sdl.Event)
+	ProcessEvent(Event) bool
 	Texture() *sdl.Texture
 }
 

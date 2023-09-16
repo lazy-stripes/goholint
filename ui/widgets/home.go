@@ -43,8 +43,11 @@ func NewHome(renderer *sdl.Renderer, size *sdl.Rect) *Home {
 	return h
 }
 
-func (h *Home) ProcessEvent(e *sdl.Event) {
-	// TODO
+func (h *Home) ProcessEvent(e Event) bool {
+	if h.next != nil {
+		return h.next.ProcessEvent(e)
+	}
+	return false
 }
 
 func (h *Home) repaint() {

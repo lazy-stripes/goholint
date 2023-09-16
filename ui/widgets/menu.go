@@ -27,8 +27,43 @@ func NewMenu(r *sdl.Renderer, s *sdl.Rect, choices []MenuChoice) *Menu {
 	}
 }
 
-func (m *Menu) ProcessEvent(e *sdl.Event) {
-	// TODO
+func (m *Menu) ProcessEvent(e Event) bool {
+	switch e {
+	case ButtonUp:
+		m.Up()
+	case ButtonDown:
+		m.Down()
+	case ButtonA:
+		m.Confirm()
+	case ButtonB:
+		m.Confirm()
+	case ButtonSelect:
+		m.Confirm()
+	case ButtonStart:
+		m.Confirm()
+	default:
+		// Unknown event, not handled.
+		return false
+	}
+	return true
+}
+
+func (m *Menu) Up() {
+	if m.selected > 0 {
+		m.selected -= 1
+	}
+	// TODO: else, blink? How?
+}
+
+func (m *Menu) Down() {
+	if m.selected < len(m.choices)-1 {
+		m.selected += 1
+	}
+	// TODO: blink?
+}
+
+func (m *Menu) Confirm() {
+	m.choices[m.selected].Action()
 }
 
 func (m *Menu) Texture() *sdl.Texture {

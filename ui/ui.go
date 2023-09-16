@@ -178,8 +178,8 @@ func New(config *options.Options) *UI {
 	}
 
 	choices := []widgets.MenuChoice{
-		{"Resume", nil},
-		{"Quit", nil},
+		{"Resume", ui.Hide},
+		{"Quit", func() { ui.QuitChan <- true }},
 	}
 	ui.root = widgets.NewMenu(renderer, screenRect, choices)
 	//ui.root = widgets.NewHome(renderer, screenRect)
@@ -344,8 +344,16 @@ func (u *UI) ScreenBuffer() (buffer []byte) {
 func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	// Intermediate mapping between labels and actual actions.
 	actions := map[string]Action{
-		"quit": u.Quit,
-		"home": u.Home,
+		"quit":   u.Quit,
+		"home":   u.Home,
+		"up":     u.propagate(widgets.ButtonUp),
+		"down":   u.propagate(widgets.ButtonDown),
+		"left":   u.propagate(widgets.ButtonLeft),
+		"right":  u.propagate(widgets.ButtonRight),
+		"a":      u.propagate(widgets.ButtonA),
+		"b":      u.propagate(widgets.ButtonB),
+		"select": u.propagate(widgets.ButtonSelect),
+		"start":  u.propagate(widgets.ButtonStart),
 	}
 
 	u.Controls = make(map[options.KeyStroke]Action)
@@ -353,6 +361,17 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		u.Controls[keyStroke] = actions[label]
 	}
 	return nil
+}
+
+func (u *UI) propagate(e widgets.Event) Action {
+	// Convert keystroke into simpler one-shot widget event. We only care about
+	// given event type to tell if a key was pressed.
+	return func(eventType uint32) {
+		if u.root != nil && eventType == sdl.KEYDOWN {
+			u.root.ProcessEvent(e)
+			u.Repaint()
+		}
+	}
 }
 
 func (u *UI) ProcessEvents() {
@@ -367,8 +386,7 @@ func (u *UI) ProcessEvents() {
 				Code: keyEvent.Keysym.Sym,
 				Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
 			}
-			// TODO: home menu actions
-			// TODO: now starts the propagation fun. How to send events down the widget tree?
+
 			if action := u.Controls[keyStroke]; action != nil {
 				action(eventType)
 			} else {
@@ -390,52 +408,51 @@ func (u *UI) ProcessEvents() {
 }
 
 func (u *UI) Repaint() {
+	// Reset background texture.
 	u.renderer.SetRenderTarget(u.texture)
 	u.renderer.SetDrawColor(0, 0, 0, 0)
 	u.renderer.Clear()
 	u.renderer.SetRenderTarget(nil)
 
-	// TODO: if enabled, use frozen/blurred screen as background.
-	// Display an overlay when emulation is stopped.
+	// If UI is enabled, use frozen/blurred screen as background. Otherwise,
+	// render GameBoy screen and overlay messages.
 	if u.Enabled {
 		// TODO: widgets. Gameboy screen may well be one too!
 		//       Widgets are probably gonna need a renderer.
 
-		// TODO: try to copy directly to window?
-
-		// Greyscale background.
-		//u.renderer.SetRenderTarget(u.texture)
+		// Render blurred greyscale background to window.
 		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.background, nil, nil)
 
-		// Overlay.
-		//u.renderer.SetRenderTarget(u.texture)
-		//u.background.SetBlendMode(sdl.BLENDMODE_BLEND)
-		//u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
-		//u.renderer.FillRect(u.screenRect)
-		//u.renderer.SetRenderTarget(nil)
-		root := u.root.Texture()
-		root.SetBlendMode(sdl.BLENDMODE_BLEND)
-		//u.renderer.SetRenderTarget(u.texture)
+		// Render overlay on foreground texture and copy it to window.
+		u.renderer.SetRenderTarget(u.texture)
+		u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
+		u.renderer.FillRect(u.screenRect)
+
 		u.renderer.SetRenderTarget(nil)
+		u.texture.SetBlendMode(sdl.BLENDMODE_BLEND)
+		u.renderer.Copy(u.texture, nil, nil)
+
+		// Retrieve texture for root widget and copy it to window.
+		root := u.root.Texture()
+
+		u.renderer.SetRenderTarget(nil)
+		root.SetBlendMode(sdl.BLENDMODE_BLEND)
 		u.renderer.Copy(root, nil, nil)
-
-		//u.renderer.SetRenderTarget(nil)
-		//u.renderer.Copy(u.texture, nil, nil)
-
-		// TODO: render root widget to foreground texture. Those words scare me.
-
 	} else {
 		// GameBoy screen and text/message.
 
 		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
 		rawPixels := unsafe.Pointer(&u.gbScreenBuffer[0])
 		u.gbScreen.Update(nil, rawPixels, options.ScreenWidth*4)
+
+		u.renderer.SetRenderTarget(nil)
 		u.renderer.Copy(u.gbScreen, nil, nil)
 
 		// Messages. I'm leaving them in the background for now.
 		if u.text != "" || u.message != "" {
-			u.repaintText()
+			u.repaintText() // FIXME: make it clearer that it's rendering to u.texture.
+			// I *really* need some more generic function to render text anyway.
 			u.renderer.SetRenderTarget(nil)
 			u.renderer.Copy(u.texture, nil, nil)
 		}
@@ -467,8 +484,6 @@ func (u *UI) repaintText() {
 			row++
 		}
 	}
-
-	u.renderer.SetRenderTarget(nil)
 }
 
 // Refresh UI texture with permanent text and current message (if any).
