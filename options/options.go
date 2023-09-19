@@ -86,7 +86,7 @@ func (m *module) Set(value string) error {
 }
 
 // Supported command-line options.
-var bootROM = flag.String("boot", "bin/boot/dmg_rom.bin", "Full path to boot ROM")
+var bootROM = flag.String("boot", "", "Full path to boot ROM")
 var configPath = flag.String("config", "", "Path to custom config file")
 var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to file")
 var duration = flag.Uint("cycles", 0, "Stop after executing that many cycles")

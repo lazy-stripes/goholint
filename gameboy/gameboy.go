@@ -8,6 +8,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/lazy-stripes/goholint/apu"
+	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/cpu"
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/joypad"
@@ -164,7 +165,11 @@ func New(config *options.Options) *GameBoy {
 			// TODO: set RAM/VRAM
 		}
 	} else {
-		boot = memory.NewBoot(config.BootROM)
+		if config.BootROM != "" {
+			boot = memory.NewBootFromFile(config.BootROM)
+		} else {
+			boot = memory.NewBoot(assets.BootROM)
+		}
 	}
 
 	wram := memory.NewRAM(0xc000, 0x2000)

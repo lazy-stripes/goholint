@@ -11,6 +11,9 @@ import (
 // using the embed package and the //go:embed directive. See the embed package
 // documentation for details.
 
+//go:embed boot.rom
+var BootROM []byte
+
 //go:embed icon.png
 var icon []byte // Raw bytes for the window's icon.
 

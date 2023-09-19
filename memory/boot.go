@@ -11,8 +11,14 @@ type Boot struct {
 }
 
 // NewBoot returns a new Boot address space containing the given boot ROM.
-func NewBoot(filename string) *Boot {
-	return &Boot{ROM: *NewROM(filename, 0)}
+func NewBoot(data []byte) *Boot {
+	return &Boot{ROM: *NewROM(data, 0)}
+}
+
+// NewBootFromFile returns a new Boot address space containing the boot ROM
+// in the given file.
+func NewBootFromFile(filename string) *Boot {
+	return &Boot{ROM: *NewROMFromFile(filename, 0)}
 }
 
 // Contains returns true if the given address belongs to the ROM or BOOT

@@ -12,9 +12,13 @@ type ROM struct {
 	RAM
 }
 
-// NewROM instantiates a read-only chunk of memory from a binary dump.
+func NewROM(data []byte, start uint16) *ROM {
+	return &ROM{RAM{Start: start, Bytes: data}}
+}
+
+// NewROMFromFile instantiates a read-only chunk of memory from a binary dump.
 // Try to support ZIP files (room for improvement there).
-func NewROM(filename string, start uint16) *ROM {
+func NewROMFromFile(filename string, start uint16) *ROM {
 	// Try decompressing ZIP first, if not, read raw bytes.
 	// TODO: Try to see if pre-read bytes can be decompressed, if not use them as-is.
 	var bytes []byte
@@ -51,7 +55,7 @@ func NewROM(filename string, start uint16) *ROM {
 		log.Fatal(err.Error())
 	}
 
-	return &ROM{RAM{Start: start, Bytes: bytes}}
+	return NewROM(bytes, start)
 }
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
