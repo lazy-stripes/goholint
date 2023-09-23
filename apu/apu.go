@@ -115,6 +115,8 @@ const (
 type APU struct {
 	memory.MMU
 
+	enabled bool
+
 	Square1 SquareWave
 	Square2 SquareWave
 	Wave    WaveTable
@@ -125,6 +127,7 @@ type APU struct {
 
 	NR50 uint8 // FF24 - Channel control / ON-OFF / Volume (R/W)
 	NR51 uint8 // FF25 - Selection of Sound output terminal (R/W)
+	NR52 uint8 // FF26 - Sound on/off
 }
 
 // New APU instance. So many registers.
@@ -157,6 +160,7 @@ func New(mono bool) *APU {
 		AddrNR44: {Ptr: &a.Noise.NRx4, Mask: 0xbf, OnWrite: a.Noise.SetNRx4},
 		AddrNR50: {Ptr: &a.NR50},
 		AddrNR51: {Ptr: &a.NR51},
+		AddrNR52: {Ptr: &a.NR52, OnWrite: a.SetNR52},
 	})
 
 	// Pre-compute default frequencies.
@@ -168,11 +172,38 @@ func New(mono bool) *APU {
 	return &a
 }
 
+func (a *APU) SetNR52(value uint8) {
+	a.enabled = value&0x80 != 0
+}
+
+// Read overrides our internal Addressables to catch reads and writes to NR52.
+func (a *APU) Read(addr uint16) (value uint8) {
+	if addr == AddrNR52 {
+		if a.Square1.Enabled {
+			value |= 0x01
+		}
+		if a.Square2.Enabled {
+			value |= 0x02
+		}
+		if a.Wave.Enabled {
+			value |= 0x04
+		}
+		if a.Noise.Enabled {
+			value |= 0x08
+		}
+		return value
+	}
+	return a.MMU.Read(addr)
+}
+
 // Tick advances the state machine of all signal generators to produce a single
 // stereo sample for the sound card. Note that the number of internal cycles
 // happening on each signal generator depends on the output frequency.
 func (a *APU) Tick() (left, right int8) {
-	// TODO: enabled (NR52)
+	if !a.enabled {
+		return
+	}
+
 	square1 := a.Square1.Tick()
 	square2 := a.Square2.Tick()
 	wave := a.Wave.Tick()

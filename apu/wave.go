@@ -28,7 +28,7 @@ type WaveTable struct {
 
 	freq uint // Computed from NRx3 and NRx4
 
-	enabled bool // Only output silence if this is false
+	Enabled bool // Only output silence if this is false
 
 	sampleOffset uint // Sub-index of the current sample into the wave table
 	ticks        uint // Clock ticks counter for advancing sample index
@@ -71,7 +71,7 @@ func (w *WaveTable) SetNRx4(value uint8) {
 	if w.NRx4&NRx4RestartSound != 0 {
 		w.NRx4 &= ^NRx4RestartSound // Reset trigger bit
 		log.Debug("NR34 triggered")
-		w.enabled = true // It's fine if the signal is already enabled.
+		w.Enabled = true // It's fine if the signal is already enabled.
 
 		// TODO:
 		// "When restarting CH3, it resumes playing the last 4-bit sample it
@@ -93,7 +93,7 @@ func (w *WaveTable) SetNRx4(value uint8) {
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
 func (w *WaveTable) Tick() (sample int8) {
-	if !w.enabled {
+	if !w.Enabled {
 		return
 	}
 

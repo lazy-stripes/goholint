@@ -19,7 +19,7 @@ type SquareWave struct {
 	NRx3 uint8 // Frequency's lower 8 bits
 	NRx4 uint8 // Control and frequency' higher 3 bits
 
-	enabled bool // Only output silence if this is false
+	Enabled bool // Only output silence if this is false
 
 	freq uint // Real signal frequency computed from NRx3 and NRx4
 
@@ -104,7 +104,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 	if value&NRx4RestartSound != 0 {
 		s.NRx4 &= ^NRx4RestartSound // Reset trigger bit
 
-		s.enabled = true // It's fine if the signal is already enabled.
+		s.Enabled = true // It's fine if the signal is already enabled.
 
 		// "Restarting a pulse channel causes its "duty step timer" to reset."
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
@@ -118,7 +118,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 			if !overflow {
 				s.SetRawFrequency(newFreq)
 			} else {
-				s.enabled = false
+				s.Enabled = false
 			}
 		}
 	}
@@ -134,7 +134,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
 func (s *SquareWave) Tick() (sample int8) {
-	if !s.enabled {
+	if !s.Enabled {
 		return
 	}
 
@@ -143,14 +143,14 @@ func (s *SquareWave) Tick() (sample int8) {
 		if !overflow {
 			s.SetRawFrequency(newFreq)
 		} else {
-			s.enabled = false
+			s.Enabled = false
 			return
 		}
 	}
 
 	disabled := s.length.Tick()
 	if disabled {
-		s.enabled = false
+		s.Enabled = false
 		return
 	}
 

@@ -60,7 +60,7 @@ type Noise struct {
 
 	LFSR LFSR // 15-bit shift register
 
-	enabled bool // Only output silence if this is false
+	Enabled bool // Only output silence if this is false
 
 	freq uint // Computed from NRx3
 
@@ -112,7 +112,7 @@ func (n *Noise) SetNRx4(value uint8) {
 	if value&NRx4RestartSound != 0 {
 		n.NRx4 &= ^NRx4RestartSound // Reset trigger bit
 		log.Debug("NR44 triggered")
-		n.enabled = true // It's fine if the signal is already enabled.
+		n.Enabled = true // It's fine if the signal is already enabled.
 
 		// The LFSR is set to 0 when (re)triggering the channel.
 		n.LFSR.Value = 0
@@ -134,13 +134,13 @@ func (n *Noise) SetNRx4(value uint8) {
 // in the signal generator's registers. We use a named return value, which is
 // conveniently set to zero (silence) by default.
 func (n *Noise) Tick() (sample int8) {
-	if !n.enabled {
+	if !n.Enabled {
 		return
 	}
 
 	disabled := n.length.Tick()
 	if disabled {
-		n.enabled = false
+		n.Enabled = false
 		return
 	}
 
