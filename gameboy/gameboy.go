@@ -173,7 +173,7 @@ func New(config *options.Options) *GameBoy {
 	}
 
 	wram := memory.NewRAM(0xc000, 0x2000)
-	hram := memory.NewRAM(0xff80, 0x7e)
+	hram := memory.NewRAM(0xff80, 0x7f)
 	g.JPad = joypad.New() // TODO: interrupts
 	mmu := memory.NewMMU([]memory.Addressable{
 		boot,
