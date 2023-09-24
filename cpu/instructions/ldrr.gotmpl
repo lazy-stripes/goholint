@@ -4,7 +4,11 @@ type {{name .}} struct {
 }
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
+{{- if eq .Register .OtherRegister}}
+	// LD {{.Register}},{{.OtherRegister}} is a no-op.
+{{- else}}
 	c.{{.Register}} = c.{{.OtherRegister}}
+{{- end}}
 	return true
 }
 

@@ -162,7 +162,7 @@ func (s *Screen) VBlank() {
 	// otherwise the call to SaveFrame will always insert a "disabled" frame in
 	// first position (since we haven't yet had time to build a full frame in
 	// that specific case).
-	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package.
+	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package. Or use the GameBoy timer itself.
 	if s.gif.IsOpen() {
 		d := time.Since(s.recordTime)
 		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)

@@ -1,4 +1,4 @@
-// Auto-generated on 2021-08-26T19:28:07+02:00. See instructions.go
+// Auto-generated on 2023-09-24T12:19:20+02:00. See instructions.go
 
 package cpu
 
@@ -1560,7 +1560,7 @@ type op40 struct {
 }
 
 func (op *op40) Execute(c *CPU) (done bool) {
-	c.B = c.B
+	// LD B,B is a no-op.
 	return true
 }
 
@@ -1650,7 +1650,7 @@ type op49 struct {
 }
 
 func (op *op49) Execute(c *CPU) (done bool) {
-	c.C = c.C
+	// LD C,C is a no-op.
 	return true
 }
 
@@ -1740,7 +1740,7 @@ type op52 struct {
 }
 
 func (op *op52) Execute(c *CPU) (done bool) {
-	c.D = c.D
+	// LD D,D is a no-op.
 	return true
 }
 
@@ -1830,7 +1830,7 @@ type op5b struct {
 }
 
 func (op *op5b) Execute(c *CPU) (done bool) {
-	c.E = c.E
+	// LD E,E is a no-op.
 	return true
 }
 
@@ -1920,7 +1920,7 @@ type op64 struct {
 }
 
 func (op *op64) Execute(c *CPU) (done bool) {
-	c.H = c.H
+	// LD H,H is a no-op.
 	return true
 }
 
@@ -2010,7 +2010,7 @@ type op6d struct {
 }
 
 func (op *op6d) Execute(c *CPU) (done bool) {
-	c.L = c.L
+	// LD L,L is a no-op.
 	return true
 }
 
@@ -2191,7 +2191,7 @@ type op7f struct {
 }
 
 func (op *op7f) Execute(c *CPU) (done bool) {
-	c.A = c.A
+	// LD A,A is a no-op.
 	return true
 }
 

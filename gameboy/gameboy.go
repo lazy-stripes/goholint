@@ -59,9 +59,6 @@ type GameBoy struct {
 
 	// For GIF record toggle.
 	recording bool
-
-	// For showing "home screen".
-	home bool
 }
 
 // SetControls validates and sets the given control map for the emulator.
@@ -174,11 +171,13 @@ func New(config *options.Options) *GameBoy {
 
 	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff80, 0x7f)
+	//prohibited := memory.NewRAM(0xfea0, 0x60)
 	g.JPad = joypad.New() // TODO: interrupts
 	mmu := memory.NewMMU([]memory.Addressable{
 		boot,
 		g.APU,
 		g.PPU,
+		//prohibited,
 		wram,
 		ints,
 		g.JPad,
