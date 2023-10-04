@@ -17,12 +17,18 @@ func NewCartridge(romPath, savePath string) (cart Addressable) {
 	rom := NewROMFromFile(romPath)
 
 	// Check what kind of chip is in the ROM, return the proper struct.
-	log.Infof("Cartridge type 0x%02x", rom.Read(0x0147))
-	log.Infof("ROM size type 0x%02x", rom.Read(0x0148))
-	log.Infof("RAM size type 0x%02x", rom.Read(0x0149))
-	romBanks := chips.ROMBanks[rom.Read(0x0148)]
-	ramBanks := chips.RAMBanks[rom.Read(0x0149)]
-	switch chip := rom.Read(0x0147); chip {
+	cartType := rom.Read(0x0147)
+	romSize := rom.Read(0x0148)
+	ramSize := rom.Read(0x0149)
+
+	romBanks := chips.ROMBanks[romSize]
+	ramBanks := chips.RAMBanks[ramSize]
+
+	log.Infof("Cartridge type 0x%02x (%s)", cartType, chips.Names[cartType])
+	log.Infof("ROM size type 0x%02x (%d banks)", romSize, romBanks)
+	log.Infof("RAM size type 0x%02x (%d banks)", ramSize, ramBanks)
+
+	switch cartType {
 	case chips.ROMOnly:
 		cart = rom
 	case chips.MBC1:
@@ -32,7 +38,7 @@ func NewCartridge(romPath, savePath string) (cart Addressable) {
 	case chips.MBC1RAMBattery:
 		cart = NewMBC1(rom, uint8(romBanks), ramBanks, true, savePath)
 	default:
-		log.Warningf("Unknown cartridge type 0x%02x", chip)
+		log.Warningf("Unknown cartridge type 0x%02x", cartType)
 		cart = rom
 	}
 
