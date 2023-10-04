@@ -14,7 +14,7 @@ func NewCartridge(romPath, savePath string) (cart Addressable) {
 		return nil
 	}
 
-	rom := NewROMFromFile(romPath, 0) // XXX: do we actually ever need to specify start > 0?
+	rom := NewROMFromFile(romPath)
 
 	// Check what kind of chip is in the ROM, return the proper struct.
 	log.Infof("Cartridge type 0x%02x", rom.Read(0x0147))

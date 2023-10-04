@@ -74,7 +74,7 @@ func TestRAMRead(t *testing.T) {
 
 func TestMMU(t *testing.T) {
 	rompath := "../bin/DMG_ROM.bin"
-	rom := NewROMFromFile(rompath, 0)
+	rom := NewROMFromFile(rompath)
 	ram := NewRAM(0, 0xffff)
 	boot := NewMMU([]Addressable{rom, ram})
 
@@ -108,6 +108,6 @@ func TestMMU(t *testing.T) {
 }
 
 func TestROMWrite(t *testing.T) {
-	rom := NewROMFromFile("/dev/null", 0)
+	rom := NewROMFromFile("/dev/null")
 	rom.Write(0, 42)
 }
