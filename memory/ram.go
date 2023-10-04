@@ -17,7 +17,11 @@ type RAM struct {
 
 // NewRAM instantiates a zeroed slice of the given size to represent RAM.
 func NewRAM(start, size uint16) *RAM {
-	return &RAM{make([]uint8, size), start, ""}
+	return &RAM{
+		Bytes:    make([]uint8, size),
+		Start:    start,
+		saveFile: "",
+	}
 }
 
 // Read returns the value stored at the given address in RAM, handling offsets.
@@ -25,7 +29,7 @@ func (r *RAM) Read(addr uint16) uint8 {
 	return r.Bytes[addr-r.Start]
 }
 
-// Read sets stores the given value at the given address in RAM, handling offsets.
+// Write sets stores the given value at the given address in RAM, handling offsets.
 func (r *RAM) Write(addr uint16, value uint8) {
 	r.Bytes[addr-r.Start] = value
 }

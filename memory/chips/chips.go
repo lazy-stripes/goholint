@@ -35,9 +35,9 @@ var ROMBanks = map[uint8]uint16{
 	0x06: 128,
 	0x07: 256,
 	0x08: 512,
-	0x52: 72,
-	0x53: 80,
-	0x54: 96,
+	0x52: 72, // Unconfirmed.
+	0x53: 80, // Unconfirmed.
+	0x54: 96, // Unconfirmed.
 }
 
 // RAMBanks number depending on "RAM Size" cartridge header.
