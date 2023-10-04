@@ -26,7 +26,7 @@ var Names = map[uint8]string{
 
 // ROMBanks number depending on "ROM Size" cartridge header.
 var ROMBanks = map[uint8]uint16{
-	0x00: 0,
+	0x00: 2,
 	0x01: 4,
 	0x02: 8,
 	0x03: 16,
