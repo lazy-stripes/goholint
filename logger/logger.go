@@ -112,7 +112,6 @@ func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
 		return
 	}
 
-	fmt.Print(Context())
 	msg := fmt.Sprintf("%s: %s", l.Name, fmt.Sprintf(format, a...))
 	if msg == lastMessage {
 		lastMessageCount++
@@ -123,6 +122,8 @@ func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
 		}
 		lastMessage = msg
 		lastMessageCount = 1
+
+		fmt.Print(Context())
 		fmt.Println(msg)
 	}
 }
