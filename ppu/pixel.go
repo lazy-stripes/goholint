@@ -9,6 +9,7 @@ const (
 
 // Pixel holding its color index and palette to be used in our FIFO.
 type Pixel struct {
-	Color   uint8
-	Palette uint8
+	Color     uint8
+	Palette   uint8
+	BGOverOBJ bool
 }

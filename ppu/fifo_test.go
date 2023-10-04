@@ -6,7 +6,7 @@ func TestFIFO(t *testing.T) {
 	f := FIFO{}
 
 	for p := byte(1); p < 12; p++ {
-		f.Push(Pixel{p, 0})
+		f.Push(Pixel{p, 0, false})
 
 		if f.len != int(p) {
 			t.Errorf("FIFO length mismatch. Expected %d, got %d", p, f.len)

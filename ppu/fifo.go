@@ -1,6 +1,8 @@
 package ppu
 
-import "errors"
+import (
+	"errors"
+)
 
 // FIFO holds the PPU's pixel FIFO shifting out pixels to the display with the
 // guarantee that there will always be 8 pixels available to mix sprites in.
@@ -63,6 +65,9 @@ func (f *FIFO) Mix(offset int, pixel Pixel) {
 	// TODO: OBJ-BG priority attribute bit.
 	// TODO: OAM index, possibly needed in Pixel struct.
 	if current.Palette == PixelBGP {
+		if current.Color != 0 && pixel.BGOverOBJ {
+			return
+		}
 		f.fifo[index] = pixel
 	}
 }

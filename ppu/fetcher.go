@@ -93,7 +93,7 @@ func (f *Fetcher) Tick() {
 	case states.PushToFIFO:
 		if f.fifo.Size() <= 8 {
 			for i := 0; i < 8; i++ {
-				f.fifo.Push(Pixel{f.tileData[i], PixelBGP})
+				f.fifo.Push(Pixel{f.tileData[i], PixelBGP, false})
 			}
 			f.tileOffset = (f.tileOffset + 1) % 32
 			f.state = states.ReadTileID
@@ -128,8 +128,9 @@ func (f *Fetcher) Tick() {
 		} else {
 			palette = PixelOBP1
 		}
+		bgOverObj := f.spriteFlags&SpritePriority != 0
 		for i := int(f.spriteOffset); i < 8; i++ {
-			f.fifo.Mix(i-int(f.spriteOffset), Pixel{f.spriteData[i], palette})
+			f.fifo.Mix(i-int(f.spriteOffset), Pixel{f.spriteData[i], palette, bgOverObj})
 		}
 		f.state = f.oldState
 	}
