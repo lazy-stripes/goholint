@@ -1,5 +1,11 @@
 package memory
 
+// Initialize sub-logger for unmapped MMU accesses.
+func init() {
+	log.Add("mmu/read", "unmapped memory reads (Debug level only)")
+	log.Add("mmu/write", "unmapped memory writes (Debug level only)")
+}
+
 // MMU manages an arbitrary number of ordered address spaces. It also satisfies
 // the Addressable interface.
 type MMU struct {

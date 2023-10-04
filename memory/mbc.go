@@ -3,6 +3,13 @@ package memory
 // Memory Bank Controllers. Source:
 // [PANMBC] https://gbdev.io/pandocs/#mbc1
 
+// Initialize sub-logger for MBC details.
+func init() {
+	log.Add("mbc", "MBC chip details")
+	log.Add("mbc/read", "MBC ROM chip reads (Desperate level only)")
+	log.Add("mbc/write", "MBC ROM chip writes (Desperate level only)")
+}
+
 // 6000-7FFF - ROM/RAM Mode Select
 const (
 	ROMBanking = 0x00

@@ -1,5 +1,10 @@
 package memory
 
+// Initialize sub-logger for boot ROM and register accesses.
+func init() {
+	log.Add("boot", "boot ROM disable register")
+}
+
 // BootAddr is the address of BOOT register in I/O RAM.
 const BootAddr = 0xff50
 

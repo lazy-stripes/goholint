@@ -13,18 +13,6 @@ type Addressable interface {
 	Write(addr uint16, value uint8)
 }
 
-// Package-wide logger initialized below.
+// Package-wide logger initialized below. Sub-loggers will be created in the
+// relevant source files.
 var log = logger.New("memory", "memory-related operations")
-
-// Package initialization function setting up logger submodules.
-func init() {
-	log.Add("boot", "boot ROM disable register")
-	log.Add("cartridge", "cartridge address space details")
-	log.Add("dma", "DMA register and transfers")
-	log.Add("mbc", "MBC chip details")
-	log.Add("mbc/read", "MBC ROM chip reads (Desperate level only)")
-	log.Add("mbc/write", "MBC ROM chip writes (Desperate level only)")
-	log.Add("mmu/read", "unmapped memory reads (Debug level only)")
-	log.Add("mmu/write", "unmapped memory writes (Debug level only)")
-	log.Add("rom", "Unexpected writes and overflows in ROM address spaces")
-}

@@ -4,6 +4,11 @@ package memory
 // [VIDEO] http://gbdev.gg8.se/wiki/articles/Video_Display#FF46_-_DMA_-_DMA_Transfer_and_Start_Address_.28R.2FW.29
 // TODO: restrict CPU access to HRAM while a transfer is active.
 
+// Initialize sub-logger for DMA transfers.
+func init() {
+	log.Add("dma", "DMA register and transfers")
+}
+
 // AddrDMA is the address of DMA register in DMG address space.
 const AddrDMA = 0xff46
 

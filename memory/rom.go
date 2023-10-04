@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+// Initialize sub-logger for ROM accesses.
+func init() {
+	log.Add("rom", "Unexpected writes and overflows in ROM address spaces")
+}
+
 // ROM is a read-only special case of RAM, initialized from a binary file.
 type ROM struct {
 	RAM

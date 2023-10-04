@@ -4,6 +4,11 @@ import (
 	"github.com/lazy-stripes/goholint/memory/chips"
 )
 
+// Initialize sub-logger for cartridge details.
+func init() {
+	log.Add("cartridge", "cartridge address space details")
+}
+
 // NewCartridge instantiates the proper kind of adress space depending on the
 // given ROM's header.
 // TODO: we only handle ROM-only and MBC1 so far.
