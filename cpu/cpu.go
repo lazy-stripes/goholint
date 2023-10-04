@@ -256,7 +256,7 @@ func (c *CPU) DumpMemory() {
 			f.Close()
 		}()
 		buf := make([]byte, 0xffff)
-		for addr := uint16(0); addr < 0xffff; addr++ {
+		for addr := uint16(0); addr <= 0xffff; addr++ {
 			buf[addr] = c.Memory.Read(addr)
 		}
 		f.Write(buf)
