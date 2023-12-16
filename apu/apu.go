@@ -109,9 +109,8 @@ const (
 )
 
 // APU structure grouping all sound signal generators and keeping track of when
-// to actually output a sample for the sound card to play. For now we only use
-// two generators for sterao sound, but in time, we'll mix the output of four of
-// those and the stereo channel they'll go to will be configurable as well.
+// to actually output a sample for the sound card to play. It also takes care of
+// volume control, channel mixing and stereo panning.
 type APU struct {
 	memory.MMU
 
@@ -176,7 +175,7 @@ func (a *APU) SetNR52(value uint8) {
 	a.enabled = value&0x80 != 0
 }
 
-// Read overrides our internal Addressables to catch reads and writes to NR52.
+// Read overrides our internal Addressables to catch reads from NR52.
 func (a *APU) Read(addr uint16) (value uint8) {
 	if addr == AddrNR52 {
 		if a.Square1.Enabled {
@@ -227,7 +226,7 @@ func (a *APU) Tick() (left, right int8) {
 	}
 
 	// Each channel can return a sample from -15 to +15. Even at those maxima,
-	// adding the four values should not overflow an int8.
+	// adding the four values together should not overflow an int8.
 	if a.NR51&NR51Output1Left != 0 || a.Mono {
 		left += square1
 	}
@@ -264,7 +263,7 @@ func (a *APU) Tick() (left, right int8) {
 	volumeRight := (a.NR50 & 0x70) >> 4
 
 	// Adjust global volume for each channel.
-	// XXX: should we just use floats for samples?
+	// XXX: should we just use floats for samples? Also what if Mono?
 	if volumeLeft == 0 {
 		left = 0
 	} else if volumeLeft < 7 {

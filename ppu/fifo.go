@@ -62,7 +62,6 @@ func (f *FIFO) Mix(offset int, pixel Pixel) {
 	}
 
 	// Mix pixel in if the current one is from the background.
-	// TODO: OBJ-BG priority attribute bit.
 	// TODO: OAM index, possibly needed in Pixel struct.
 	if current.Palette == PixelBGP {
 		if current.Color != 0 && pixel.BGOverOBJ {
