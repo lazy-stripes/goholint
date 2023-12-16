@@ -42,6 +42,12 @@ func new(renderer *sdl.Renderer, size *sdl.Rect) *widget {
 	return widget
 }
 
+// ProcessEvent should be overridden in widgets that actually do process events.
+func (w *widget) ProcessEvent(Event) bool {
+	// Default widget behavior is to not catch events.
+	return false
+}
+
 func (w *widget) SetNext(next Widget) {
 	w.next = next
 }

@@ -10,20 +10,95 @@ type MenuChoice struct {
 	Action func()
 }
 
+// item wraps a Label with a margin and an optional background for selected
+// items. TODO: add margin and background options to Label, obviously.
+type item struct {
+	*widget
+
+	label    *Label
+	selected bool
+}
+
+func newItem(r *sdl.Renderer, s *sdl.Rect, text string) *item {
+	l := NewLabel(r, text)
+
+	// Create item texture with margin.
+	margin := properties.Zoom * 2
+	_, _, _, h, _ := l.Texture().Query()
+
+	itemSize := sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: s.W,
+		H: h + int32(margin*2),
+	}
+	item := &item{
+		widget: new(r, &itemSize),
+		label:  l,
+	}
+
+	return item
+}
+
+// Texture renders the label and an optional background if the item is selected.
+func (i *item) Texture() *sdl.Texture {
+	// Render transparent or filled (selected) background.
+	i.renderer.SetRenderTarget(i.texture)
+	if i.selected {
+		i.renderer.SetDrawColor(
+			properties.BgColor.R,
+			properties.BgColor.G,
+			properties.BgColor.B,
+			properties.BgColor.A,
+		)
+	} else {
+		i.renderer.SetDrawColor(0, 0, 0, 0) // Transparent
+	}
+	i.renderer.Clear()
+
+	// Render lebal on top of it.
+	labelTexture := i.label.Texture()
+	_, _, w, h, _ := labelTexture.Query()
+	labelTexture.SetBlendMode(sdl.BLENDMODE_BLEND)
+	i.renderer.Copy(labelTexture, nil, &sdl.Rect{
+		X: (i.width - w) / 2,          // Center text, this should probably be in widgets.Label too.
+		Y: int32(properties.Zoom * 2), // Margin
+		W: w,
+		H: h,
+	})
+	i.renderer.SetRenderTarget(nil)
+	return i.texture
+}
+
 // Menu widget displaying a list of potential choices, each of which should map
 // to some kind of Action.
 type Menu struct {
-	*widget
+	*VerticalLayout
 
+	items    []*item
 	choices  []MenuChoice
 	selected int // Index of selected choice
 }
 
 func NewMenu(r *sdl.Renderer, s *sdl.Rect, choices []MenuChoice) *Menu {
+	layout := NewVerticalLayout(r, s, nil)
+	var items []*item
+	for i, c := range choices {
+		item := newItem(r, s, c.Text)
+		items = append(items, item)
+		layout.Add(item)
+
+		// Pre-select first item in list.
+		if i == 0 {
+			item.selected = true
+		}
+	}
+
 	return &Menu{
-		widget:   new(r, s),
-		choices:  choices,
-		selected: 0,
+		VerticalLayout: layout,
+		items:          items,
+		choices:        choices,
+		selected:       0,
 	}
 }
 
@@ -49,93 +124,27 @@ func (m *Menu) ProcessEvent(e Event) bool {
 }
 
 func (m *Menu) Up() {
+	m.items[m.selected].selected = false
+
 	if m.selected > 0 {
 		m.selected -= 1
 	}
 	// TODO: else, blink? How?
+
+	m.items[m.selected].selected = true
 }
 
 func (m *Menu) Down() {
+	m.items[m.selected].selected = false
+
 	if m.selected < len(m.choices)-1 {
 		m.selected += 1
 	}
 	// TODO: blink?
+
+	m.items[m.selected].selected = true
 }
 
 func (m *Menu) Confirm() {
 	m.choices[m.selected].Action()
-}
-
-func (m *Menu) Texture() *sdl.Texture {
-	m.repaint()
-	return m.texture
-}
-
-// repaint refreshes the widget's texture with its current state (menu choice).
-func (m *Menu) repaint() {
-	if len(m.choices) == 0 {
-		return
-	}
-	margin := int32(properties.TitleFont.Height())
-
-	// Render choices first, grab height, render menu.
-	var choiceTextures []*sdl.Texture
-	for _, c := range m.choices {
-		choiceTextures = append(choiceTextures, m.renderText(c.Text))
-		//fmt.Println(c.Text)
-	}
-
-	// I really hope renderText creates textures that are all the same height.
-	_, _, _, choiceH, _ := choiceTextures[0].Query()
-	menuH := int32(len(choiceTextures))*choiceH + int32(len(choiceTextures)-1)*margin
-
-	menuTexture, _ := m.renderer.CreateTexture( // TODO: I should probably make a helper method
-		sdl.PIXELFORMAT_RGBA8888,
-		sdl.TEXTUREACCESS_TARGET,
-		m.width,
-		int32(menuH),
-	)
-
-	m.renderer.SetRenderTarget(menuTexture)
-	y := int32(0) // Start at the top of the texture
-	for i, ct := range choiceTextures {
-		if i > 0 {
-			y += margin
-		}
-
-		if i == m.selected {
-			m.renderer.SetDrawColor(
-				properties.BgColor.R,
-				properties.BgColor.G,
-				properties.BgColor.B,
-				properties.BgColor.A,
-			)
-			m.renderer.FillRect(&sdl.Rect{
-				X: 0, //margin / 2,
-				Y: y,
-				W: m.width, // - margin,
-				H: choiceH,
-			})
-		}
-
-		_, _, choiceW, choiceH, _ := ct.Query()
-		ct.SetBlendMode(sdl.BLENDMODE_BLEND)
-		m.renderer.Copy(ct, nil, &sdl.Rect{
-			X: (m.width - choiceW) / 2, // Center text, this should probably be in widgets.Label too.
-			Y: y,
-			W: choiceW,
-			H: choiceH,
-		})
-
-		y += choiceH
-	}
-
-	// Center menu on widget texture.
-	m.renderer.SetRenderTarget(m.texture)
-	m.renderer.Copy(menuTexture, nil, &sdl.Rect{
-		X: 0,
-		Y: (m.height - menuH) / 2,
-		W: m.width,
-		H: menuH,
-	})
 }

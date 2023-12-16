@@ -15,12 +15,25 @@ type VerticalLayout struct {
 
 func NewVerticalLayout(renderer *sdl.Renderer, size *sdl.Rect, children []Widget) *VerticalLayout {
 	l := &VerticalLayout{
-		widget: new(renderer, size),
+		widget:   new(renderer, size),
 		viewport: size,
 		children: children,
 	}
 
 	return l
+}
+
+func (l *VerticalLayout) Add(child Widget) {
+	l.children = append(l.children, child)
+}
+
+func (l *VerticalLayout) Texture() *sdl.Texture {
+	l.repaint()
+	return l.texture
+}
+
+func (l *VerticalLayout) ProcessEvent(Event) bool {
+	return false
 }
 
 // repaint renders children top-down and spaces them vertically.
@@ -38,7 +51,7 @@ func (l *VerticalLayout) repaint() {
 	}
 
 	// Compute inter-widget space if any.
-	margin := (l.height - int32(totalHeight)) / int32(len(l.children) + 1)
+	margin := (l.height - int32(totalHeight)) / int32(len(l.children)+1)
 	if margin < 0 {
 		margin = 0
 	}
@@ -60,13 +73,4 @@ func (l *VerticalLayout) repaint() {
 
 		y += h
 	}
-}
-
-func (l *VerticalLayout) Texture() *sdl.Texture {
-	l.repaint()
-	return l.texture
-}
-
-func (l *VerticalLayout) ProcessEvent(Event) bool {
-	return false
 }
