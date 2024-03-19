@@ -74,3 +74,74 @@ func (l *VerticalLayout) repaint() {
 		y += h
 	}
 }
+
+// HorizontalLayout renders its children widgets from left to right, horizontally
+// centered.
+type HorizontalLayout struct {
+	*widget
+
+	viewport *sdl.Rect
+	children []Widget // TODO: make that part of widget struct?
+}
+
+func NewHorizontalLayout(renderer *sdl.Renderer, size *sdl.Rect, children []Widget) *HorizontalLayout {
+	l := &HorizontalLayout{
+		widget:   new(size),
+		viewport: size,
+		children: children,
+	}
+
+	return l
+}
+
+func (l *HorizontalLayout) Add(child Widget) {
+	l.children = append(l.children, child)
+}
+
+func (l *HorizontalLayout) Texture() *sdl.Texture {
+	l.repaint()
+	return l.texture
+}
+
+func (l *HorizontalLayout) ProcessEvent(Event) bool {
+	return false
+}
+
+// repaint renders children left-right and spaces them horizontally.
+func (l *HorizontalLayout) repaint() {
+	var textures []*sdl.Texture
+	totalWidth := int32(0)
+
+	for _, c := range l.children {
+		// Render child to texture. Keep track of width.
+		// TODO: common layout code.
+		t := c.Texture()
+		_, _, w, _, _ := t.Query()
+		totalWidth += w
+		textures = append(textures, t)
+	}
+
+	// Compute inter-widget space if any.
+	margin := (l.width - int32(totalWidth)) / int32(len(l.children)+1)
+	if margin < 0 {
+		margin = 0
+	}
+
+	// Render to our texture, vertically center each child.
+	// TODO: making that vertical aligment configurable would be neat.
+	renderer.SetRenderTarget(l.texture)
+	x := int32(0) // Start at the left of the texture
+	for _, t := range textures {
+		x += margin
+
+		_, _, w, h, _ := t.Query()
+		renderer.Copy(t, nil, &sdl.Rect{
+			X: x,
+			Y: 0, // FIXME: vertical align
+			W: w,
+			H: h,
+		})
+
+		x += w
+	}
+}
