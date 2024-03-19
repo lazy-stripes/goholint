@@ -19,8 +19,8 @@ type item struct {
 	selected bool
 }
 
-func newItem(r *sdl.Renderer, s *sdl.Rect, text string) *item {
-	l := NewLabel(r, text)
+func newItem(s *sdl.Rect, text string) *item {
+	l := NewLabel(text)
 
 	// Create item texture with margin.
 	margin := properties.Zoom * 2
@@ -33,7 +33,7 @@ func newItem(r *sdl.Renderer, s *sdl.Rect, text string) *item {
 		H: h + int32(margin*2),
 	}
 	item := &item{
-		widget: new(r, &itemSize),
+		widget: new(&itemSize),
 		label:  l,
 	}
 
@@ -43,30 +43,30 @@ func newItem(r *sdl.Renderer, s *sdl.Rect, text string) *item {
 // Texture renders the label and an optional background if the item is selected.
 func (i *item) Texture() *sdl.Texture {
 	// Render transparent or filled (selected) background.
-	i.renderer.SetRenderTarget(i.texture)
+	renderer.SetRenderTarget(i.texture)
 	if i.selected {
-		i.renderer.SetDrawColor(
+		renderer.SetDrawColor(
 			properties.BgColor.R,
 			properties.BgColor.G,
 			properties.BgColor.B,
 			properties.BgColor.A,
 		)
 	} else {
-		i.renderer.SetDrawColor(0, 0, 0, 0) // Transparent
+		renderer.SetDrawColor(0, 0, 0, 0) // Transparent
 	}
-	i.renderer.Clear()
+	renderer.Clear()
 
-	// Render lebal on top of it.
+	// Render label on top of it.
 	labelTexture := i.label.Texture()
 	_, _, w, h, _ := labelTexture.Query()
 	labelTexture.SetBlendMode(sdl.BLENDMODE_BLEND)
-	i.renderer.Copy(labelTexture, nil, &sdl.Rect{
+	renderer.Copy(labelTexture, nil, &sdl.Rect{
 		X: (i.width - w) / 2,          // Center text, this should probably be in widgets.Label too.
 		Y: int32(properties.Zoom * 2), // Margin
 		W: w,
 		H: h,
 	})
-	i.renderer.SetRenderTarget(nil)
+	renderer.SetRenderTarget(nil)
 	return i.texture
 }
 
@@ -80,13 +80,14 @@ type Menu struct {
 	selected int // Index of selected choice
 }
 
-func NewMenu(r *sdl.Renderer, s *sdl.Rect, choices []MenuChoice) *Menu {
-	layout := NewVerticalLayout(r, s, nil)
+func NewMenu(s *sdl.Rect, choices []MenuChoice) *Menu {
+	layout := NewVerticalLayout(s, nil)
 	var items []*item
 	for i, c := range choices {
-		item := newItem(r, s, c.Text)
+		item := newItem(s, c.Text)
 		items = append(items, item)
 		layout.Add(item)
+		// TODO: phase out items, use layout.Add(NewLabel(c.Text)), change label background
 
 		// Pre-select first item in list.
 		if i == 0 {

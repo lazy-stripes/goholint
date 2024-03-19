@@ -13,9 +13,9 @@ type VerticalLayout struct {
 	children []Widget // TODO: make that part of widget struct?
 }
 
-func NewVerticalLayout(renderer *sdl.Renderer, size *sdl.Rect, children []Widget) *VerticalLayout {
+func NewVerticalLayout(size *sdl.Rect, children []Widget) *VerticalLayout {
 	l := &VerticalLayout{
-		widget:   new(renderer, size),
+		widget:   new(size),
 		viewport: size,
 		children: children,
 	}
@@ -58,13 +58,13 @@ func (l *VerticalLayout) repaint() {
 
 	// Render to our texture, horizontally center each child.
 	// TODO: making that horizontal aligment configurable would be neat.
-	l.renderer.SetRenderTarget(l.texture)
+	renderer.SetRenderTarget(l.texture)
 	y := int32(0) // Start at the top of the texture
 	for _, t := range textures {
 		y += margin
 
 		_, _, w, h, _ := t.Query()
-		l.renderer.Copy(t, nil, &sdl.Rect{
+		renderer.Copy(t, nil, &sdl.Rect{
 			X: 0, // FIXME: horizontal align
 			Y: y,
 			W: w,

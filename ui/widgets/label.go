@@ -10,14 +10,14 @@ type Label struct {
 
 // TODO: why couldn't these be methods of a global UI object abstracting the renderer?
 //       I'd just need to move all widgets back up to the ui package.
-func NewLabel(r *sdl.Renderer, text string) *Label {
-	texture := renderText(r, text)
+// TODO: alignment
+func NewLabel(text string) *Label {
+	texture := renderText(text)
 	_, _, w, h, _ := texture.Query()
 	l := &Label{
 		widget: &widget{
-			renderer: r,
-			width: w,
-			height: h,
+			width:   w,
+			height:  h,
 			texture: texture,
 		},
 		Text: text,
@@ -30,13 +30,9 @@ func (l *Label) Texture() *sdl.Texture {
 	return l.texture
 }
 
-func (l *Label) ProcessEvent(Event) bool {
-	return false
-}
-
 // renderText renders the given string on the given renderer. A a new texture
 // will be created.
-func renderText(r *sdl.Renderer, s string) *sdl.Texture {
+func renderText(s string) *sdl.Texture {
 	// Instantiate text with an outline effect. There's probably an easier way.
 	properties.TitleFont.SetOutline(properties.Zoom)
 	outline, _ := properties.TitleFont.RenderUTF8Solid(s, properties.BgColor)
@@ -48,18 +44,18 @@ func renderText(r *sdl.Renderer, s string) *sdl.Texture {
 
 	// I can't draw the text directly on the outline as CreateTextureFromSurface
 	// creates static textures. Bummer.
-	outlineTexture, _ := r.CreateTextureFromSurface(outline)
-	msgTexture, _ := r.CreateTextureFromSurface(text)
+	outlineTexture, _ := renderer.CreateTextureFromSurface(outline)
+	msgTexture, _ := renderer.CreateTextureFromSurface(text)
 
-	labelTexture, _ := r.CreateTexture(
+	labelTexture, _ := renderer.CreateTexture(
 		sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_TARGET,
 		outline.W,
 		outline.H,
 	)
 
-	r.SetRenderTarget(labelTexture)
-	r.Copy(outlineTexture,
+	renderer.SetRenderTarget(labelTexture)
+	renderer.Copy(outlineTexture,
 		nil,
 		&sdl.Rect{
 			X: 0,
@@ -67,7 +63,7 @@ func renderText(r *sdl.Renderer, s string) *sdl.Texture {
 			W: outline.W,
 			H: outline.H,
 		})
-	r.Copy(msgTexture,
+	renderer.Copy(msgTexture,
 		nil,
 		&sdl.Rect{
 			// Render text on top of outline, offset by outline width.
@@ -76,7 +72,7 @@ func renderText(r *sdl.Renderer, s string) *sdl.Texture {
 			W: text.W,
 			H: text.H,
 		})
-	r.SetRenderTarget(nil)
+	renderer.SetRenderTarget(nil)
 
 	return labelTexture
 }

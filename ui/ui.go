@@ -156,6 +156,7 @@ func New(config *options.Options) *UI {
 	// Store common widget properties and preinstantiated fonts in the widget
 	// package namespace. Maybe someday this could be called dynamically to
 	// change the UI palette or theme.
+	widgets.Init(renderer)
 	widgets.SetProperties(&widgets.Properties{
 		Font:      font,
 		TitleFont: titleFont,
@@ -181,7 +182,8 @@ func New(config *options.Options) *UI {
 		{"Resume", ui.Hide},
 		{"Quit", func() { ui.QuitChan <- true }},
 	}
-	ui.root = widgets.NewMenu(renderer, screenRect, choices)
+	ui.root = widgets.NewMenu(screenRect, choices)
+
 	//ui.root = widgets.NewHome(renderer, screenRect)
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex

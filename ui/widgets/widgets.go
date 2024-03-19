@@ -1,8 +1,35 @@
 package widgets
 
 import (
+	"log"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+// This feels dirty but I'm going for convenient right now.
+
+var renderer *sdl.Renderer
+
+func texture(size *sdl.Rect) *sdl.Texture {
+	texture, err := renderer.CreateTexture(
+		sdl.PIXELFORMAT_RGBA8888,
+		sdl.TEXTUREACCESS_TARGET,
+		size.W,
+		size.H,
+	)
+
+	if err != nil {
+		// I'm already not checking for error anywhere else, but this should at
+		// least provide a log before the caller panics on a nil texture.
+		log.Printf("failed to create texture: %v", err)
+	}
+
+	return texture
+}
+
+func Init(r *sdl.Renderer) {
+	renderer = r
+}
 
 type Widget interface {
 	ProcessEvent(Event) bool
@@ -11,45 +38,42 @@ type Widget interface {
 
 // Base widget type.
 type widget struct {
-	renderer *sdl.Renderer
-	texture  *sdl.Texture
+	texture *sdl.Texture
 
-	width, height int32
+	width, height int32 // XXX could this be derived from texture?
 
-	// I'm only using a linked list of widgets for now.
-	next Widget
+	children []Widget // List of sub-widgets
+
+	background sdl.Color // Background color. Default value is transparent.
+
+	// TODO: margins (or better: properties)
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
 // creates the texture to render the widget to.
-func new(renderer *sdl.Renderer, size *sdl.Rect) *widget {
-
-	// Take texture size from the clipping rectangle set by the parent widget.
-	texture, _ := renderer.CreateTexture(
-		sdl.PIXELFORMAT_RGBA8888,
-		sdl.TEXTUREACCESS_TARGET,
-		size.W,
-		size.H,
-	)
-
+func new(size *sdl.Rect) *widget {
 	widget := &widget{
-		renderer: renderer,
-		texture:  texture,
-		width:    size.W,
-		height:   size.H,
+		texture: texture(size),
+		width:   size.W,
+		height:  size.H,
 	}
-
 	return widget
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
-func (w *widget) ProcessEvent(Event) bool {
-	// Default widget behavior is to not catch events.
+func (w *widget) ProcessEvent(e Event) bool {
+	// Propagate event processing until a sub-widget catches it.
+	for _, c := range w.children {
+		if c.ProcessEvent(e) {
+			return true
+		}
+	}
 	return false
 }
 
-func (w *widget) SetNext(next Widget) {
-	w.next = next
+// Add appends a sub-widget to the internal list of children.
+func (w *widget) Add(child Widget) {
+	w.children = append(w.children, child)
 }
 
 // renderText lets the widget render outlined text to a new texture using its
@@ -66,18 +90,18 @@ func (w *widget) renderText(s string) *sdl.Texture {
 
 	// I can't draw the text directly on the outline as CreateTextureFromSurface
 	// creates static textures. Bummer.
-	outlineTexture, _ := w.renderer.CreateTextureFromSurface(outline)
-	msgTexture, _ := w.renderer.CreateTextureFromSurface(text)
+	outlineTexture, _ := renderer.CreateTextureFromSurface(outline)
+	msgTexture, _ := renderer.CreateTextureFromSurface(text)
 
-	labelTexture, _ := w.renderer.CreateTexture(
+	labelTexture, _ := renderer.CreateTexture(
 		sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_TARGET,
 		outline.W,
 		outline.H,
 	)
 
-	w.renderer.SetRenderTarget(labelTexture)
-	w.renderer.Copy(outlineTexture,
+	renderer.SetRenderTarget(labelTexture)
+	renderer.Copy(outlineTexture,
 		nil,
 		&sdl.Rect{
 			X: 0,
@@ -85,7 +109,7 @@ func (w *widget) renderText(s string) *sdl.Texture {
 			W: outline.W,
 			H: outline.H,
 		})
-	w.renderer.Copy(msgTexture,
+	renderer.Copy(msgTexture,
 		nil,
 		&sdl.Rect{
 			// Render text on top of outline, offset by outline width.
@@ -94,7 +118,7 @@ func (w *widget) renderText(s string) *sdl.Texture {
 			W: text.W,
 			H: text.H,
 		})
-	w.renderer.SetRenderTarget(nil)
+	renderer.SetRenderTarget(nil)
 
 	return labelTexture
 }
