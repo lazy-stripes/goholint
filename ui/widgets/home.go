@@ -77,7 +77,7 @@ func (h *Home) drawHeader() (height int32) {
 	renderer.Clear()
 
 	// Show name and logo as a header.
-	margin := 8 * int32(properties.Zoom)
+	margin := 8 * int32(DefaultProperties.Zoom)
 	title.SetBlendMode(sdl.BLENDMODE_BLEND)
 	renderer.Copy(title, nil, &sdl.Rect{
 		X: (h.width - titleW - iconW) / 2,

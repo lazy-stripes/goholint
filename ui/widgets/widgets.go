@@ -38,24 +38,25 @@ type Widget interface {
 
 // Base widget type.
 type widget struct {
+	Properties
+
 	texture *sdl.Texture
 
 	width, height int32 // XXX could this be derived from texture?
 
 	children []Widget // List of sub-widgets
 
-	background sdl.Color // Background color. Default value is transparent.
-
-	// TODO: margins (or better: properties)
+	background sdl.Color // Background color. Default value is transparent. FIXME: this needs to be a property. But then what about BgColor/font outline?
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
 // creates the texture to render the widget to.
 func new(size *sdl.Rect) *widget {
 	widget := &widget{
-		texture: texture(size),
-		width:   size.W,
-		height:  size.H,
+		Properties: DefaultProperties,
+		texture:    texture(size),
+		width:      size.W,
+		height:     size.H,
 	}
 	return widget
 }
@@ -71,6 +72,27 @@ func (w *widget) ProcessEvent(e Event) bool {
 	return false
 }
 
+// Texture should be called by subclasses to apply unused properties like border
+// or background to the widget's internal texture.
+func (w *widget) Texture() *sdl.Texture {
+	// TODO: call w.repaint() and remove .Texture() from all subclasses that don't need to override it?
+	// Draw border on top of internal texture.
+	_, _, width, height, _ := w.texture.Query()
+	renderer.SetRenderTarget(w.texture)
+	renderer.SetDrawColor(w.FgColor.R, w.FgColor.G, w.FgColor.B, w.FgColor.A)
+	rect := sdl.Rect{}
+	for i := int32(0); i < w.Border; i++ {
+		rect.X = i
+		rect.Y = i
+		rect.W = width - i
+		rect.H = height - i
+		renderer.DrawRect(&rect)
+	}
+	renderer.SetRenderTarget(nil)
+
+	return w.texture
+}
+
 // Add appends a sub-widget to the internal list of children.
 func (w *widget) Add(child Widget) {
 	w.children = append(w.children, child)
@@ -80,12 +102,12 @@ func (w *widget) Add(child Widget) {
 // internal renderer.
 func (w *widget) renderText(s string) *sdl.Texture {
 	// Instantiate text with an outline effect. There's probably an easier way.
-	properties.TitleFont.SetOutline(properties.Zoom)
-	outline, _ := properties.TitleFont.RenderUTF8Solid(s, properties.BgColor)
+	DefaultProperties.TitleFont.SetOutline(DefaultProperties.Zoom)
+	outline, _ := DefaultProperties.TitleFont.RenderUTF8Solid(s, DefaultProperties.BgColor)
 	defer outline.Free()
 
-	properties.TitleFont.SetOutline(0)
-	text, _ := properties.TitleFont.RenderUTF8Solid(s, properties.FgColor)
+	DefaultProperties.TitleFont.SetOutline(0)
+	text, _ := DefaultProperties.TitleFont.RenderUTF8Solid(s, DefaultProperties.FgColor)
 	defer text.Free()
 
 	// I can't draw the text directly on the outline as CreateTextureFromSurface
@@ -113,8 +135,8 @@ func (w *widget) renderText(s string) *sdl.Texture {
 		nil,
 		&sdl.Rect{
 			// Render text on top of outline, offset by outline width.
-			X: int32(properties.Zoom),
-			Y: int32(properties.Zoom),
+			X: int32(DefaultProperties.Zoom),
+			Y: int32(DefaultProperties.Zoom),
 			W: text.W,
 			H: text.H,
 		})

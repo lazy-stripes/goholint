@@ -139,6 +139,7 @@ func New(config *options.Options) *UI {
 		H: options.ScreenHeight * int32(config.ZoomFactor),
 	}
 
+	// TODO: try and move all of this to the widgets package to clean up the ui one.
 	// Colors from config.
 	fg := sdl.Color{
 		R: config.UIForeground.R,
@@ -153,17 +154,18 @@ func New(config *options.Options) *UI {
 		A: config.UIBackground.A,
 	}
 
-	// Store common widget properties and preinstantiated fonts in the widget
-	// package namespace. Maybe someday this could be called dynamically to
-	// change the UI palette or theme.
-	widgets.Init(renderer)
-	widgets.SetProperties(&widgets.Properties{
+	// Store default widget properties in the widget package namespace. This
+	// will be copied to every new widget.
+	widgets.DefaultProperties = widgets.Properties{
 		Font:      font,
 		TitleFont: titleFont,
 		BgColor:   bg,
 		FgColor:   fg,
+		Border:    1,
 		Zoom:      int(config.ZoomFactor),
-	})
+	}
+
+	widgets.Init(renderer)
 
 	ui := &UI{
 		QuitChan:   make(chan bool),

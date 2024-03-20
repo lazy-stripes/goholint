@@ -23,7 +23,7 @@ func newItem(s *sdl.Rect, text string) *item {
 	l := NewLabel(text)
 
 	// Create item texture with margin.
-	margin := properties.Zoom * 2
+	margin := DefaultProperties.Zoom * 2
 	_, _, _, h, _ := l.Texture().Query()
 
 	itemSize := sdl.Rect{
@@ -46,10 +46,10 @@ func (i *item) Texture() *sdl.Texture {
 	renderer.SetRenderTarget(i.texture)
 	if i.selected {
 		renderer.SetDrawColor(
-			properties.BgColor.R,
-			properties.BgColor.G,
-			properties.BgColor.B,
-			properties.BgColor.A,
+			DefaultProperties.BgColor.R,
+			DefaultProperties.BgColor.G,
+			DefaultProperties.BgColor.B,
+			DefaultProperties.BgColor.A,
 		)
 	} else {
 		renderer.SetDrawColor(0, 0, 0, 0) // Transparent
@@ -61,13 +61,13 @@ func (i *item) Texture() *sdl.Texture {
 	_, _, w, h, _ := labelTexture.Query()
 	labelTexture.SetBlendMode(sdl.BLENDMODE_BLEND)
 	renderer.Copy(labelTexture, nil, &sdl.Rect{
-		X: (i.width - w) / 2,          // Center text, this should probably be in widgets.Label too.
-		Y: int32(properties.Zoom * 2), // Margin
+		X: (i.width - w) / 2,                 // Center text, this should probably be in widgets.Label too.
+		Y: int32(DefaultProperties.Zoom * 2), // Margin
 		W: w,
 		H: h,
 	})
 	renderer.SetRenderTarget(nil)
-	return i.texture
+	return i.widget.Texture()
 }
 
 // Menu widget displaying a list of potential choices, each of which should map

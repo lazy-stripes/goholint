@@ -34,12 +34,12 @@ func (l *Label) Texture() *sdl.Texture {
 // will be created.
 func renderText(s string) *sdl.Texture {
 	// Instantiate text with an outline effect. There's probably an easier way.
-	properties.TitleFont.SetOutline(properties.Zoom)
-	outline, _ := properties.TitleFont.RenderUTF8Solid(s, properties.BgColor)
+	DefaultProperties.TitleFont.SetOutline(DefaultProperties.Zoom)
+	outline, _ := DefaultProperties.TitleFont.RenderUTF8Solid(s, DefaultProperties.BgColor)
 	defer outline.Free()
 
-	properties.TitleFont.SetOutline(0)
-	text, _ := properties.TitleFont.RenderUTF8Solid(s, properties.FgColor)
+	DefaultProperties.TitleFont.SetOutline(0)
+	text, _ := DefaultProperties.TitleFont.RenderUTF8Solid(s, DefaultProperties.FgColor)
 	defer text.Free()
 
 	// I can't draw the text directly on the outline as CreateTextureFromSurface
@@ -67,8 +67,8 @@ func renderText(s string) *sdl.Texture {
 		nil,
 		&sdl.Rect{
 			// Render text on top of outline, offset by outline width.
-			X: int32(properties.Zoom),
-			Y: int32(properties.Zoom),
+			X: int32(DefaultProperties.Zoom),
+			Y: int32(DefaultProperties.Zoom),
 			W: text.W,
 			H: text.H,
 		})
