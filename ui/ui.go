@@ -157,12 +157,13 @@ func New(config *options.Options) *UI {
 	// Store default widget properties in the widget package namespace. This
 	// will be copied to every new widget.
 	widgets.DefaultProperties = widgets.Properties{
-		Font:      font,
-		TitleFont: titleFont,
-		BgColor:   bg,
-		FgColor:   fg,
-		Border:    1,
-		Zoom:      int(config.ZoomFactor),
+		Font:       font,
+		TitleFont:  titleFont,
+		BgColor:    bg,
+		FgColor:    fg,
+		Border:     1,
+		Background: sdl.Color{0x7f, 0, 0x7f, 0x7f},
+		Zoom:       int(config.ZoomFactor),
 	}
 
 	widgets.Init(renderer)

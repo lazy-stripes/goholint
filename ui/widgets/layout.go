@@ -24,7 +24,7 @@ func (l *VerticalLayout) Add(child Widget) {
 
 func (l *VerticalLayout) Texture() *sdl.Texture {
 	l.repaint()
-	return l.texture
+	return l.widget.Texture()
 }
 
 func (l *VerticalLayout) ProcessEvent(Event) bool {

@@ -26,10 +26,6 @@ func NewLabel(text string) *Label {
 	return l
 }
 
-func (l *Label) Texture() *sdl.Texture {
-	return l.texture
-}
-
 // renderText renders the given string on the given renderer. A a new texture
 // will be created.
 func renderText(s string) *sdl.Texture {

@@ -43,23 +43,13 @@ func newItem(s *sdl.Rect, text string) *item {
 // Texture renders the label and an optional background if the item is selected.
 func (i *item) Texture() *sdl.Texture {
 	// Render transparent or filled (selected) background.
-	renderer.SetRenderTarget(i.texture)
-	if i.selected {
-		renderer.SetDrawColor(
-			DefaultProperties.BgColor.R,
-			DefaultProperties.BgColor.G,
-			DefaultProperties.BgColor.B,
-			DefaultProperties.BgColor.A,
-		)
-	} else {
-		renderer.SetDrawColor(0, 0, 0, 0) // Transparent
-	}
-	renderer.Clear()
+	i.clear()
 
 	// Render label on top of it.
 	labelTexture := i.label.Texture()
 	_, _, w, h, _ := labelTexture.Query()
 	labelTexture.SetBlendMode(sdl.BLENDMODE_BLEND)
+	renderer.SetRenderTarget(i.texture)
 	renderer.Copy(labelTexture, nil, &sdl.Rect{
 		X: (i.width - w) / 2,                 // Center text, this should probably be in widgets.Label too.
 		Y: int32(DefaultProperties.Zoom * 2), // Margin
@@ -81,7 +71,7 @@ type Menu struct {
 }
 
 func NewMenu(s *sdl.Rect, choices []MenuChoice) *Menu {
-	layout := NewVerticalLayout(s, nil)
+	layout := NewVerticalLayout(s)
 	var items []*item
 	for i, c := range choices {
 		item := newItem(s, c.Text)
@@ -91,7 +81,7 @@ func NewMenu(s *sdl.Rect, choices []MenuChoice) *Menu {
 
 		// Pre-select first item in list.
 		if i == 0 {
-			item.selected = true
+			item.Background = item.BgColor
 		}
 	}
 
@@ -126,17 +116,19 @@ func (m *Menu) ProcessEvent(e Event) bool {
 
 func (m *Menu) Up() {
 	m.items[m.selected].selected = false
-
+	m.items[m.selected].Background = DefaultProperties.Background
 	if m.selected > 0 {
 		m.selected -= 1
 	}
 	// TODO: else, blink? How?
 
 	m.items[m.selected].selected = true
+	m.items[m.selected].Background = m.items[m.selected].BgColor
 }
 
 func (m *Menu) Down() {
 	m.items[m.selected].selected = false
+	m.items[m.selected].Background = DefaultProperties.Background
 
 	if m.selected < len(m.choices)-1 {
 		m.selected += 1
@@ -144,6 +136,7 @@ func (m *Menu) Down() {
 	// TODO: blink?
 
 	m.items[m.selected].selected = true
+	m.items[m.selected].Background = m.items[m.selected].BgColor
 }
 
 func (m *Menu) Confirm() {

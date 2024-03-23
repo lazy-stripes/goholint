@@ -11,8 +11,10 @@ type Properties struct {
 	Font      *ttf.Font
 	TitleFont *ttf.Font // FIXME: only one Font property, to be set to small or large.
 
-	BgColor sdl.Color
+	BgColor sdl.Color // FIXME: OutlineColor
 	FgColor sdl.Color
+
+	Background sdl.Color // Background color (default is transparent)
 
 	Margin uint // TODO: all sides
 

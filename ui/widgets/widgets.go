@@ -6,6 +6,10 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// sizeHint is a safe non-nil zero-size rect to use when creating widgets that
+// are expected to be able to handle their own size (i.e. labels).
+var noSizeHint = sdl.Rect{}
+
 // This feels dirty but I'm going for convenient right now.
 
 var renderer *sdl.Renderer
@@ -49,8 +53,6 @@ type widget struct {
 	texture *sdl.Texture
 
 	width, height int32 // XXX could this be derived from texture?
-
-	background sdl.Color // Background color. Default value is transparent. FIXME: this needs to be a property. But then what about BgColor/font outline?
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
@@ -62,7 +64,22 @@ func new(size *sdl.Rect) *widget {
 		width:      size.W,
 		height:     size.H,
 	}
+	widget.clear()
 	return widget
+}
+
+// clear repaints the widget's internal texture with the current background
+// color. Automatically called at creation time. Should be called before a
+// repaint.
+func (w *widget) clear() {
+	renderer.SetDrawColor(
+		w.Background.R,
+		w.Background.G,
+		w.Background.B,
+		w.Background.A)
+	renderer.SetRenderTarget(w.texture)
+	renderer.Clear()
+	renderer.SetRenderTarget(nil)
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
@@ -73,7 +90,7 @@ func (w *widget) ProcessEvent(e Event) bool {
 }
 
 // Texture should be called by subclasses to apply unused properties like border
-// or background to the widget's internal texture.
+// to the widget's internal texture.
 func (w *widget) Texture() *sdl.Texture {
 	// TODO: call w.repaint() and remove .Texture() from all subclasses that don't need to override it?
 	// Draw border on top of internal texture.
