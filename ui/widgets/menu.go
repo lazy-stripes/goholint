@@ -20,7 +20,9 @@ type item struct {
 }
 
 func newItem(s *sdl.Rect, text string) *item {
-	l := NewLabel(text)
+	// Item texture should we font-high and window-wide.
+	viewPort := sdl.Rect{H: int32(DefaultProperties.Font.Height()), W: s.W}
+	l := NewLabel(&viewPort, text)
 
 	// Create item texture with margin.
 	margin := DefaultProperties.Zoom * 2

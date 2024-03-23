@@ -11,14 +11,15 @@ type Label struct {
 // TODO: why couldn't these be methods of a global UI object abstracting the renderer?
 //       I'd just need to move all widgets back up to the ui package.
 // TODO: alignment
-func NewLabel(text string) *Label {
+func NewLabel(sizeHint *sdl.Rect, text string) *Label {
 	texture := renderText(text)
 	_, _, w, h, _ := texture.Query()
 	l := &Label{
 		widget: &widget{
-			width:   w,
-			height:  h,
-			texture: texture,
+			Properties: DefaultProperties,
+			width:      w,
+			height:     h,
+			texture:    texture,
 		},
 		Text: text,
 	}
