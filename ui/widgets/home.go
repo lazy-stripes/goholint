@@ -18,7 +18,7 @@ type Home struct {
 
 func NewHome(size *sdl.Rect) *Home {
 	h := &Home{
-		VerticalLayout: NewVerticalLayout(size, nil),
+		VerticalLayout: NewVerticalLayout(size),
 	}
 
 	// Compute viewport size. It'd be easier to render once and get it from

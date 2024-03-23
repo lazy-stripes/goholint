@@ -7,17 +7,12 @@ import "github.com/veandco/go-sdl2/sdl"
 // VerticalLayout renders its children widgets from top to bottom, vertically
 // centered.
 type VerticalLayout struct {
-	*widget
-
-	viewport *sdl.Rect
-	children []Widget // TODO: make that part of widget struct?
+	*Group
 }
 
-func NewVerticalLayout(size *sdl.Rect, children []Widget) *VerticalLayout {
+func NewVerticalLayout(size *sdl.Rect, children ...Widget) *VerticalLayout {
 	l := &VerticalLayout{
-		widget:   new(size),
-		viewport: size,
-		children: children,
+		Group: NewGroup(size, children...),
 	}
 
 	return l
@@ -78,17 +73,12 @@ func (l *VerticalLayout) repaint() {
 // HorizontalLayout renders its children widgets from left to right, horizontally
 // centered.
 type HorizontalLayout struct {
-	*widget
-
-	viewport *sdl.Rect
-	children []Widget // TODO: make that part of widget struct?
+	*Group
 }
 
-func NewHorizontalLayout(renderer *sdl.Renderer, size *sdl.Rect, children []Widget) *HorizontalLayout {
+func NewHorizontalLayout(size *sdl.Rect, children ...Widget) *HorizontalLayout {
 	l := &HorizontalLayout{
-		widget:   new(size),
-		viewport: size,
-		children: children,
+		Group: NewGroup(size, children...),
 	}
 
 	return l

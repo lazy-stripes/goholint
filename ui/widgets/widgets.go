@@ -32,7 +32,13 @@ func Init(r *sdl.Renderer) {
 }
 
 type Widget interface {
+	// ProcessEvent returns true if the widget caught and handled the event,
+	// false if it did not.
 	ProcessEvent(Event) bool
+
+	// Texture return the widget's internal texture in its current state. This
+	// call might modify the renderer's state if a widget redraws its texture
+	// just-in-time.
 	Texture() *sdl.Texture
 }
 
@@ -43,8 +49,6 @@ type widget struct {
 	texture *sdl.Texture
 
 	width, height int32 // XXX could this be derived from texture?
-
-	children []Widget // List of sub-widgets
 
 	background sdl.Color // Background color. Default value is transparent. FIXME: this needs to be a property. But then what about BgColor/font outline?
 }
@@ -62,13 +66,9 @@ func new(size *sdl.Rect) *widget {
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
+// The default implementation always returns false to indicate no event is
+// handled.
 func (w *widget) ProcessEvent(e Event) bool {
-	// Propagate event processing until a sub-widget catches it.
-	for _, c := range w.children {
-		if c.ProcessEvent(e) {
-			return true
-		}
-	}
 	return false
 }
 
@@ -91,11 +91,6 @@ func (w *widget) Texture() *sdl.Texture {
 	renderer.SetRenderTarget(nil)
 
 	return w.texture
-}
-
-// Add appends a sub-widget to the internal list of children.
-func (w *widget) Add(child Widget) {
-	w.children = append(w.children, child)
 }
 
 // renderText lets the widget render outlined text to a new texture using its
