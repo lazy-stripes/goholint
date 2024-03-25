@@ -181,13 +181,14 @@ func New(config *options.Options) *UI {
 		//root:       widgets.NewHome(renderer, screenRect),
 	}
 
+	input := widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
 	choices := []widgets.MenuChoice{
 		{"Resume", ui.Hide},
+		{"Input", func() { ui.root = input }},
 		{"Quit", func() { ui.QuitChan <- true }},
 	}
 	ui.root = widgets.NewMenu(screenRect, choices)
-
-	//ui.root = widgets.NewHome(renderer, screenRect)
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
 	// interface. I can't wait.
