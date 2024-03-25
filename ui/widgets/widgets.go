@@ -8,7 +8,7 @@ import (
 
 // sizeHint is a safe non-nil zero-size rect to use when creating widgets that
 // are expected to be able to handle their own size (i.e. labels).
-var noSizeHint = sdl.Rect{}
+var noSizeHint = &sdl.Rect{}
 
 // This feels dirty but I'm going for convenient right now.
 
