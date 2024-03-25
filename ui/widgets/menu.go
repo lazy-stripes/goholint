@@ -42,6 +42,17 @@ func newItem(s *sdl.Rect, text string) *item {
 	return item
 }
 
+func (i *item) highlight(v bool) {
+	if v {
+		i.Background = i.BgColor
+		i.label.Background = i.BgColor
+	} else {
+		i.Background = DefaultProperties.Background
+		i.label.Background = DefaultProperties.Background
+	}
+	i.label.repaint()
+}
+
 // Texture renders the label and an optional background if the item is selected.
 func (i *item) Texture() *sdl.Texture {
 	// Render transparent or filled (selected) background.
@@ -113,32 +124,28 @@ func (m *Menu) ProcessEvent(e Event) bool {
 		// Unknown event, not handled.
 		return false
 	}
+
+	// Refresh texture if something changed.
+	m.repaint()
+
 	return true
 }
 
 func (m *Menu) Up() {
-	m.items[m.selected].selected = false
-	m.items[m.selected].Background = DefaultProperties.Background
+	m.items[m.selected].highlight(false)
 	if m.selected > 0 {
 		m.selected -= 1
 	}
-	// TODO: else, blink? How?
-
-	m.items[m.selected].selected = true
-	m.items[m.selected].Background = m.items[m.selected].BgColor
+	// TODO: else, blink? How? widget.Animate(...)?
+	m.items[m.selected].highlight(true)
 }
 
 func (m *Menu) Down() {
-	m.items[m.selected].selected = false
-	m.items[m.selected].Background = DefaultProperties.Background
-
+	m.items[m.selected].highlight(false)
 	if m.selected < len(m.choices)-1 {
 		m.selected += 1
 	}
-	// TODO: blink?
-
-	m.items[m.selected].selected = true
-	m.items[m.selected].Background = m.items[m.selected].BgColor
+	m.items[m.selected].highlight(true)
 }
 
 func (m *Menu) Confirm() {

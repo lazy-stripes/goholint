@@ -14,25 +14,19 @@ func NewVerticalLayout(size *sdl.Rect, children ...Widget) *VerticalLayout {
 	l := &VerticalLayout{
 		Group: NewGroup(size, children...),
 	}
-
+	l.repaint()
 	return l
 }
 
 func (l *VerticalLayout) Add(child Widget) {
-	l.children = append(l.children, child)
-}
-
-func (l *VerticalLayout) Texture() *sdl.Texture {
+	l.Group.Add(child)
 	l.repaint()
-	return l.widget.Texture()
-}
-
-func (l *VerticalLayout) ProcessEvent(Event) bool {
-	return false
 }
 
 // repaint renders children top-down and spaces them vertically.
 func (l *VerticalLayout) repaint() {
+	l.clear()
+
 	var textures []*sdl.Texture
 	totalHeight := int32(0)
 
@@ -80,25 +74,28 @@ func NewHorizontalLayout(size *sdl.Rect, children ...Widget) *HorizontalLayout {
 	l := &HorizontalLayout{
 		Group: NewGroup(size, children...),
 	}
-
+	l.repaint()
 	return l
 }
 
 func (l *HorizontalLayout) Add(child Widget) {
-	l.children = append(l.children, child)
-}
-
-func (l *HorizontalLayout) Texture() *sdl.Texture {
+	l.Group.Add(child)
 	l.repaint()
-	return l.texture
 }
 
-func (l *HorizontalLayout) ProcessEvent(Event) bool {
-	return false
+func (l *HorizontalLayout) ProcessEvent(e Event) bool {
+	// Repaint if one of our children handled the event.
+	caught := l.Group.ProcessEvent(e)
+	if caught {
+		l.repaint()
+	}
+	return caught
 }
 
 // repaint renders children left-right and spaces them horizontally.
 func (l *HorizontalLayout) repaint() {
+	l.clear()
+
 	var textures []*sdl.Texture
 	totalWidth := int32(0)
 
