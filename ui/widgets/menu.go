@@ -15,8 +15,7 @@ type MenuChoice struct {
 type item struct {
 	*widget
 
-	label    *Label
-	selected bool
+	label *Label
 }
 
 func newItem(s *sdl.Rect, text string) *item {

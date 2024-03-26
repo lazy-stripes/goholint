@@ -1,6 +1,10 @@
 package widgets
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
+
+	"github.com/veandco/go-sdl2/sdl"
+)
 
 // Let's do this.
 
@@ -40,21 +44,20 @@ func (l *VerticalLayout) repaint() {
 	}
 
 	// Compute inter-widget space if any.
-	margin := (l.height - int32(totalHeight)) / int32(len(l.children)+1)
-	if margin < 0 {
-		margin = 0
+	spacing := int32(0)
+	if l.VerticalAlign == align.Justified && l.height > totalHeight {
+		spacing = (l.height - int32(totalHeight)) / int32(len(l.children)+1)
 	}
 
-	// Render to our texture, horizontally center each child.
-	// TODO: making that horizontal aligment configurable would be neat.
+	// Render to our texture, horizontally align each child.
 	renderer.SetRenderTarget(l.texture)
 	y := int32(0) // Start at the top of the texture
 	for _, t := range textures {
-		y += margin
+		y += spacing
 
 		_, _, w, h, _ := t.Query()
 		renderer.Copy(t, nil, &sdl.Rect{
-			X: 0, // FIXME: horizontal align
+			X: l.alignX(w),
 			Y: y,
 			W: w,
 			H: h,
@@ -109,22 +112,21 @@ func (l *HorizontalLayout) repaint() {
 	}
 
 	// Compute inter-widget space if any.
-	margin := (l.width - int32(totalWidth)) / int32(len(l.children)+1)
-	if margin < 0 {
-		margin = 0
+	spacing := int32(0)
+	if l.HorizontalAlign == align.Justified && l.width > totalWidth {
+		spacing = (l.width - int32(totalWidth)) / int32(len(l.children)+1)
 	}
 
 	// Render to our texture, vertically center each child.
-	// TODO: making that vertical aligment configurable would be neat.
 	renderer.SetRenderTarget(l.texture)
 	x := int32(0) // Start at the left of the texture
 	for _, t := range textures {
-		x += margin
+		x += spacing
 
 		_, _, w, h, _ := t.Query()
 		renderer.Copy(t, nil, &sdl.Rect{
 			X: x,
-			Y: 0, // FIXME: vertical align
+			Y: l.alignY(h),
 			W: w,
 			H: h,
 		})

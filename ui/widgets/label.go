@@ -72,5 +72,4 @@ func (l *Label) repaint() {
 			H: outline.H,
 		})
 	renderer.SetRenderTarget(nil)
-
 }

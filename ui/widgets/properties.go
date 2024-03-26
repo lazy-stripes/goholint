@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
+
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -18,6 +20,9 @@ type Properties struct {
 	Background sdl.Color // Background color (default is transparent)
 
 	Margin uint // TODO: all sides
+
+	HorizontalAlign align.Align // Widget contents alignment (horizontal)
+	VerticalAlign   align.Align // Widget contents alignment (vertical)
 
 	// For debugging if nothing else.
 	Border      int32

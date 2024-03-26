@@ -3,6 +3,7 @@ package widgets
 import (
 	"log"
 
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -80,6 +81,34 @@ func (w *widget) clear() {
 	renderer.SetRenderTarget(w.texture)
 	renderer.Clear()
 	renderer.SetRenderTarget(nil)
+}
+
+// alignX returns the horizontal offset relative to the widget's left for the
+// given width.
+func (w *widget) alignX(width int32) (offset int32) {
+	switch w.HorizontalAlign {
+	case align.Left:
+		offset = 0
+	case align.Center:
+		offset = (w.width - width) / 2
+	case align.Right:
+		offset = w.width - width
+	}
+	return
+}
+
+// alignX returns the vertical offset relative to the widget's top for the
+// given height.
+func (w *widget) alignY(height int32) (offset int32) {
+	switch w.VerticalAlign {
+	case align.Top:
+		offset = 0
+	case align.Middle:
+		offset = (w.height - height) / 2
+	case align.Bottom:
+		offset = w.height - height
+	}
+	return
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
