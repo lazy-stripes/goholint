@@ -8,12 +8,12 @@ import (
 // horizontal menu widget where entries can be changed.
 
 const (
-	charsetAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	charsetAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
 	charsetNum   = "0123456789"
 	charsetHex   = charsetNum + "ABCDEF"
 )
 
-// character is a one-character label selectable from a list of choices.
+// character is a one-character label selectable from a larget charset.
 type character struct {
 	*Label
 
@@ -23,6 +23,7 @@ type character struct {
 
 func newChar(charset string) *character {
 	c := &character{
+		// Auto-size label texture to its contents.
 		Label:   NewLabel(noSizeHint, charset[0:1]),
 		charset: charset,
 	}
@@ -38,40 +39,26 @@ func (c *character) highlight(v bool) {
 	c.repaint()
 }
 
-func (c *character) ProcessEvent(e Event) bool {
-	// TODO: common code for Prev/Next with Menu?
-	switch e {
-	case ButtonUp:
-		c.Next()
-	case ButtonDown:
-		c.Prev()
-	default:
-		// Unknown event, not handled.
-		return false
-	}
-
-	// Refresh texture if something changed.
-	c.repaint()
-
-	return true
+func (c *character) repaint() {
+	// Update label before redrawing.
+	c.text = c.charset[c.selected : c.selected+1]
+	c.Label.repaint()
 }
 
 func (c *character) Next() {
 	c.selected = (c.selected + 1) % len(c.charset)
-	c.text = c.charset[c.selected : c.selected+1]
+	c.repaint()
 }
 
 func (c *character) Prev() {
 	c.selected = (c.selected + len(c.charset) - 1) % len(c.charset)
-	c.text = c.charset[c.selected : c.selected+1]
+	c.repaint()
 }
 
 type Input struct {
 	*HorizontalLayout
 
-	chars    []*character
 	selected int // Index of selected character
-
 }
 
 // NewInput instantiates an Input widget with the given number of editable
@@ -93,22 +80,33 @@ func NewInput(sizeHint *sdl.Rect, size int, charset string) *Input {
 	return in
 }
 
+// current returns the selected character instance from the internal list of
+// children.
+func (in *Input) current() *character {
+	return in.children[in.selected].(*character)
+}
+
+// highlight sets/unsets the background for the currently selected character.
+func (in *Input) highlight(v bool) {
+	in.current().highlight(v)
+}
+
 func (in *Input) ProcessEvent(e Event) bool {
 	switch e {
 	case ButtonUp:
-		in.children[in.selected].ProcessEvent(e)
+		in.current().Next()
 	case ButtonDown:
-		in.children[in.selected].ProcessEvent(e)
+		in.current().Prev()
 	case ButtonLeft:
 		in.Prev()
 	case ButtonRight:
 		in.Next()
 	case ButtonA:
-		// Next char
+		// TODO Next char, keep currently selected character
 	case ButtonB:
-		// Previous char
+		// TODO Previous char, keep currently selected character
 	case ButtonSelect:
-		//
+		// ?
 	case ButtonStart:
 		//in.Confirm()
 	default:
@@ -123,13 +121,13 @@ func (in *Input) ProcessEvent(e Event) bool {
 }
 
 func (in *Input) Prev() {
-	in.children[in.selected].(*character).highlight(false)
+	in.highlight(false)
 	in.selected = (in.selected + len(in.children) - 1) % len(in.children)
-	in.children[in.selected].(*character).highlight(true)
+	in.highlight(true)
 }
 
 func (in *Input) Next() {
-	in.children[in.selected].(*character).highlight(false)
+	in.highlight(false)
 	in.selected = (in.selected + 1) % len(in.children)
-	in.children[in.selected].(*character).highlight(true)
+	in.highlight(true)
 }

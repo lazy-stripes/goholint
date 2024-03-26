@@ -83,11 +83,11 @@ type Menu struct {
 	selected int // Index of selected choice
 }
 
-func NewMenu(s *sdl.Rect, choices []MenuChoice) *Menu {
-	layout := NewVerticalLayout(s)
+func NewMenu(sizeHint *sdl.Rect, choices []MenuChoice) *Menu {
+	layout := NewVerticalLayout(sizeHint)
 	var items []*item
 	for i, c := range choices {
-		item := newItem(s, c.Text)
+		item := newItem(sizeHint, c.Text)
 		items = append(items, item)
 		layout.Add(item)
 		// TODO: phase out items, use layout.Add(NewLabel(c.Text)), change label background

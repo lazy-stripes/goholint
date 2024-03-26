@@ -7,6 +7,7 @@ import (
 
 // Properties stores useful configuration variables to be passed to all widgets
 // at creation time. Internally uses SDL types for convenience.
+// FIXME: separate actual widget properties (margin, background...) and configuration (Fg/BgColor, fonts...)
 type Properties struct {
 	Font      *ttf.Font
 	TitleFont *ttf.Font // FIXME: only one Font property, to be set to small or large.
