@@ -13,6 +13,7 @@ import (
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ui/widgets"
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -157,12 +158,14 @@ func New(config *options.Options) *UI {
 	// Store default widget properties in the widget package namespace. This
 	// will be copied to every new widget.
 	widgets.DefaultProperties = widgets.Properties{
-		Font:       font,
-		TitleFont:  titleFont,
-		BgColor:    bg,
-		FgColor:    fg,
-		Border:     1,
-		Background: sdl.Color{0x7f, 0, 0x7f, 0x7f},
+		Font:            font,
+		TitleFont:       titleFont,
+		BgColor:         bg,
+		FgColor:         fg,
+		HorizontalAlign: align.Center,
+		VerticalAlign:   align.Middle,
+		//Border:     1,
+		Background: sdl.Color{0, 0x7f, 0x7f, 0x7f},
 		Zoom:       int(config.ZoomFactor),
 	}
 
