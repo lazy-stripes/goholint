@@ -100,6 +100,10 @@ func (l *Logger) Sub(name string) *Logger {
 	return l
 }
 
+func (l *Logger) Enabled() bool {
+	return Enabled["all"] || Enabled[l.Name] || Enabled[l.wildcard]
+}
+
 // Output log message if the given package/subpackage is enabled and if the
 // global log level permits it.
 func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
@@ -108,7 +112,7 @@ func (l *Logger) log(level LogLevel, format string, a ...interface{}) {
 		return
 	}
 
-	if !(Enabled["all"] || Enabled[l.Name] || Enabled[l.wildcard]) {
+	if !l.Enabled() {
 		return
 	}
 

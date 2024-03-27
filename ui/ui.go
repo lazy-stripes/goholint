@@ -445,6 +445,18 @@ func (u *UI) Repaint() {
 		u.renderer.SetRenderTarget(nil)
 		root.SetBlendMode(sdl.BLENDMODE_BLEND)
 		u.renderer.Copy(root, nil, nil)
+
+		// Debug stuff
+		if log.Enabled() && logger.Level >= logger.Debug {
+			u.renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
+			for x := int32(0); x < u.screenRect.W; x += 8 {
+				u.renderer.DrawLine(x, 0, x, u.screenRect.H)
+			}
+			for y := int32(0); y < u.screenRect.H; y += 8 {
+				u.renderer.DrawLine(0, y, u.screenRect.W, y)
+			}
+		}
+
 	} else {
 		// GameBoy screen and text/message.
 
