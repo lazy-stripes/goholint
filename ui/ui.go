@@ -37,6 +37,9 @@ type UI struct {
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
 
+	mainMenu  widgets.Widget // TODO: list of subwidgets for various systems.
+	testInput widgets.Widget
+
 	msgTimer *time.Timer // Timer for clearing messages
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
@@ -181,20 +184,20 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
-		//root:       widgets.NewHome(renderer, screenRect),
 	}
-
-	input := widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-	choices := []widgets.MenuChoice{
-		{"Resume", ui.Hide},
-		{"Input", func() { ui.root = input }},
-		{"Quit", func() { ui.QuitChan <- true }},
-	}
-	ui.root = widgets.NewMenu(screenRect, choices)
 
 	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
 	// interface. I can't wait.
+	// TODO: map[name]rootWidget
+	ui.testInput = widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", func() { ui.ShowMenu() })
+
+	choices := []widgets.MenuChoice{
+		{"Resume", ui.Hide},
+		{"Input", func() { ui.ShowInput() }},
+		{"Quit", func() { ui.QuitChan <- true }},
+	}
+	ui.mainMenu = widgets.NewMenu(screenRect, choices)
+	ui.root = ui.mainMenu
 
 	ui.SetControls(config.Keymap)
 
@@ -202,9 +205,18 @@ func New(config *options.Options) *UI {
 }
 
 func (u *UI) Show() {
-	// TODO: background blur, top menu
 	u.Enabled = true
 	u.freezeBackground()
+	u.Repaint()
+}
+
+func (u *UI) ShowMenu() {
+	u.root = u.mainMenu
+	u.Repaint()
+}
+
+func (u *UI) ShowInput() {
+	u.root = u.testInput
 	u.Repaint()
 }
 
@@ -337,7 +349,7 @@ func (u *UI) ScreenBuffer() (buffer []byte) {
 		options.ScreenHeight)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create screen texture: %s\n", err)
-		return nil // TODO: result, err
+		return nil // XXX Honestly, at this point we might as well panic()
 	}
 
 	// Save texture for repaints.
