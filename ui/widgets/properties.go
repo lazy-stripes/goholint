@@ -19,7 +19,7 @@ type Properties struct {
 
 	Background sdl.Color // Background color (default is transparent)
 
-	Margin uint // TODO: all sides
+	Margin int32 // TODO: individual horizontal/vertical margin
 
 	HorizontalAlign align.Align // Widget contents alignment (horizontal)
 	VerticalAlign   align.Align // Widget contents alignment (vertical)

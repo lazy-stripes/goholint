@@ -23,9 +23,14 @@ type character struct {
 }
 
 func newChar(charset string) *character {
+	props := DefaultProperties
+	props.HorizontalAlign = align.Center
+	props.VerticalAlign = align.Middle
+	props.Margin = 10
+
 	c := &character{
 		// Auto-size label texture to its contents.
-		Label:   NewLabel(noSizeHint, charset[0:1]),
+		Label:   NewLabel(noSizeHint, charset[0:1], props),
 		charset: charset,
 	}
 	return c

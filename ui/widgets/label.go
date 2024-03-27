@@ -14,13 +14,12 @@ type Label struct {
 
 // TODO: why couldn't these be methods of a global UI object abstracting the renderer?
 //       I'd just need to move all widgets back up to the ui package.
-// TODO: alignment
 // TODO: actual font size
-func NewLabel(sizeHint *sdl.Rect, text string) *Label {
-	return newLabel(sizeHint, text, DefaultProperties.TitleFont)
+func NewLabel(sizeHint *sdl.Rect, text string, props ...Properties) *Label {
+	return newLabel(sizeHint, text, DefaultProperties.TitleFont, props...)
 }
 
-func newLabel(sizeHint *sdl.Rect, text string, font *ttf.Font) *Label {
+func newLabel(sizeHint *sdl.Rect, text string, font *ttf.Font, props ...Properties) *Label {
 	if sizeHint == noSizeHint {
 		// Query font size to create internal texture.
 		w, h, _ := font.SizeUTF8(text)
@@ -30,7 +29,7 @@ func newLabel(sizeHint *sdl.Rect, text string, font *ttf.Font) *Label {
 		}
 	}
 	l := &Label{
-		widget: new(sizeHint),
+		widget: new(sizeHint, props...),
 		font:   font,
 		text:   text,
 	}
@@ -64,10 +63,9 @@ func (l *Label) repaint() {
 	renderer.SetRenderTarget(l.texture)
 	renderer.Copy(outlineTexture,
 		nil,
-		// TODO: align, somehow
 		&sdl.Rect{
-			X: 0,
-			Y: 0,
+			X: l.alignX(outline.W),
+			Y: l.alignY(outline.H),
 			W: outline.W,
 			H: outline.H,
 		})

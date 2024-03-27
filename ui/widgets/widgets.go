@@ -64,11 +64,17 @@ func new(sizeHint *sdl.Rect, props ...Properties) *widget {
 	if len(props) > 0 {
 		p = props[0]
 	}
+
+	// Apply margin before creating texture.
+	size := *sizeHint
+	size.W += p.Margin * 2 // Apply margin to left + right
+	size.H += p.Margin * 2 // Apply margin to top + bottom
+
 	widget := &widget{
 		Properties: p,
-		texture:    texture(sizeHint), // TODO: skip if noSizeHint
-		width:      sizeHint.W,
-		height:     sizeHint.H,
+		texture:    texture(&size),
+		width:      size.W,
+		height:     size.H,
 	}
 	widget.clear()
 	return widget
@@ -126,7 +132,6 @@ func (w *widget) ProcessEvent(e Event) bool {
 // Texture should be called by subclasses to apply unused properties like border
 // to the widget's internal texture.
 func (w *widget) Texture() *sdl.Texture {
-	// TODO: call w.repaint() and remove .Texture() from all subclasses that don't need to override it?
 	// Draw border on top of internal texture.
 	_, _, width, height, _ := w.texture.Query()
 	renderer.SetRenderTarget(w.texture)

@@ -19,8 +19,7 @@ type item struct {
 	label *Label
 }
 
-func newItem(s *sdl.Rect, text string) *item {
-	// Item texture should we font-high and window-wide.
+func newItem(sizeHint *sdl.Rect, text string) *item {
 	//viewPort := sdl.Rect{H: int32(DefaultProperties.Font.Height()), W: s.W}
 	l := NewLabel(noSizeHint, text)
 
@@ -31,7 +30,7 @@ func newItem(s *sdl.Rect, text string) *item {
 	itemSize := sdl.Rect{
 		X: 0,
 		Y: 0,
-		W: s.W,
+		W: sizeHint.W,
 		H: h + int32(margin*2),
 	}
 	item := &item{
@@ -78,31 +77,33 @@ func (i *item) Texture() *sdl.Texture {
 type Menu struct {
 	*VerticalLayout
 
-	items    []*item
 	choices  []MenuChoice
 	selected int // Index of selected choice
 }
 
 func NewMenu(sizeHint *sdl.Rect, choices []MenuChoice) *Menu {
 	props := DefaultProperties
+	props.HorizontalAlign = align.Center
 	props.VerticalAlign = align.Middle
 	layout := NewVerticalLayout(sizeHint, nil, props)
-	var items []*item
+
+	props.Margin = int32(DefaultProperties.Zoom * 8)
+	//labelSizeHint := *sizeHint
+	//labelSizeHint.H = int32(DefaultProperties.TitleFont.Height())
 	for i, c := range choices {
-		item := newItem(sizeHint, c.Text)
-		items = append(items, item)
-		layout.Add(item)
-		// TODO: phase out items, use layout.Add(NewLabel(c.Text)), change label background
+		label := NewLabel(noSizeHint, c.Text, props)
 
 		// Pre-select first item in list.
 		if i == 0 {
-			item.Background = item.BgColor
+			label.Background = label.BgColor
+			label.repaint()
 		}
+
+		layout.Add(label)
 	}
 
 	return &Menu{
 		VerticalLayout: layout,
-		items:          items,
 		choices:        choices,
 		selected:       0,
 	}
@@ -133,21 +134,39 @@ func (m *Menu) ProcessEvent(e Event) bool {
 	return true
 }
 
+// current returns the selected character instance from the internal list of
+// children.
+// FIXME: lots of common code with input, I should write a SelectableLayout or something.
+func (m *Menu) current() *Label {
+	return m.children[m.selected].(*Label)
+}
+
+// XXX: Maybe wrap label in a common type that provides .highlight()
+func (m *Menu) highlightCurrent(v bool) {
+	label := m.current()
+	if v {
+		label.Background = label.BgColor
+	} else {
+		label.Background = DefaultProperties.Background
+	}
+	label.repaint()
+}
+
 func (m *Menu) Up() {
-	m.items[m.selected].highlight(false)
+	m.highlightCurrent(false)
 	if m.selected > 0 {
 		m.selected -= 1
 	}
 	// TODO: else, blink? How? widget.Animate(...)?
-	m.items[m.selected].highlight(true)
+	m.highlightCurrent(true)
 }
 
 func (m *Menu) Down() {
-	m.items[m.selected].highlight(false)
+	m.highlightCurrent(false)
 	if m.selected < len(m.choices)-1 {
 		m.selected += 1
 	}
-	m.items[m.selected].highlight(true)
+	m.highlightCurrent(true)
 }
 
 func (m *Menu) Confirm() {
