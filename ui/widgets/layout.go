@@ -14,9 +14,9 @@ type VerticalLayout struct {
 	*Group
 }
 
-func NewVerticalLayout(size *sdl.Rect, children ...Widget) *VerticalLayout {
+func NewVerticalLayout(size *sdl.Rect, children []Widget, props ...Properties) *VerticalLayout {
 	l := &VerticalLayout{
-		Group: NewGroup(size, children...),
+		Group: NewGroup(size, children, props...),
 	}
 	l.repaint()
 	return l
@@ -51,7 +51,10 @@ func (l *VerticalLayout) repaint() {
 
 	// Render to our texture, horizontally align each child.
 	renderer.SetRenderTarget(l.texture)
-	y := int32(0) // Start at the top of the texture
+
+	// Offset contents Y value depending on alignment.
+	y := l.alignY(totalHeight)
+
 	for _, t := range textures {
 		y += spacing
 
@@ -73,9 +76,9 @@ type HorizontalLayout struct {
 	*Group
 }
 
-func NewHorizontalLayout(size *sdl.Rect, children ...Widget) *HorizontalLayout {
+func NewHorizontalLayout(size *sdl.Rect, children []Widget, props ...Properties) *HorizontalLayout {
 	l := &HorizontalLayout{
-		Group: NewGroup(size, children...),
+		Group: NewGroup(size, children, props...),
 	}
 	l.repaint()
 	return l
@@ -119,7 +122,10 @@ func (l *HorizontalLayout) repaint() {
 
 	// Render to our texture, vertically center each child.
 	renderer.SetRenderTarget(l.texture)
-	x := int32(0) // Start at the left of the texture
+
+	// Offset contents Y value depending on alignment.
+	x := l.alignX(totalWidth)
+
 	for _, t := range textures {
 		x += spacing
 

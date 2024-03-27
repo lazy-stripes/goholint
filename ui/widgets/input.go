@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -66,8 +67,10 @@ type Input struct {
 // default, the first character of the string given as a charset is used.
 func NewInput(sizeHint *sdl.Rect, size int, charset string) *Input {
 	in := &Input{
-		HorizontalLayout: NewHorizontalLayout(sizeHint),
+		HorizontalLayout: NewHorizontalLayout(sizeHint, nil),
 	}
+	in.HorizontalAlign = align.Center
+	in.VerticalAlign = align.Middle
 
 	for i := 0; i < size; i++ {
 		c := newChar(charset)

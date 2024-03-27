@@ -27,9 +27,9 @@ func (g *Group) Add(child Widget) {
 	g.children = append(g.children, child)
 }
 
-func NewGroup(rect *sdl.Rect, children ...Widget) *Group {
+func NewGroup(rect *sdl.Rect, children []Widget, props ...Properties) *Group {
 	g := Group{
-		widget:   new(rect),
+		widget:   new(rect, props...),
 		children: children,
 	}
 	return &g

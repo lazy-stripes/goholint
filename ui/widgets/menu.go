@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -83,7 +84,9 @@ type Menu struct {
 }
 
 func NewMenu(sizeHint *sdl.Rect, choices []MenuChoice) *Menu {
-	layout := NewVerticalLayout(sizeHint)
+	props := DefaultProperties
+	props.VerticalAlign = align.Middle
+	layout := NewVerticalLayout(sizeHint, nil, props)
 	var items []*item
 	for i, c := range choices {
 		item := newItem(sizeHint, c.Text)

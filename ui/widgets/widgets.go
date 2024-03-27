@@ -57,10 +57,15 @@ type widget struct {
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
-// creates the texture to render the widget to.
-func new(sizeHint *sdl.Rect) *widget {
+// creates the texture to render the widget to. Optional properties can also
+// be provided.
+func new(sizeHint *sdl.Rect, props ...Properties) *widget {
+	p := DefaultProperties
+	if len(props) > 0 {
+		p = props[0]
+	}
 	widget := &widget{
-		Properties: DefaultProperties,
+		Properties: p,
 		texture:    texture(sizeHint), // TODO: skip if noSizeHint
 		width:      sizeHint.W,
 		height:     sizeHint.H,
