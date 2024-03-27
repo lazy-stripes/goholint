@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"fmt"
+
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -64,15 +66,19 @@ func (c *character) Prev() {
 type Input struct {
 	*HorizontalLayout
 
-	selected int // Index of selected character
+	Text string // Input value as text, set at confirm time
+
+	confirm  func() // Action to execute when input is confirmed
+	selected int    // Index of selected character
 }
 
 // NewInput instantiates an Input widget with the given number of editable
 // characters. Each character can be selected within the given charset. By
 // default, the first character of the string given as a charset is used.
-func NewInput(sizeHint *sdl.Rect, size int, charset string) *Input {
+func NewInput(sizeHint *sdl.Rect, size int, charset string, onConfirm func()) *Input {
 	in := &Input{
 		HorizontalLayout: NewHorizontalLayout(sizeHint, nil),
+		confirm:          onConfirm,
 	}
 	in.HorizontalAlign = align.Center
 	in.VerticalAlign = align.Middle
@@ -116,7 +122,7 @@ func (in *Input) ProcessEvent(e Event) bool {
 	case ButtonSelect:
 		// ?
 	case ButtonStart:
-		//in.Confirm()
+		in.Confirm()
 	default:
 		// Unknown event, not handled.
 		return false
@@ -138,4 +144,13 @@ func (in *Input) Next() {
 	in.highlight(false)
 	in.selected = (in.selected + 1) % len(in.children)
 	in.highlight(true)
+}
+
+func (in *Input) Confirm() {
+	in.Text = ""
+	for _, c := range in.children {
+		in.Text += c.(*character).text
+	}
+	fmt.Println("INPUT: ", in.Text)
+	in.confirm()
 }
