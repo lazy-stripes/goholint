@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
@@ -45,6 +46,10 @@ type Widget interface {
 	// call might modify the renderer's state if a widget redraws its texture
 	// just-in-time.
 	Texture() *sdl.Texture
+
+	// Destroy releases all resources dynamically allocated by the widget, like
+	// its internal texture.
+	Destroy()
 }
 
 // Base widget type.
@@ -149,4 +154,11 @@ func (w *widget) Texture() *sdl.Texture {
 	return w.texture
 }
 
+// Destroy frees the widget's internal texture.
+func (w *widget) Destroy() {
+	if w.texture != nil {
+		if err := w.texture.Destroy(); err != nil {
+			fmt.Printf("error while destroying texture: %v", err)
+		}
+	}
 }
