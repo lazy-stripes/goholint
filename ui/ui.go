@@ -28,6 +28,12 @@ const (
 // Package-wide logger.
 var log = logger.New("ui", "UI-related messages")
 
+type dialog struct {
+	widgets.Widget
+
+	title string
+}
+
 // UI structure to manage user commands and overlay.
 type UI struct {
 	Enabled bool
@@ -37,14 +43,12 @@ type UI struct {
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
 
-	mainMenu  widgets.Widget // TODO: list of subwidgets for various systems.
-	testInput widgets.Widget
-
 	msgTimer *time.Timer // Timer for clearing messages
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
-	root widgets.Widget
+	dialogs []dialog       // Subwidgets for various systems.
+	root    *widgets.Stack // WIP
 
 	zoomFactor int // From -zoom to compute offsets in various textures
 
@@ -184,39 +188,53 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
+		root:       widgets.NewStack(screenRect, nil),
 	}
 
-	// TODO: allow several subsystems with .AddUI(scanner). We'll need a complex
-	// interface. I can't wait.
-	// TODO: map[name]rootWidget
-	ui.testInput = widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", func() { ui.ShowMenu() })
+	// FIXME: more helper functions.
+	ui.addDialog(dialog{
+		widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ui.Hide),
+		"Input",
+	})
 
-	choices := []widgets.MenuChoice{
-		{"Resume", ui.Hide},
-		{"Input", func() { ui.ShowInput() }},
-		{"Quit", func() { ui.QuitChan <- true }},
-	}
-	ui.mainMenu = widgets.NewMenu(screenRect, choices)
-	ui.root = ui.mainMenu
+	ui.buildMenu()
 
 	ui.SetControls(config.Keymap)
 
 	return ui
 }
 
+func (u *UI) addDialog(d dialog) {
+	u.dialogs = append(u.dialogs, d)
+}
+
+func (u *UI) showDialog(idx int) func() {
+	return func() { u.root.Show(uint(idx)) }
+}
+
+func (u *UI) buildMenu() {
+	mainMenu := widgets.NewMenu(u.screenRect)
+
+	// Main menu should always be the Stack's bottom widget. It's shown first.
+	u.root.Add(mainMenu)
+	u.root.Show(0)
+
+	mainMenu.AddChoice("Resume", u.Hide)
+
+	for i, d := range u.dialogs {
+		// Each choice outside of the defaults (resume or quit) will just
+		// show the corresponding widget in the root stack.
+		mainMenu.AddChoice(d.title, u.showDialog(i+1)) // Main menu is entry 0
+		u.root.Add(d)
+	}
+
+	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true })
+	mainMenu.Select(0) // highlight first entry
+}
+
 func (u *UI) Show() {
 	u.Enabled = true
 	u.freezeBackground()
-	u.Repaint()
-}
-
-func (u *UI) ShowMenu() {
-	u.root = u.mainMenu
-	u.Repaint()
-}
-
-func (u *UI) ShowInput() {
-	u.root = u.testInput
 	u.Repaint()
 }
 
