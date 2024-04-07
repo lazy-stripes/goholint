@@ -92,7 +92,9 @@ func (c *CPU) Tick() {
 		} else {
 			c.instruction = LR35902InstructionSet[opcode]
 			if c.instruction.Execute(c) { // Instruction is done within the first 4 cycles.
-				c.state = states.FetchOpCode
+				if c.state != states.Halted { // Catch HALT effects
+					c.state = states.FetchOpCode
+				}
 			} else {
 				c.state = states.Execute
 			}
