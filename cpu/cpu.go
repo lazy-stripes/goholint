@@ -6,6 +6,7 @@ import (
 
 	"github.com/lazy-stripes/goholint/cpu/states"
 	"github.com/lazy-stripes/goholint/interrupts"
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/options"
 )
@@ -255,10 +256,14 @@ func (c *CPU) DumpMemory() {
 		defer func() {
 			f.Close()
 		}()
-		buf := make([]byte, 0xffff)
-		for addr := uint16(0); addr <= 0xffff; addr++ {
-			buf[addr] = c.Memory.Read(addr)
+		// Disable logging while dumping memory to avoid spurious output.
+		currentLevel := logger.Level
+		logger.Level = logger.Fatal
+		buf := make([]byte, 0x10000)
+		for addr := 0; addr < len(buf); addr++ {
+			buf[addr] = c.Memory.Read(uint16(addr))
 		}
+		logger.Level = currentLevel
 		f.Write(buf)
 		fmt.Printf("Memory dumped to %s\n", f.Name())
 	}
