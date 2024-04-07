@@ -38,14 +38,22 @@ const (
 	AddrIE      = 0xffff
 )
 
-// InterruptAddress is a quick and dirty mapping between an interrupt flag and
+// Addresses is a quick and dirty mapping between an interrupt flag and
 // its address.
-var InterruptAddress = [...]uint16{
+var Addresses = [...]uint16{
 	VBlank:  AddrVBlank,
 	LCDStat: AddrLCDStat,
 	Timer:   AddrTimer,
 	Serial:  AddrSerial,
 	Joypad:  AddrJoypad,
+}
+
+var Names = [...]string{
+	VBlank:  "VBlank",
+	LCDStat: "LCDStat",
+	Timer:   "Timer",
+	Serial:  "Serial",
+	Joypad:  "Joypad",
 }
 
 // Interrupts represents an address space to access IF (5 LSB bits) and IE
@@ -93,4 +101,5 @@ func (i *Interrupts) Write(addr uint16, value uint8) {
 // Request sets the bit corresponding to the requested interrupt type.
 func (i *Interrupts) Request(interrupt uint8) {
 	*i.regIF |= interrupt
+	log.Desperatef("requested interrupt %s (IF=%#x)", Names[interrupt], *i.regIF)
 }

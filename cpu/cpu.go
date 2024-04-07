@@ -13,6 +13,9 @@ import (
 
 // [GEKKIO] https://gekkio.fi/files/gb-docs/gbctr.pdf
 
+// Package-wide logger.
+var log = logger.New("cpu", "CPU operations")
+
 // Flag bitfield enum
 const (
 	FlagC uint8 = 1 << (iota + 4)
@@ -143,6 +146,7 @@ func (c *CPU) Tick() {
 			fmt.Printf(" !!! Unknown interrupt requested: 0x%02x\n", requested)
 		}
 
+		log.Debugf("handling interrupt %s", interrupts.Names[c.interrupt])
 		c.state = states.InterruptPushPCHigh
 
 	case states.InterruptPushPCHigh:
@@ -156,7 +160,7 @@ func (c *CPU) Tick() {
 		c.state = states.InterruptCall
 
 	case states.InterruptCall:
-		c.PC = interrupts.InterruptAddress[c.interrupt]
+		c.PC = interrupts.Addresses[c.interrupt]
 		c.IME = false
 		c.IF &= ^c.interrupt
 		c.state = states.FetchOpCode
