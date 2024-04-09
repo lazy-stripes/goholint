@@ -50,11 +50,13 @@ type MBC1 struct {
 // Takes an instance of ROM because to know which kind of chip it uses, we had
 // to read it beforehand anyway.
 func NewMBC1(rom *ROM, romBanks uint8, ramBanks uint8, battery bool, savePath string) *MBC1 {
+	// Avenging Spirit uses MBC1 with no RAM, but still enables it and attempts
+	// writing to it, so we still need to check whether there is RAM at all.
 	ramSize := uint16(ramBanks) * 0x2000
 	ram := NewBankedRAM(AddrExternalRAM, ramSize)
 
 	// If the cartridge has a battery-backed RAM, restore it here.
-	if battery {
+	if battery && (ramBanks > 0) {
 		if err := ram.Load(savePath); err != nil {
 			log.Warning(err.Error())
 		}
@@ -91,7 +93,7 @@ func (m *MBC1) Read(addr uint16) uint8 {
 		return m.ROM.Read(addr)
 
 	case addr >= 0xa000 && addr <= 0xbfff:
-		if m.RAMEnabled {
+		if m.RAMEnabled && (m.ramBanks > 0) {
 			value := m.RAM.Read(addr)
 			log.Sub("mbc/read").Desperatef("RAM[%04x]: 0x%02x", addr, value)
 			return value
@@ -153,7 +155,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 
 	// A000-BFFF - RAM Bank 00-03, if any
 	case addr >= 0xa000 && addr <= 0xbfff:
-		if !m.RAMEnabled {
+		if !m.RAMEnabled || (m.ramBanks == 0) {
 			log.Sub("mbc/write").Desperatef("RAM not enabled, write to 0x%04x ignored.", addr)
 			return
 		}
