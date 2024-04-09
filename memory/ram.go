@@ -53,7 +53,7 @@ func (r *RAM) Load(filename string) error {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		// The file may not yet exist, it's fine.
-		return fmt.Errorf("cannot load RAM file %s (%s)", filename, err)
+		return fmt.Errorf("couldn't load RAM file %s (%s)", filename, err)
 	}
 
 	// Token attempt at checking file validity.
