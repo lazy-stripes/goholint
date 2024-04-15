@@ -1,0 +1,9 @@
+// {{.Opcode | printf "%02X"}}: Invalid opcode
+type {{name .}} struct {
+	SingleStepOp
+}
+
+func (op *{{name .}}) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode {{.Opcode | printf "%02X"}}")
+}
+

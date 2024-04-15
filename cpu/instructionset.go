@@ -1,4 +1,4 @@
-// Auto-generated on 2023-09-24T12:19:20+02:00. See instructions.go
+// Auto-generated on 2024-04-15T22:54:46+02:00. See instructions.go
 
 package cpu
 
@@ -209,6 +209,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xc8: &opC8{},
 	0xc9: &opC9{},
 	0xca: &opCa{},
+	0xcb: &opCb{},
 	0xcc: &opCc{},
 	0xcd: &opCd{},
 	0xce: &opCe{},
@@ -216,6 +217,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd0: &opD0{},
 	0xd1: &opD1{},
 	0xd2: &opD2{},
+	0xd3: &opD3{},
 	0xd4: &opD4{},
 	0xd5: &opD5{},
 	0xd6: &opD6{},
@@ -223,12 +225,15 @@ var LR35902InstructionSet = [...]Instruction{
 	0xd8: &opD8{},
 	0xd9: &opD9{},
 	0xda: &opDa{},
+	0xdb: &opDb{},
 	0xdc: &opDc{},
 	0xde: &opDe{},
 	0xdf: &opDf{},
 	0xe0: &opE0{},
 	0xe1: &opE1{},
 	0xe2: &opE2{},
+	0xe3: &opE3{},
+	0xe4: &opE4{},
 	0xe5: &opE5{},
 	0xe6: &opE6{},
 	0xe7: &opE7{},
@@ -241,6 +246,7 @@ var LR35902InstructionSet = [...]Instruction{
 	0xf1: &opF1{},
 	0xf2: &opF2{},
 	0xf3: &opF3{},
+	0xf4: &opF4{},
 	0xf5: &opF5{},
 	0xf6: &opF6{},
 	0xf7: &opF7{},
@@ -248,6 +254,8 @@ var LR35902InstructionSet = [...]Instruction{
 	0xf9: &opF9{},
 	0xfa: &opFa{},
 	0xfb: &opFb{},
+	0xfc: &opFc{},
+	0xfd: &opFd{},
 	0xfe: &opFe{},
 	0xff: &opFf{},
 }
@@ -657,7 +665,7 @@ func (op *op09) Tick() (done bool) {
 	// Flags: - 0 h c
 	op.cpu.F &= FlagZ
 	hl := uint(op.cpu.HL())
-	rr := uint(op.cpu.C) | uint(op.cpu.B)<<8
+    rr := uint(op.cpu.C) | uint(op.cpu.B)<<8
 	if hl&0xfff+rr&0xfff > 0xfff {
 		op.cpu.F |= FlagH
 	}
@@ -666,7 +674,7 @@ func (op *op09) Tick() (done bool) {
 		op.cpu.F |= FlagC
 	}
 	op.cpu.SetHL(uint16(result & 0xffff))
-	return true
+    return true
 }
 
 // 0A: LD A,(BC)			8 cycles
@@ -765,7 +773,7 @@ type op10 struct {
 
 func (op *op10) Execute(c *CPU) (done bool) {
 	// Source indicates a 2-byte, 4-cycle instruction but this is unclear.
-	c.PC++ // Ignore following zero
+	c.PC++	// Ignore following zero
 	c.state = states.Stopped
 	return true
 }
@@ -906,7 +914,7 @@ func (op *op19) Tick() (done bool) {
 	// Flags: - 0 h c
 	op.cpu.F &= FlagZ
 	hl := uint(op.cpu.HL())
-	rr := uint(op.cpu.E) | uint(op.cpu.D)<<8
+    rr := uint(op.cpu.E) | uint(op.cpu.D)<<8
 	if hl&0xfff+rr&0xfff > 0xfff {
 		op.cpu.F |= FlagH
 	}
@@ -915,7 +923,7 @@ func (op *op19) Tick() (done bool) {
 		op.cpu.F |= FlagC
 	}
 	op.cpu.SetHL(uint16(result & 0xffff))
-	return true
+    return true
 }
 
 // 1A: LD A,(DE)			8 cycles
@@ -997,7 +1005,7 @@ func (op *op1f) Execute(c *CPU) (done bool) {
 	// Flags 0 0 0 c
 	result := c.A >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -1057,7 +1065,7 @@ type op22 struct {
 func (op *op22) Tick() (done bool) {
 	hl := op.cpu.HL()
 	op.cpu.Memory.Write(hl, op.cpu.A)
-	op.cpu.SetHL(hl + 1)
+	op.cpu.SetHL(hl+1)
 	return true
 }
 
@@ -1188,7 +1196,7 @@ func (op *op29) Tick() (done bool) {
 	// Flags: - 0 h c
 	op.cpu.F &= FlagZ
 	hl := uint(op.cpu.HL())
-	rr := uint(op.cpu.L) | uint(op.cpu.H)<<8
+    rr := uint(op.cpu.L) | uint(op.cpu.H)<<8
 	if hl&0xfff+rr&0xfff > 0xfff {
 		op.cpu.F |= FlagH
 	}
@@ -1197,7 +1205,7 @@ func (op *op29) Tick() (done bool) {
 		op.cpu.F |= FlagC
 	}
 	op.cpu.SetHL(uint16(result & 0xffff))
-	return true
+    return true
 }
 
 // 2A: LD A,(HL+)			8 cycles
@@ -1208,7 +1216,7 @@ type op2a struct {
 func (op *op2a) Tick() (done bool) {
 	hl := op.cpu.HL()
 	op.cpu.A = op.cpu.Memory.Read(hl)
-	op.cpu.SetHL(hl + 1)
+	op.cpu.SetHL(hl+1)
 	return true
 }
 
@@ -1279,9 +1287,9 @@ type op2f struct {
 
 func (op *op2f) Execute(c *CPU) (done bool) {
 	// Flags: z 1 1 c
-	c.F |= FlagN | FlagH
+	c.F |= FlagN|FlagH
 	c.A ^= 0xff
-	return true
+    return true
 }
 
 // 30: JR NC,r8		12/8 cycles
@@ -1332,7 +1340,7 @@ type op32 struct {
 func (op *op32) Tick() (done bool) {
 	hl := op.cpu.HL()
 	op.cpu.Memory.Write(hl, op.cpu.A)
-	op.cpu.SetHL(hl - 1)
+	op.cpu.SetHL(hl-1)
 	return true
 }
 
@@ -1469,7 +1477,7 @@ func (op *op39) Tick() (done bool) {
 		op.cpu.F |= FlagC
 	}
 	op.cpu.SetHL(uint16(result & 0xffff))
-	return true
+    return true
 }
 
 // 3A: LD A,(HL-)			8 cycles
@@ -1480,7 +1488,7 @@ type op3a struct {
 func (op *op3a) Tick() (done bool) {
 	hl := op.cpu.HL()
 	op.cpu.A = op.cpu.Memory.Read(hl)
-	op.cpu.SetHL(hl - 1)
+	op.cpu.SetHL(hl-1)
 	return true
 }
 
@@ -2214,7 +2222,7 @@ func (op *op80) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 81: ADD A,C		4 cycles
@@ -2236,7 +2244,7 @@ func (op *op81) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 82: ADD A,D		4 cycles
@@ -2258,7 +2266,7 @@ func (op *op82) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 83: ADD A,E		4 cycles
@@ -2280,7 +2288,7 @@ func (op *op83) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 84: ADD A,H		4 cycles
@@ -2302,7 +2310,7 @@ func (op *op84) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 85: ADD A,L		4 cycles
@@ -2324,7 +2332,7 @@ func (op *op85) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 86: ADD A,(HL)		8 cycles
@@ -2347,8 +2355,9 @@ func (op *op86) Tick() (done bool) {
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 87: ADD A,A		4 cycles
 type op87 struct {
@@ -2369,7 +2378,7 @@ func (op *op87) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 88: ADC A,B		4 cycles
@@ -2381,7 +2390,7 @@ func (op *op88) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.B&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.B & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.B) + uint16(carry)
@@ -2392,7 +2401,7 @@ func (op *op88) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 89: ADC A,C		4 cycles
@@ -2404,7 +2413,7 @@ func (op *op89) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.C&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.C & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.C) + uint16(carry)
@@ -2415,7 +2424,7 @@ func (op *op89) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 8A: ADC A,D		4 cycles
@@ -2427,7 +2436,7 @@ func (op *op8a) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.D&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.D & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.D) + uint16(carry)
@@ -2438,7 +2447,7 @@ func (op *op8a) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 8B: ADC A,E		4 cycles
@@ -2450,7 +2459,7 @@ func (op *op8b) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.E&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.E & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.E) + uint16(carry)
@@ -2461,7 +2470,7 @@ func (op *op8b) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 8C: ADC A,H		4 cycles
@@ -2473,7 +2482,7 @@ func (op *op8c) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.H&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.H & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.H) + uint16(carry)
@@ -2484,7 +2493,7 @@ func (op *op8c) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 8D: ADC A,L		4 cycles
@@ -2496,7 +2505,7 @@ func (op *op8d) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.L&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.L & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.L) + uint16(carry)
@@ -2507,7 +2516,7 @@ func (op *op8d) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 8E: ADC A,(HL)		8 cycles
@@ -2520,7 +2529,7 @@ func (op *op8e) Tick() (done bool) {
 	// Flags: z 0 h c
 	op.cpu.F = 0
 	value := op.cpu.Memory.Read(op.cpu.HL())
-	if (op.cpu.A&0x0f)+(value&0x0f)+carry > 0x0f {
+	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
 		op.cpu.F |= FlagH
 	}
 	result := uint16(op.cpu.A) + uint16(value) + uint16(carry)
@@ -2531,8 +2540,9 @@ func (op *op8e) Tick() (done bool) {
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 8F: ADC A,A		4 cycles
 type op8f struct {
@@ -2543,7 +2553,7 @@ func (op *op8f) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A&0x0f)+(c.A&0x0f)+carry > 0x0f {
+	if (c.A & 0x0f) + (c.A & 0x0f) + carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.A) + uint16(carry)
@@ -2554,7 +2564,7 @@ func (op *op8f) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
 
 // 90: SUB B		4 cycles
@@ -2576,8 +2586,9 @@ func (op *op90) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 91: SUB C		4 cycles
 type op91 struct {
@@ -2598,8 +2609,9 @@ func (op *op91) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 92: SUB D		4 cycles
 type op92 struct {
@@ -2620,8 +2632,9 @@ func (op *op92) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 93: SUB E		4 cycles
 type op93 struct {
@@ -2642,8 +2655,9 @@ func (op *op93) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 94: SUB H		4 cycles
 type op94 struct {
@@ -2664,8 +2678,9 @@ func (op *op94) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 95: SUB L		4 cycles
 type op95 struct {
@@ -2686,8 +2701,9 @@ func (op *op95) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 96: SUB (HL)		8 cycles
 type op96 struct {
@@ -2709,8 +2725,9 @@ func (op *op96) Tick() (done bool) {
 		op.cpu.F |= FlagZ
 	}
 	op.cpu.A = result
-	return true
+    return true
 }
+
 
 // 97: SUB A		4 cycles
 type op97 struct {
@@ -2731,8 +2748,9 @@ func (op *op97) Execute(c *CPU) (done bool) {
 		c.F |= FlagZ
 	}
 	c.A = result
-	return true
+    return true
 }
+
 
 // 98: SBC A,B		4 cycles
 type op98 struct {
@@ -2745,18 +2763,19 @@ func (op *op98) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.B) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.B^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.B ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 99: SBC A,C		4 cycles
 type op99 struct {
@@ -2769,18 +2788,19 @@ func (op *op99) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.C) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.C^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.C ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9A: SBC A,D		4 cycles
 type op9a struct {
@@ -2793,18 +2813,19 @@ func (op *op9a) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.D) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.D^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.D ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9B: SBC A,E		4 cycles
 type op9b struct {
@@ -2817,18 +2838,19 @@ func (op *op9b) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.E) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.E^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.E ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9C: SBC A,H		4 cycles
 type op9c struct {
@@ -2841,18 +2863,19 @@ func (op *op9c) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.H) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.H^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.H ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9D: SBC A,L		4 cycles
 type op9d struct {
@@ -2865,18 +2888,19 @@ func (op *op9d) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.L) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.L^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.L ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9E: SBC A,(HL)		8 cycles
 type op9e struct {
@@ -2890,18 +2914,19 @@ func (op *op9e) Tick() (done bool) {
 	op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
 	// Trusting the Internet on this one.
-	if (op.cpu.A^op.cpu.temp8^uint8(result&0xff))&(1<<4) != 0 {
+	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		op.cpu.F |= FlagH
 	}
 	if result < 0 {
 		op.cpu.F |= FlagC
 	}
-	op.cpu.A = uint8(result & 0xff)
+	op.cpu.A = uint8(result&0xff)
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // 9F: SBC A,A		4 cycles
 type op9f struct {
@@ -2914,18 +2939,19 @@ func (op *op9f) Execute(c *CPU) (done bool) {
 	c.F = FlagN
 	result := int(c.A) - int(c.A) - carry
 	// Trusting the Internet on this one.
-	if (c.A^c.A^uint8(result&0xff))&(1<<4) != 0 {
+	if (c.A ^ c.A ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		c.F |= FlagH
 	}
 	if result < 0 {
 		c.F |= FlagC
 	}
-	c.A = uint8(result & 0xff)
+	c.A = uint8(result&0xff)
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // A0: AND B			4 cycles
 type opA0 struct {
@@ -3305,8 +3331,9 @@ func (op *opB8) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // B9: CP C		4 cycles
 type opB9 struct {
@@ -3326,8 +3353,9 @@ func (op *opB9) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BA: CP D		4 cycles
 type opBa struct {
@@ -3347,8 +3375,9 @@ func (op *opBa) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BB: CP E		4 cycles
 type opBb struct {
@@ -3368,8 +3397,9 @@ func (op *opBb) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BC: CP H		4 cycles
 type opBc struct {
@@ -3389,8 +3419,9 @@ func (op *opBc) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BD: CP L		4 cycles
 type opBd struct {
@@ -3410,8 +3441,9 @@ func (op *opBd) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BE: CP (HL)		8 cycles
 type opBe struct {
@@ -3432,8 +3464,9 @@ func (op *opBe) Tick() (done bool) {
 	if result == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // BF: CP A		4 cycles
 type opBf struct {
@@ -3453,8 +3486,9 @@ func (op *opBf) Execute(c *CPU) (done bool) {
 	if result == 0 {
 		c.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // C0: RET NZ		20/8 cycles
 type opC0 struct {
@@ -3621,8 +3655,9 @@ func (op *opC6) Tick() (done bool) {
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // C7: RST 00H		16 cycles
 type opC7 struct {
@@ -3720,6 +3755,15 @@ func (op *opCa) Tick() (done bool) {
 	return
 }
 
+// CB: Invalid opcode
+type opCb struct {
+	SingleStepOp
+}
+
+func (op *opCb) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode CB")
+}
+
 // CC: CALL Z,a16		24/12 cycles
 type opCc struct {
 	MultiStepsOp
@@ -3790,7 +3834,7 @@ func (op *opCe) Tick() (done bool) {
 	// Flags: z 0 h c
 	op.cpu.F = 0
 	value := op.cpu.NextByte()
-	if (op.cpu.A&0x0f)+(value&0x0f)+carry > 0x0f {
+	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
 		op.cpu.F |= FlagH
 	}
 	result := uint16(op.cpu.A) + uint16(value) + uint16(carry)
@@ -3801,8 +3845,9 @@ func (op *opCe) Tick() (done bool) {
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // CF: RST 08H		16 cycles
 type opCf struct {
@@ -3897,6 +3942,15 @@ func (op *opD2) Tick() (done bool) {
 	return
 }
 
+// D3: Invalid opcode
+type opD3 struct {
+	SingleStepOp
+}
+
+func (op *opD3) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode D3")
+}
+
 // D4: CALL NC,a16		24/12 cycles
 type opD4 struct {
 	MultiStepsOp
@@ -3971,8 +4025,9 @@ func (op *opD6) Tick() (done bool) {
 		op.cpu.F |= FlagZ
 	}
 	op.cpu.A = result
-	return true
+    return true
 }
+
 
 // D7: RST 10H		16 cycles
 type opD7 struct {
@@ -4071,6 +4126,15 @@ func (op *opDa) Tick() (done bool) {
 	return
 }
 
+// DB: Invalid opcode
+type opDb struct {
+	SingleStepOp
+}
+
+func (op *opDb) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode DB")
+}
+
 // DC: CALL C,a16		24/12 cycles
 type opDc struct {
 	MultiStepsOp
@@ -4115,18 +4179,19 @@ func (op *opDe) Tick() (done bool) {
 	op.cpu.temp8 = op.cpu.NextByte()
 	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
 	// Trusting the Internet on this one.
-	if (op.cpu.A^op.cpu.temp8^uint8(result&0xff))&(1<<4) != 0 {
+	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
 		op.cpu.F |= FlagH
 	}
 	if result < 0 {
 		op.cpu.F |= FlagC
 	}
-	op.cpu.A = uint8(result & 0xff)
+	op.cpu.A = uint8(result&0xff)
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // DF: RST 18H		16 cycles
 type opDf struct {
@@ -4194,6 +4259,24 @@ type opE2 struct {
 func (op *opE2) Tick() (done bool) {
 	op.cpu.Memory.Write(uint16(0xff00+uint16(op.cpu.C)), op.cpu.A)
 	return true
+}
+
+// E3: Invalid opcode
+type opE3 struct {
+	SingleStepOp
+}
+
+func (op *opE3) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode E3")
+}
+
+// E4: Invalid opcode
+type opE4 struct {
+	SingleStepOp
+}
+
+func (op *opE4) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode E4")
 }
 
 // E5: PUSH HL		16 cycles
@@ -4274,10 +4357,10 @@ func (op *opE8) Tick() (done bool) {
 		op.cpu.F = 0
 
 		// Need cast to signed for the potential substraction
-		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f)&0x10 != 0 {
+		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f) & 0x10 != 0 {
 			op.cpu.F |= FlagH
 		}
-		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff)&0x100 != 0 {
+		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff) & 0x100 != 0 {
 			op.cpu.F |= FlagC
 		}
 		result := int16(op.cpu.SP) + int16(op.offset)
@@ -4364,7 +4447,7 @@ func (op *opF0) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.NextByte()
 		op.step++
 	case 1:
-		op.cpu.A = op.cpu.Memory.Read(uint16(0xff00 + uint16(op.cpu.temp8)))
+		op.cpu.A = op.cpu.Memory.Read(uint16(0xff00+uint16(op.cpu.temp8)))
 		done = true
 	}
 	return
@@ -4395,7 +4478,7 @@ type opF2 struct {
 }
 
 func (op *opF2) Tick() (done bool) {
-	op.cpu.A = op.cpu.Memory.Read(uint16(0xff00 + uint16(op.cpu.C)))
+	op.cpu.A = op.cpu.Memory.Read(uint16(0xff00+uint16(op.cpu.C)))
 	return true
 }
 
@@ -4407,7 +4490,16 @@ type opF3 struct {
 func (op *opF3) Execute(c *CPU) (done bool) {
 	c.IMEScheduled = false
 	c.IME = false
-	return true
+    return true
+}
+
+// F4: Invalid opcode
+type opF4 struct {
+	SingleStepOp
+}
+
+func (op *opF4) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode F4")
 }
 
 // F5: PUSH AF		16 cycles
@@ -4485,10 +4577,10 @@ func (op *opF8) Tick() (done bool) {
 		op.cpu.F = 0
 
 		// Need cast to signed for the potential substraction
-		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f)&0x10 != 0 {
+		if (int16(op.cpu.SP)&0x0f+int16(op.offset)&0x0f) & 0x10 != 0 {
 			op.cpu.F |= FlagH
 		}
-		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff)&0x100 != 0 {
+		if (int16(op.cpu.SP)&0xff+int16(op.offset)&0xff) & 0x100 != 0 {
 			op.cpu.F |= FlagC
 		}
 		result := int16(op.cpu.SP) + int16(op.offset)
@@ -4535,7 +4627,25 @@ type opFb struct {
 func (op *opFb) Execute(c *CPU) (done bool) {
 	c.IMEScheduled = true
 	c.IMEPending = true
-	return true
+    return true
+}
+
+// FC: Invalid opcode
+type opFc struct {
+	SingleStepOp
+}
+
+func (op *opFc) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode FC")
+}
+
+// FD: Invalid opcode
+type opFd struct {
+	SingleStepOp
+}
+
+func (op *opFd) Execute(c *CPU) (done bool) {
+	panic("tried to execute invalid opcode FD")
 }
 
 // FE: CP d8		8 cycles
@@ -4557,8 +4667,9 @@ func (op *opFe) Tick() (done bool) {
 	if result == 0 {
 		op.cpu.F |= FlagZ
 	}
-	return true
+    return true
 }
+
 
 // FF: RST 38H		16 cycles
 type opFf struct {
@@ -5123,7 +5234,7 @@ type opCb18 struct {
 func (op *opCb18) Execute(c *CPU) (done bool) {
 	result := c.B >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5146,7 +5257,7 @@ type opCb19 struct {
 func (op *opCb19) Execute(c *CPU) (done bool) {
 	result := c.C >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5169,7 +5280,7 @@ type opCb1a struct {
 func (op *opCb1a) Execute(c *CPU) (done bool) {
 	result := c.D >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5192,7 +5303,7 @@ type opCb1b struct {
 func (op *opCb1b) Execute(c *CPU) (done bool) {
 	result := c.E >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5215,7 +5326,7 @@ type opCb1c struct {
 func (op *opCb1c) Execute(c *CPU) (done bool) {
 	result := c.H >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5238,7 +5349,7 @@ type opCb1d struct {
 func (op *opCb1d) Execute(c *CPU) (done bool) {
 	result := c.L >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -5267,7 +5378,7 @@ func (op *opCb1e) Tick() (done bool) {
 		// Flags z 0 0 c
 		result := op.cpu.temp8 >> 1
 		if op.cpu.F&FlagC != 0 {
-			result |= (1 << 7)
+			result |= (1<<7)
 		}
 		op.cpu.F = 0x00
 		if result == 0 {
@@ -5290,7 +5401,7 @@ type opCb1f struct {
 func (op *opCb1f) Execute(c *CPU) (done bool) {
 	result := c.A >> 1
 	if c.F&FlagC > 0 {
-		result |= (1 << 7)
+		result |= (1<<7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00
@@ -6867,7 +6978,7 @@ type opCb80 struct {
 }
 
 func (op *opCb80) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 0)
+	c.B &= ^uint8(1<<0)
 	return true
 }
 
@@ -6877,7 +6988,7 @@ type opCb81 struct {
 }
 
 func (op *opCb81) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 0)
+	c.C &= ^uint8(1<<0)
 	return true
 }
 
@@ -6887,7 +6998,7 @@ type opCb82 struct {
 }
 
 func (op *opCb82) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 0)
+	c.D &= ^uint8(1<<0)
 	return true
 }
 
@@ -6897,7 +7008,7 @@ type opCb83 struct {
 }
 
 func (op *opCb83) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 0)
+	c.E &= ^uint8(1<<0)
 	return true
 }
 
@@ -6907,7 +7018,7 @@ type opCb84 struct {
 }
 
 func (op *opCb84) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 0)
+	c.H &= ^uint8(1<<0)
 	return true
 }
 
@@ -6917,7 +7028,7 @@ type opCb85 struct {
 }
 
 func (op *opCb85) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 0)
+	c.L &= ^uint8(1<<0)
 	return true
 }
 
@@ -6932,7 +7043,7 @@ func (op *opCb86) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 0)
+		op.cpu.temp8 &= ^uint8(1<<0)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -6945,7 +7056,7 @@ type opCb87 struct {
 }
 
 func (op *opCb87) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 0)
+	c.A &= ^uint8(1<<0)
 	return true
 }
 
@@ -6955,7 +7066,7 @@ type opCb88 struct {
 }
 
 func (op *opCb88) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 1)
+	c.B &= ^uint8(1<<1)
 	return true
 }
 
@@ -6965,7 +7076,7 @@ type opCb89 struct {
 }
 
 func (op *opCb89) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 1)
+	c.C &= ^uint8(1<<1)
 	return true
 }
 
@@ -6975,7 +7086,7 @@ type opCb8a struct {
 }
 
 func (op *opCb8a) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 1)
+	c.D &= ^uint8(1<<1)
 	return true
 }
 
@@ -6985,7 +7096,7 @@ type opCb8b struct {
 }
 
 func (op *opCb8b) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 1)
+	c.E &= ^uint8(1<<1)
 	return true
 }
 
@@ -6995,7 +7106,7 @@ type opCb8c struct {
 }
 
 func (op *opCb8c) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 1)
+	c.H &= ^uint8(1<<1)
 	return true
 }
 
@@ -7005,7 +7116,7 @@ type opCb8d struct {
 }
 
 func (op *opCb8d) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 1)
+	c.L &= ^uint8(1<<1)
 	return true
 }
 
@@ -7020,7 +7131,7 @@ func (op *opCb8e) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 1)
+		op.cpu.temp8 &= ^uint8(1<<1)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7033,7 +7144,7 @@ type opCb8f struct {
 }
 
 func (op *opCb8f) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 1)
+	c.A &= ^uint8(1<<1)
 	return true
 }
 
@@ -7043,7 +7154,7 @@ type opCb90 struct {
 }
 
 func (op *opCb90) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 2)
+	c.B &= ^uint8(1<<2)
 	return true
 }
 
@@ -7053,7 +7164,7 @@ type opCb91 struct {
 }
 
 func (op *opCb91) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 2)
+	c.C &= ^uint8(1<<2)
 	return true
 }
 
@@ -7063,7 +7174,7 @@ type opCb92 struct {
 }
 
 func (op *opCb92) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 2)
+	c.D &= ^uint8(1<<2)
 	return true
 }
 
@@ -7073,7 +7184,7 @@ type opCb93 struct {
 }
 
 func (op *opCb93) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 2)
+	c.E &= ^uint8(1<<2)
 	return true
 }
 
@@ -7083,7 +7194,7 @@ type opCb94 struct {
 }
 
 func (op *opCb94) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 2)
+	c.H &= ^uint8(1<<2)
 	return true
 }
 
@@ -7093,7 +7204,7 @@ type opCb95 struct {
 }
 
 func (op *opCb95) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 2)
+	c.L &= ^uint8(1<<2)
 	return true
 }
 
@@ -7108,7 +7219,7 @@ func (op *opCb96) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 2)
+		op.cpu.temp8 &= ^uint8(1<<2)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7121,7 +7232,7 @@ type opCb97 struct {
 }
 
 func (op *opCb97) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 2)
+	c.A &= ^uint8(1<<2)
 	return true
 }
 
@@ -7131,7 +7242,7 @@ type opCb98 struct {
 }
 
 func (op *opCb98) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 3)
+	c.B &= ^uint8(1<<3)
 	return true
 }
 
@@ -7141,7 +7252,7 @@ type opCb99 struct {
 }
 
 func (op *opCb99) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 3)
+	c.C &= ^uint8(1<<3)
 	return true
 }
 
@@ -7151,7 +7262,7 @@ type opCb9a struct {
 }
 
 func (op *opCb9a) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 3)
+	c.D &= ^uint8(1<<3)
 	return true
 }
 
@@ -7161,7 +7272,7 @@ type opCb9b struct {
 }
 
 func (op *opCb9b) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 3)
+	c.E &= ^uint8(1<<3)
 	return true
 }
 
@@ -7171,7 +7282,7 @@ type opCb9c struct {
 }
 
 func (op *opCb9c) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 3)
+	c.H &= ^uint8(1<<3)
 	return true
 }
 
@@ -7181,7 +7292,7 @@ type opCb9d struct {
 }
 
 func (op *opCb9d) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 3)
+	c.L &= ^uint8(1<<3)
 	return true
 }
 
@@ -7196,7 +7307,7 @@ func (op *opCb9e) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 3)
+		op.cpu.temp8 &= ^uint8(1<<3)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7209,7 +7320,7 @@ type opCb9f struct {
 }
 
 func (op *opCb9f) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 3)
+	c.A &= ^uint8(1<<3)
 	return true
 }
 
@@ -7219,7 +7330,7 @@ type opCbA0 struct {
 }
 
 func (op *opCbA0) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 4)
+	c.B &= ^uint8(1<<4)
 	return true
 }
 
@@ -7229,7 +7340,7 @@ type opCbA1 struct {
 }
 
 func (op *opCbA1) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 4)
+	c.C &= ^uint8(1<<4)
 	return true
 }
 
@@ -7239,7 +7350,7 @@ type opCbA2 struct {
 }
 
 func (op *opCbA2) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 4)
+	c.D &= ^uint8(1<<4)
 	return true
 }
 
@@ -7249,7 +7360,7 @@ type opCbA3 struct {
 }
 
 func (op *opCbA3) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 4)
+	c.E &= ^uint8(1<<4)
 	return true
 }
 
@@ -7259,7 +7370,7 @@ type opCbA4 struct {
 }
 
 func (op *opCbA4) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 4)
+	c.H &= ^uint8(1<<4)
 	return true
 }
 
@@ -7269,7 +7380,7 @@ type opCbA5 struct {
 }
 
 func (op *opCbA5) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 4)
+	c.L &= ^uint8(1<<4)
 	return true
 }
 
@@ -7284,7 +7395,7 @@ func (op *opCbA6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 4)
+		op.cpu.temp8 &= ^uint8(1<<4)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7297,7 +7408,7 @@ type opCbA7 struct {
 }
 
 func (op *opCbA7) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 4)
+	c.A &= ^uint8(1<<4)
 	return true
 }
 
@@ -7307,7 +7418,7 @@ type opCbA8 struct {
 }
 
 func (op *opCbA8) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 5)
+	c.B &= ^uint8(1<<5)
 	return true
 }
 
@@ -7317,7 +7428,7 @@ type opCbA9 struct {
 }
 
 func (op *opCbA9) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 5)
+	c.C &= ^uint8(1<<5)
 	return true
 }
 
@@ -7327,7 +7438,7 @@ type opCbAa struct {
 }
 
 func (op *opCbAa) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 5)
+	c.D &= ^uint8(1<<5)
 	return true
 }
 
@@ -7337,7 +7448,7 @@ type opCbAb struct {
 }
 
 func (op *opCbAb) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 5)
+	c.E &= ^uint8(1<<5)
 	return true
 }
 
@@ -7347,7 +7458,7 @@ type opCbAc struct {
 }
 
 func (op *opCbAc) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 5)
+	c.H &= ^uint8(1<<5)
 	return true
 }
 
@@ -7357,7 +7468,7 @@ type opCbAd struct {
 }
 
 func (op *opCbAd) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 5)
+	c.L &= ^uint8(1<<5)
 	return true
 }
 
@@ -7372,7 +7483,7 @@ func (op *opCbAe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 5)
+		op.cpu.temp8 &= ^uint8(1<<5)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7385,7 +7496,7 @@ type opCbAf struct {
 }
 
 func (op *opCbAf) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 5)
+	c.A &= ^uint8(1<<5)
 	return true
 }
 
@@ -7395,7 +7506,7 @@ type opCbB0 struct {
 }
 
 func (op *opCbB0) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 6)
+	c.B &= ^uint8(1<<6)
 	return true
 }
 
@@ -7405,7 +7516,7 @@ type opCbB1 struct {
 }
 
 func (op *opCbB1) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 6)
+	c.C &= ^uint8(1<<6)
 	return true
 }
 
@@ -7415,7 +7526,7 @@ type opCbB2 struct {
 }
 
 func (op *opCbB2) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 6)
+	c.D &= ^uint8(1<<6)
 	return true
 }
 
@@ -7425,7 +7536,7 @@ type opCbB3 struct {
 }
 
 func (op *opCbB3) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 6)
+	c.E &= ^uint8(1<<6)
 	return true
 }
 
@@ -7435,7 +7546,7 @@ type opCbB4 struct {
 }
 
 func (op *opCbB4) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 6)
+	c.H &= ^uint8(1<<6)
 	return true
 }
 
@@ -7445,7 +7556,7 @@ type opCbB5 struct {
 }
 
 func (op *opCbB5) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 6)
+	c.L &= ^uint8(1<<6)
 	return true
 }
 
@@ -7460,7 +7571,7 @@ func (op *opCbB6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 6)
+		op.cpu.temp8 &= ^uint8(1<<6)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7473,7 +7584,7 @@ type opCbB7 struct {
 }
 
 func (op *opCbB7) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 6)
+	c.A &= ^uint8(1<<6)
 	return true
 }
 
@@ -7483,7 +7594,7 @@ type opCbB8 struct {
 }
 
 func (op *opCbB8) Execute(c *CPU) (done bool) {
-	c.B &= ^uint8(1 << 7)
+	c.B &= ^uint8(1<<7)
 	return true
 }
 
@@ -7493,7 +7604,7 @@ type opCbB9 struct {
 }
 
 func (op *opCbB9) Execute(c *CPU) (done bool) {
-	c.C &= ^uint8(1 << 7)
+	c.C &= ^uint8(1<<7)
 	return true
 }
 
@@ -7503,7 +7614,7 @@ type opCbBa struct {
 }
 
 func (op *opCbBa) Execute(c *CPU) (done bool) {
-	c.D &= ^uint8(1 << 7)
+	c.D &= ^uint8(1<<7)
 	return true
 }
 
@@ -7513,7 +7624,7 @@ type opCbBb struct {
 }
 
 func (op *opCbBb) Execute(c *CPU) (done bool) {
-	c.E &= ^uint8(1 << 7)
+	c.E &= ^uint8(1<<7)
 	return true
 }
 
@@ -7523,7 +7634,7 @@ type opCbBc struct {
 }
 
 func (op *opCbBc) Execute(c *CPU) (done bool) {
-	c.H &= ^uint8(1 << 7)
+	c.H &= ^uint8(1<<7)
 	return true
 }
 
@@ -7533,7 +7644,7 @@ type opCbBd struct {
 }
 
 func (op *opCbBd) Execute(c *CPU) (done bool) {
-	c.L &= ^uint8(1 << 7)
+	c.L &= ^uint8(1<<7)
 	return true
 }
 
@@ -7548,7 +7659,7 @@ func (op *opCbBe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 &= ^uint8(1 << 7)
+		op.cpu.temp8 &= ^uint8(1<<7)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7561,7 +7672,7 @@ type opCbBf struct {
 }
 
 func (op *opCbBf) Execute(c *CPU) (done bool) {
-	c.A &= ^uint8(1 << 7)
+	c.A &= ^uint8(1<<7)
 	return true
 }
 
@@ -7571,7 +7682,7 @@ type opCbC0 struct {
 }
 
 func (op *opCbC0) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 0)
+	c.B |= uint8(1<<0)
 	return true
 }
 
@@ -7581,7 +7692,7 @@ type opCbC1 struct {
 }
 
 func (op *opCbC1) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 0)
+	c.C |= uint8(1<<0)
 	return true
 }
 
@@ -7591,7 +7702,7 @@ type opCbC2 struct {
 }
 
 func (op *opCbC2) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 0)
+	c.D |= uint8(1<<0)
 	return true
 }
 
@@ -7601,7 +7712,7 @@ type opCbC3 struct {
 }
 
 func (op *opCbC3) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 0)
+	c.E |= uint8(1<<0)
 	return true
 }
 
@@ -7611,7 +7722,7 @@ type opCbC4 struct {
 }
 
 func (op *opCbC4) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 0)
+	c.H |= uint8(1<<0)
 	return true
 }
 
@@ -7621,7 +7732,7 @@ type opCbC5 struct {
 }
 
 func (op *opCbC5) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 0)
+	c.L |= uint8(1<<0)
 	return true
 }
 
@@ -7636,7 +7747,7 @@ func (op *opCbC6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 0)
+		op.cpu.temp8 |= uint8(1<<0)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7649,7 +7760,7 @@ type opCbC7 struct {
 }
 
 func (op *opCbC7) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 0)
+	c.A |= uint8(1<<0)
 	return true
 }
 
@@ -7659,7 +7770,7 @@ type opCbC8 struct {
 }
 
 func (op *opCbC8) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 1)
+	c.B |= uint8(1<<1)
 	return true
 }
 
@@ -7669,7 +7780,7 @@ type opCbC9 struct {
 }
 
 func (op *opCbC9) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 1)
+	c.C |= uint8(1<<1)
 	return true
 }
 
@@ -7679,7 +7790,7 @@ type opCbCa struct {
 }
 
 func (op *opCbCa) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 1)
+	c.D |= uint8(1<<1)
 	return true
 }
 
@@ -7689,7 +7800,7 @@ type opCbCb struct {
 }
 
 func (op *opCbCb) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 1)
+	c.E |= uint8(1<<1)
 	return true
 }
 
@@ -7699,7 +7810,7 @@ type opCbCc struct {
 }
 
 func (op *opCbCc) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 1)
+	c.H |= uint8(1<<1)
 	return true
 }
 
@@ -7709,7 +7820,7 @@ type opCbCd struct {
 }
 
 func (op *opCbCd) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 1)
+	c.L |= uint8(1<<1)
 	return true
 }
 
@@ -7724,7 +7835,7 @@ func (op *opCbCe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 1)
+		op.cpu.temp8 |= uint8(1<<1)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7737,7 +7848,7 @@ type opCbCf struct {
 }
 
 func (op *opCbCf) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 1)
+	c.A |= uint8(1<<1)
 	return true
 }
 
@@ -7747,7 +7858,7 @@ type opCbD0 struct {
 }
 
 func (op *opCbD0) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 2)
+	c.B |= uint8(1<<2)
 	return true
 }
 
@@ -7757,7 +7868,7 @@ type opCbD1 struct {
 }
 
 func (op *opCbD1) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 2)
+	c.C |= uint8(1<<2)
 	return true
 }
 
@@ -7767,7 +7878,7 @@ type opCbD2 struct {
 }
 
 func (op *opCbD2) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 2)
+	c.D |= uint8(1<<2)
 	return true
 }
 
@@ -7777,7 +7888,7 @@ type opCbD3 struct {
 }
 
 func (op *opCbD3) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 2)
+	c.E |= uint8(1<<2)
 	return true
 }
 
@@ -7787,7 +7898,7 @@ type opCbD4 struct {
 }
 
 func (op *opCbD4) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 2)
+	c.H |= uint8(1<<2)
 	return true
 }
 
@@ -7797,7 +7908,7 @@ type opCbD5 struct {
 }
 
 func (op *opCbD5) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 2)
+	c.L |= uint8(1<<2)
 	return true
 }
 
@@ -7812,7 +7923,7 @@ func (op *opCbD6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 2)
+		op.cpu.temp8 |= uint8(1<<2)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7825,7 +7936,7 @@ type opCbD7 struct {
 }
 
 func (op *opCbD7) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 2)
+	c.A |= uint8(1<<2)
 	return true
 }
 
@@ -7835,7 +7946,7 @@ type opCbD8 struct {
 }
 
 func (op *opCbD8) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 3)
+	c.B |= uint8(1<<3)
 	return true
 }
 
@@ -7845,7 +7956,7 @@ type opCbD9 struct {
 }
 
 func (op *opCbD9) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 3)
+	c.C |= uint8(1<<3)
 	return true
 }
 
@@ -7855,7 +7966,7 @@ type opCbDa struct {
 }
 
 func (op *opCbDa) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 3)
+	c.D |= uint8(1<<3)
 	return true
 }
 
@@ -7865,7 +7976,7 @@ type opCbDb struct {
 }
 
 func (op *opCbDb) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 3)
+	c.E |= uint8(1<<3)
 	return true
 }
 
@@ -7875,7 +7986,7 @@ type opCbDc struct {
 }
 
 func (op *opCbDc) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 3)
+	c.H |= uint8(1<<3)
 	return true
 }
 
@@ -7885,7 +7996,7 @@ type opCbDd struct {
 }
 
 func (op *opCbDd) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 3)
+	c.L |= uint8(1<<3)
 	return true
 }
 
@@ -7900,7 +8011,7 @@ func (op *opCbDe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 3)
+		op.cpu.temp8 |= uint8(1<<3)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -7913,7 +8024,7 @@ type opCbDf struct {
 }
 
 func (op *opCbDf) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 3)
+	c.A |= uint8(1<<3)
 	return true
 }
 
@@ -7923,7 +8034,7 @@ type opCbE0 struct {
 }
 
 func (op *opCbE0) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 4)
+	c.B |= uint8(1<<4)
 	return true
 }
 
@@ -7933,7 +8044,7 @@ type opCbE1 struct {
 }
 
 func (op *opCbE1) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 4)
+	c.C |= uint8(1<<4)
 	return true
 }
 
@@ -7943,7 +8054,7 @@ type opCbE2 struct {
 }
 
 func (op *opCbE2) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 4)
+	c.D |= uint8(1<<4)
 	return true
 }
 
@@ -7953,7 +8064,7 @@ type opCbE3 struct {
 }
 
 func (op *opCbE3) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 4)
+	c.E |= uint8(1<<4)
 	return true
 }
 
@@ -7963,7 +8074,7 @@ type opCbE4 struct {
 }
 
 func (op *opCbE4) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 4)
+	c.H |= uint8(1<<4)
 	return true
 }
 
@@ -7973,7 +8084,7 @@ type opCbE5 struct {
 }
 
 func (op *opCbE5) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 4)
+	c.L |= uint8(1<<4)
 	return true
 }
 
@@ -7988,7 +8099,7 @@ func (op *opCbE6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 4)
+		op.cpu.temp8 |= uint8(1<<4)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -8001,7 +8112,7 @@ type opCbE7 struct {
 }
 
 func (op *opCbE7) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 4)
+	c.A |= uint8(1<<4)
 	return true
 }
 
@@ -8011,7 +8122,7 @@ type opCbE8 struct {
 }
 
 func (op *opCbE8) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 5)
+	c.B |= uint8(1<<5)
 	return true
 }
 
@@ -8021,7 +8132,7 @@ type opCbE9 struct {
 }
 
 func (op *opCbE9) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 5)
+	c.C |= uint8(1<<5)
 	return true
 }
 
@@ -8031,7 +8142,7 @@ type opCbEa struct {
 }
 
 func (op *opCbEa) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 5)
+	c.D |= uint8(1<<5)
 	return true
 }
 
@@ -8041,7 +8152,7 @@ type opCbEb struct {
 }
 
 func (op *opCbEb) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 5)
+	c.E |= uint8(1<<5)
 	return true
 }
 
@@ -8051,7 +8162,7 @@ type opCbEc struct {
 }
 
 func (op *opCbEc) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 5)
+	c.H |= uint8(1<<5)
 	return true
 }
 
@@ -8061,7 +8172,7 @@ type opCbEd struct {
 }
 
 func (op *opCbEd) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 5)
+	c.L |= uint8(1<<5)
 	return true
 }
 
@@ -8076,7 +8187,7 @@ func (op *opCbEe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 5)
+		op.cpu.temp8 |= uint8(1<<5)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -8089,7 +8200,7 @@ type opCbEf struct {
 }
 
 func (op *opCbEf) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 5)
+	c.A |= uint8(1<<5)
 	return true
 }
 
@@ -8099,7 +8210,7 @@ type opCbF0 struct {
 }
 
 func (op *opCbF0) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 6)
+	c.B |= uint8(1<<6)
 	return true
 }
 
@@ -8109,7 +8220,7 @@ type opCbF1 struct {
 }
 
 func (op *opCbF1) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 6)
+	c.C |= uint8(1<<6)
 	return true
 }
 
@@ -8119,7 +8230,7 @@ type opCbF2 struct {
 }
 
 func (op *opCbF2) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 6)
+	c.D |= uint8(1<<6)
 	return true
 }
 
@@ -8129,7 +8240,7 @@ type opCbF3 struct {
 }
 
 func (op *opCbF3) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 6)
+	c.E |= uint8(1<<6)
 	return true
 }
 
@@ -8139,7 +8250,7 @@ type opCbF4 struct {
 }
 
 func (op *opCbF4) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 6)
+	c.H |= uint8(1<<6)
 	return true
 }
 
@@ -8149,7 +8260,7 @@ type opCbF5 struct {
 }
 
 func (op *opCbF5) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 6)
+	c.L |= uint8(1<<6)
 	return true
 }
 
@@ -8164,7 +8275,7 @@ func (op *opCbF6) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 6)
+		op.cpu.temp8 |= uint8(1<<6)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -8177,7 +8288,7 @@ type opCbF7 struct {
 }
 
 func (op *opCbF7) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 6)
+	c.A |= uint8(1<<6)
 	return true
 }
 
@@ -8187,7 +8298,7 @@ type opCbF8 struct {
 }
 
 func (op *opCbF8) Execute(c *CPU) (done bool) {
-	c.B |= uint8(1 << 7)
+	c.B |= uint8(1<<7)
 	return true
 }
 
@@ -8197,7 +8308,7 @@ type opCbF9 struct {
 }
 
 func (op *opCbF9) Execute(c *CPU) (done bool) {
-	c.C |= uint8(1 << 7)
+	c.C |= uint8(1<<7)
 	return true
 }
 
@@ -8207,7 +8318,7 @@ type opCbFa struct {
 }
 
 func (op *opCbFa) Execute(c *CPU) (done bool) {
-	c.D |= uint8(1 << 7)
+	c.D |= uint8(1<<7)
 	return true
 }
 
@@ -8217,7 +8328,7 @@ type opCbFb struct {
 }
 
 func (op *opCbFb) Execute(c *CPU) (done bool) {
-	c.E |= uint8(1 << 7)
+	c.E |= uint8(1<<7)
 	return true
 }
 
@@ -8227,7 +8338,7 @@ type opCbFc struct {
 }
 
 func (op *opCbFc) Execute(c *CPU) (done bool) {
-	c.H |= uint8(1 << 7)
+	c.H |= uint8(1<<7)
 	return true
 }
 
@@ -8237,7 +8348,7 @@ type opCbFd struct {
 }
 
 func (op *opCbFd) Execute(c *CPU) (done bool) {
-	c.L |= uint8(1 << 7)
+	c.L |= uint8(1<<7)
 	return true
 }
 
@@ -8252,7 +8363,7 @@ func (op *opCbFe) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.HL())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1 << 7)
+		op.cpu.temp8 |= uint8(1<<7)
 		op.cpu.Memory.Write(op.cpu.HL(), op.cpu.temp8)
 		done = true
 	}
@@ -8265,6 +8376,7 @@ type opCbFf struct {
 }
 
 func (op *opCbFf) Execute(c *CPU) (done bool) {
-	c.A |= uint8(1 << 7)
+	c.A |= uint8(1<<7)
 	return true
 }
+

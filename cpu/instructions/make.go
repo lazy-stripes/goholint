@@ -251,7 +251,7 @@ func main() {
 		{Opcode: 0xc8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "Z"},
 		{Opcode: 0xc9, Template: "ret", Instruction: "RET"},
 		{Opcode: 0xca, Template: "calljp", Instruction: "JP", Operator: "=", Flag: "Z"},
-		// CB is used as prefix for the extended instruction set.
+		{Opcode: 0xcb, Template: "invalid"}, // CB is used as prefix for the extended instruction set.
 		{Opcode: 0xcc, Template: "calljp", Instruction: "CALL", Operator: "=", Flag: "Z"},
 		{Opcode: 0xcd, Template: "calljp", Instruction: "CALL"},
 		{Opcode: 0xce, Template: "adcaddr"},
@@ -259,7 +259,7 @@ func main() {
 		{Opcode: 0xd0, Template: "ret", Instruction: "RET", Operator: "!", Flag: "C"},
 		{Opcode: 0xd1, Template: "pop", High: "D", Low: "E"},
 		{Opcode: 0xd2, Template: "calljp", Instruction: "JP", Operator: "!", Flag: "C"},
-		// No D3 opcode.
+		{Opcode: 0xd3, Template: "invalid"}, // No D3 opcode.
 		{Opcode: 0xd4, Template: "calljp", Instruction: "CALL", Operator: "!", Flag: "C"},
 		{Opcode: 0xd5, Template: "push", High: "D", Low: "E"},
 		{Opcode: 0xd6, Template: "subcpaddr", Instruction: "SUB"},
@@ -267,15 +267,15 @@ func main() {
 		{Opcode: 0xd8, Template: "ret", Instruction: "RET", Operator: "=", Flag: "C"},
 		{Opcode: 0xd9, Template: "ret", Instruction: "RETI"},
 		{Opcode: 0xda, Template: "calljp", Instruction: "JP", Operator: "=", Flag: "C"},
-		// No DB opcode.
+		{Opcode: 0xdb, Template: "invalid"}, // No DB opcode.
 		{Opcode: 0xdc, Template: "calljp", Instruction: "CALL", Operator: "=", Flag: "C"},
 		{Opcode: 0xde, Template: "sbcaddr"},
 		{Opcode: 0xdf, Template: "rst", Address: "18"},
 		{Opcode: 0xe0, Template: "ldioa"},
 		{Opcode: 0xe1, Template: "pop", High: "H", Low: "L"},
 		{Opcode: 0xe2, Template: "ldioa", Register: "C"},
-		// No E3 opcode.
-		// No E4 opcode.
+		{Opcode: 0xe3, Template: "invalid"}, // No E3 opcode.
+		{Opcode: 0xe4, Template: "invalid"}, // No E4 opcode.
 		{Opcode: 0xe5, Template: "push", High: "H", Low: "L"},
 		{Opcode: 0xe6, Template: "booladdr", Instruction: "AND", Operator: "&="},
 		{Opcode: 0xe7, Template: "rst", Address: "20"},
@@ -288,7 +288,7 @@ func main() {
 		{Opcode: 0xf1, Template: "pop", High: "A", Low: "F"},
 		{Opcode: 0xf2, Template: "ldaio", Register: "C"},
 		{Opcode: 0xf3, Template: "interrupt", Instruction: "DI"},
-		// No F4 opcode.
+		{Opcode: 0xf4, Template: "invalid"}, // No F4 opcode.
 		{Opcode: 0xf5, Template: "push", High: "A", Low: "F"},
 		{Opcode: 0xf6, Template: "booladdr", Instruction: "OR", Operator: "|="},
 		{Opcode: 0xf7, Template: "rst", Address: "30"},
@@ -296,8 +296,8 @@ func main() {
 		{Opcode: 0xf9, Template: "ldsphl"},
 		{Opcode: 0xfa, Template: "ldaa16"},
 		{Opcode: 0xfb, Template: "interrupt", Instruction: "EI"},
-		// No FC opcode.
-		// No FD opcode.
+		{Opcode: 0xfc, Template: "invalid"}, // No FC opcode.
+		{Opcode: 0xfd, Template: "invalid"}, // No FD opcode.
 		{Opcode: 0xfe, Template: "subcpaddr", Instruction: "CP"},
 		{Opcode: 0xff, Template: "rst", Address: "38"},
 	}
