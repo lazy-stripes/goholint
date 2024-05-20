@@ -101,6 +101,17 @@ func (f *Fetcher) Tick() {
 	case states.ReadSpriteID:
 		// Read directly from OAM RAM.
 		f.spriteID = f.oamRAM.Read(f.sprite.Address + 2) // We already read X&Y
+
+		// Account for 8×16 sprites.
+		if *f.lcdc&LCDCSpriteSize != 0 {
+			if f.spriteLine < 8 {
+				f.spriteID &= 0xfe
+			} else {
+				f.spriteID |= 0x01
+				f.spriteLine %= 8
+			}
+		}
+
 		f.state = states.ReadSpriteFlags
 
 	case states.ReadSpriteFlags:
