@@ -108,7 +108,7 @@ func (f *Fetcher) Tick() {
 				f.spriteID &= 0xfe
 			} else {
 				f.spriteID |= 0x01
-				f.spriteLine %= 8
+				f.spriteLine -= 8
 			}
 		}
 
