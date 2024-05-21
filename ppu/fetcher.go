@@ -102,7 +102,14 @@ func (f *Fetcher) Tick() {
 		// Read directly from OAM RAM.
 		f.spriteID = f.oamRAM.Read(f.sprite.Address + 2) // We already read X&Y
 
-		// Account for 8×16 sprites.
+		// Account for 8×16 sprites. Quoting PanDocs [4.3 OAM]:
+		//
+		// In 8×16 mode (LCDC bit 2 = 1), the memory area at $8000-$8FFF is
+		// still interpreted as a series of 8×8 tiles, where every 2 tiles form
+		// an object. In this mode, this byte specifies the index of the first
+		// (top) tile of the object. This is enforced by the hardware: the least
+		// significant bit of the tile index is ignored; that is, the top 8×8
+		// tile is “NN & $FE”, and the bottom 8×8 tile is “NN | $01”.
 		if *f.lcdc&LCDCSpriteSize != 0 {
 			if f.spriteLine < 8 {
 				f.spriteID &= 0xfe
