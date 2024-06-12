@@ -30,6 +30,7 @@ import (
 	"github.com/lazy-stripes/goholint/gameboy"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ui"
 )
 
 // TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
@@ -42,7 +43,11 @@ func init() {
 
 // Not sure how I'm supposed to pass this to SDL. Go doesn't allow Go pointers
 // use in C code but we're calling a Go callback... I'm working on this.
-var gb *gameboy.GameBoy
+var goholint struct {
+	gb    *gameboy.GameBoy
+	ui    *ui.UI
+	ticks uint64
+}
 
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
@@ -56,6 +61,22 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	n := int(len)
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
 	buffer := *(*[]C.Int8)(unsafe.Pointer(&hdr))
+
+	// Poll events 1000 times per second.
+	if g.ticks%4000 == 0 {
+		if g.UI.Enabled {
+			sdl.Do(g.UI.ProcessEvents)
+		} else {
+			sdl.Do(g.ProcessEvents)
+		}
+	}
+
+	// Emulation is paused while home screen is active.
+	if g.UI.Enabled {
+		// Still output a silence sample when needed.
+		res.Play = g.ticks%apu.SoundOutRate == 0
+		return
+	}
 
 	defer gb.Recover()
 

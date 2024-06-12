@@ -243,6 +243,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 	g.ticks++
 
 	// Poll events 1000 times per second.
+	// TODO: move this up one level, the callback should have access to both ui and gb.
 	if g.ticks%4000 == 0 {
 		if g.UI.Enabled {
 			sdl.Do(g.UI.ProcessEvents)
