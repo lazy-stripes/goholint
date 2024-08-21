@@ -20,7 +20,7 @@ func TestFIFO(t *testing.T) {
 		}
 
 		if pixel.Color != p {
-			t.Errorf("Pop returned wrong value %x instead of 0x01", pixel)
+			t.Errorf("Pop returned wrong value %x instead of 0x01", pixel.Color)
 		}
 	}
 }

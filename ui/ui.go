@@ -10,6 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/lazy-stripes/goholint/assets"
+	"github.com/lazy-stripes/goholint/gameboy"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ui/widgets"
@@ -35,8 +36,11 @@ type dialog struct {
 }
 
 // UI structure to manage user commands and overlay.
+// TODO: move Gameboy inside UI, implement UI.Tick(), see if it works.
 type UI struct {
-	Enabled bool
+	emulator *gameboy.GameBoy
+
+	Enabled bool // TODO: rename to paused, invert logic
 
 	Controls map[options.KeyStroke]Action
 
@@ -108,6 +112,7 @@ func New(config *options.Options) *UI {
 		log.Infof("PRESENTVSYNC: %t", info.Flags&sdl.RENDERER_PRESENTVSYNC != 0)
 	}
 
+	// TODO: ui.Font(size) -> *ttf.Font (cached by size).
 	font, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(8*config.ZoomFactor))
 	if err != nil {
 		panic(err)
@@ -172,14 +177,19 @@ func New(config *options.Options) *UI {
 		HorizontalAlign: align.Center,
 		VerticalAlign:   align.Middle,
 		//Border:     1,
-		Background: sdl.Color{0, 0x7f, 0x7f, 0x7f},
+		Background: sdl.Color{0x20, 0x7f, 0x20, 0x7f},
 		Zoom:       int(config.ZoomFactor),
 	}
 
 	widgets.Init(renderer)
 
+	// Screen widget the emulator will write into via the PixelWriter interface.
+	gbScreen := widgets.NewScreen(screenRect, config)
+	emulator := gameboy.New(config, gbScreen)
+
 	ui := &UI{
 		QuitChan:   make(chan bool),
+		emulator:   emulator,
 		background: background,
 		texture:    texture, // TODO: rename to foreground?
 		renderer:   renderer,
@@ -188,20 +198,27 @@ func New(config *options.Options) *UI {
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
-		root:       widgets.NewStack(screenRect, nil),
+		//root:       widgets.NewStack(screenRect, nil),
+		root: widgets.NewStack(screenRect, []widgets.Widget{gbScreen}),
 	}
 
 	// FIXME: more helper functions.
-	ui.addDialog(dialog{
-		widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ui.Hide),
-		"Input",
-	})
+	//ui.addDialog(dialog{
+	//	widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ui.Hide),
+	//	"Input",
+	//})
 
-	ui.buildMenu()
+	//ui.buildMenu()
 
 	ui.SetControls(config.Keymap)
 
 	return ui
+}
+
+func (u *UI) Tick() (res gameboy.TickResult) {
+	// WIP Only tick emulator for now. We'll do the "pause to menu" again from scratch. Weeee.
+	return u.emulator.Tick()
+	//return TickResult{Play: true} // Always return silence. TODO: play samples of our UI SFXes...es here!
 }
 
 func (u *UI) addDialog(d dialog) {

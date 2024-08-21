@@ -137,7 +137,6 @@ func New(mono bool) *APU {
 
 	// Make APU an address space covering its registers and the Wave Pattern
 	// memory.
-	a.Add(a.Wave.Pattern)
 	a.Add(APURegisters{
 		AddrNR10: {Ptr: &a.Square1.NRx0, Mask: 0x80, OnWrite: a.Square1.SetNRx0},
 		AddrNR11: {Ptr: &a.Square1.NRx1, Mask: 0x3f, OnWrite: a.Square1.SetNRx1},
@@ -161,6 +160,7 @@ func New(mono bool) *APU {
 		AddrNR51: {Ptr: &a.NR51},
 		AddrNR52: {Ptr: &a.NR52, OnWrite: a.SetNR52},
 	})
+	a.Add(a.Wave.Pattern)
 
 	// Pre-compute default frequencies.
 	a.Square1.RecomputeFrequency()

@@ -6,6 +6,9 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// TODO: most if not all of these should move to ui/actions.go and call
+//       dedicated method of the Gameboy object.
+
 // Action type for user interactions. This might move to a ui package someday.
 type Action func(eventType uint32)
 
@@ -56,7 +59,7 @@ func (g *GameBoy) Screenshot(eventType uint32) {
 		return
 	}
 
-	g.Display.Screenshot()
+	//g.Display.Screenshot()
 }
 
 // StartStopRecord starts recording video output to GIF and closes the file
@@ -68,29 +71,31 @@ func (g *GameBoy) StartStopRecord(eventType uint32) {
 	}
 
 	if g.recording { // TODO: query directly from screen?
-		g.Display.StopRecord()
+		//g.Display.StopRecord()
 		g.recording = false
 	} else {
 		g.recording = true
-		g.Display.StartRecord()
+		//g.Display.StartRecord()
 	}
 }
 
 // NextPalette switches colors to the next defined palette, wrapping around.
 // There should always be at least a default palette in the config object.
+// TODO: move to UI, call emulator.SetPalette() then display message. (ui/actions.go?)
 func (g *GameBoy) NextPalette(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
 
 	g.paletteIndex = (g.paletteIndex + 1) % len(g.config.Palettes)
-	g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	//g.Display.Palette(g.config.Palettes[g.paletteIndex])
+	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping
 // around. There should always be at least a default palette in the config
 // object.
+// TODO: move to UI, call emulator.SetPalette() then display message. (ui/actions.go?)
 func (g *GameBoy) PreviousPalette(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
@@ -101,8 +106,8 @@ func (g *GameBoy) PreviousPalette(eventType uint32) {
 		// Wrap around (can't use % with negative values).
 		g.paletteIndex = len(g.config.Palettes) - 1
 	}
-	g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	//g.Display.Palette(g.config.Palettes[g.paletteIndex])
+	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
 }
 
 // Helper strings to format UI messages.
@@ -138,7 +143,7 @@ func (g *GameBoy) ToggleVoice1(eventType uint32) {
 		return
 	}
 	g.APU.Muted[0] = !g.APU.Muted[0]
-	g.UI.Message(g.voiceStatusMsg(0), 2)
+	//g.UI.Message(g.voiceStatusMsg(0), 2)
 }
 
 // ToggleVoice2 mutes or unmutes the second audio generator (Square 2).
@@ -147,7 +152,7 @@ func (g *GameBoy) ToggleVoice2(eventType uint32) {
 		return
 	}
 	g.APU.Muted[1] = !g.APU.Muted[1]
-	g.UI.Message(g.voiceStatusMsg(1), 2)
+	//g.UI.Message(g.voiceStatusMsg(1), 2)
 }
 
 // ToggleVoice3 mutes or unmutes the third audio generator (Wave).
@@ -156,7 +161,7 @@ func (g *GameBoy) ToggleVoice3(eventType uint32) {
 		return
 	}
 	g.APU.Muted[2] = !g.APU.Muted[2]
-	g.UI.Message(g.voiceStatusMsg(2), 2)
+	//g.UI.Message(g.voiceStatusMsg(2), 2)
 }
 
 // ToggleVoice4 mutes or unmutes the fourth audio generator (Noise).
@@ -165,7 +170,7 @@ func (g *GameBoy) ToggleVoice4(eventType uint32) {
 		return
 	}
 	g.APU.Muted[3] = !g.APU.Muted[3]
-	g.UI.Message(g.voiceStatusMsg(3), 2)
+	// g.UI.Message(g.voiceStatusMsg(3), 2)
 }
 
 // Quit cleanly quits the program.
@@ -173,7 +178,7 @@ func (g *GameBoy) Quit(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	g.UI.QuitChan <- true
+	// g.UI.QuitChan <- true
 }
 
 // Home stops the emulation to display some kind of home menu. Clearing it
@@ -186,7 +191,7 @@ func (g *GameBoy) Home(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	g.UI.Show()
+	// g.UI.Show()
 }
 
 // TODO: so many things! Save states, toggle features...

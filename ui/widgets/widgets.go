@@ -2,13 +2,16 @@ package widgets
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// sizeHint is a safe non-nil zero-size rect to use when creating widgets that
+// Package-wide logger.
+var log = logger.New("widgets", "widget-level debug")
+
+// noSizeHint is a safe non-nil zero-size rect to use when creating widgets that
 // are expected to be able to handle their own size (i.e. labels).
 var noSizeHint = &sdl.Rect{}
 
@@ -27,7 +30,7 @@ func texture(size *sdl.Rect) *sdl.Texture {
 	if err != nil {
 		// I'm already not checking for error anywhere else, but this should at
 		// least provide a log before the caller panics on a nil texture.
-		log.Printf("failed to create texture: %v", err)
+		log.Warningf("failed to create texture: %v", err)
 	}
 
 	return texture

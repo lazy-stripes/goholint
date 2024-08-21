@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"reflect"
 	"runtime/pprof"
 	"strings"
@@ -41,48 +40,55 @@ func init() {
 	quit = make(chan bool)
 }
 
-// Not sure how I'm supposed to pass this to SDL. Go doesn't allow Go pointers
-// use in C code but we're calling a Go callback... I'm working on this.
+// I have given up on trying to pass this as userdata to SDL.
+// TODO: try runtime.Pinner whenever we upgrade to go 1.21
+
+// TODO: maybe move all that main code to a goholint package?
+
 var goholint struct {
 	gb    *gameboy.GameBoy
 	ui    *ui.UI
 	ticks uint64
 }
 
+var gb *gameboy.GameBoy
+
+var mainUI *ui.UI
+
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
 //
 //export mainLoopCallback
 func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
-	// We've reached the limits of the Go bindings. In order to access the
-	// audio buffer, we have to jump through rather ugly conversion hoops
-	// between C and Go. Note that the three lines of code below were in the
-	// SDL example program. I couldn't have come up with that myself.
+	// We've reached the limits of the Go bindings. I might try and see if it's
+	// any cleaner when using a push approach rather than a callback.
 	n := int(len)
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
 	buffer := *(*[]C.Int8)(unsafe.Pointer(&hdr))
 
+	// TODO: move all that to UI.Tick(), decide whether to Tick the GB or just fill the sound buffer.
 	// Poll events 1000 times per second.
-	if g.ticks%4000 == 0 {
-		if g.UI.Enabled {
-			sdl.Do(g.UI.ProcessEvents)
-		} else {
-			sdl.Do(g.ProcessEvents)
-		}
-	}
+	//if goholint.ticks%4000 == 0 {
+	//	if g.UI.Enabled {
+	//		sdl.Do(g.UI.ProcessEvents)
+	//	} else {
+	//		sdl.Do(g.ProcessEvents)
+	//	}
+	//}
 
 	// Emulation is paused while home screen is active.
-	if g.UI.Enabled {
-		// Still output a silence sample when needed.
-		res.Play = g.ticks%apu.SoundOutRate == 0
-		return
-	}
+	// TODO: UI.paused. Also add sounds to UI and just drain them to sound buffer, that will be fun.
+	//if g.UI.Enabled {
+	//	// Still output a silence sample when needed.
+	//	res.Play = g.ticks%apu.SoundOutRate == 0
+	//	return
+	//}
 
 	defer gb.Recover()
 
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
-		res := gb.Tick()
+		res := mainUI.Tick()
 
 		if res.Play {
 			buffer[i] = C.Int8(res.Left)
@@ -98,7 +104,8 @@ func handleSIGINT(c chan os.Signal, gb *gameboy.GameBoy) {
 	<-c
 	fmt.Println("\nTerminated...")
 
-	gb.Display.Close()
+	// TODO: quit-time cleanup in gb, ui, etc.
+	//gb.Display.Close()
 
 	// TODO: only dump RAM/VRAM/Other if requested in parameters.
 	fmt.Print(gb.CPU)
@@ -156,8 +163,8 @@ func run() {
 		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
 		ttf.Init()
 
-		// Instantiate emulator and use it with signal interrupts.
-		gb = gameboy.New(args)
+		// Instantiate main UI. Someday I might add extra windows for debugging.
+		mainUI = ui.New(args)
 
 		// Wait for keypress if requested, so obs has time to capture window.
 		// Less useful now that we have -gif flag.
@@ -167,9 +174,9 @@ func run() {
 		}
 
 		// Handle SIGINT, store pointers to CPU and PPU for debug info.
-		c := make(chan os.Signal, 1)
-		go handleSIGINT(c, gb)
-		signal.Notify(c, os.Interrupt)
+		//c := make(chan os.Signal, 1)
+		//go handleSIGINT(c, gb)
+		//signal.Notify(mainUI.SIGINTChan, os.Interrupt) // TODO TOO
 
 		// Add CPU-specific context to debug output.
 		logger.Context = gb.CPU.Context
@@ -197,7 +204,7 @@ func run() {
 
 	defer gb.Stop()
 
-	<-gb.UI.QuitChan // Wait for the callback or an action to signal us.
+	<-mainUI.QuitChan // Wait for the callback or an action to signal us.
 
 	sdl.CloseAudio()
 }

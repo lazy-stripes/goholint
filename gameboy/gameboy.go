@@ -19,7 +19,6 @@ import (
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/serial"
 	"github.com/lazy-stripes/goholint/timer"
-	"github.com/lazy-stripes/goholint/ui"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -39,8 +38,6 @@ type TickResult struct {
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
 	config *options.Options
-
-	UI *ui.UI
 
 	ticks   uint64
 	APU     *apu.APU
@@ -96,16 +93,12 @@ func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
 
 // New just instantiates most of the emulator. No biggie.
 // TODO: try cleaning this mess up a little.
-func New(config *options.Options) *GameBoy {
+func New(config *options.Options, display screen.PixelWriter) *GameBoy {
 	g := GameBoy{
 		config: config,
 	}
 
 	g.SetControls(config.Keymap)
-
-	// Maybe instantiate SDL window right here and pass renderer to UI and Screen.
-
-	g.UI = ui.New(config)
 
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
@@ -113,14 +106,14 @@ func New(config *options.Options) *GameBoy {
 
 	g.APU = apu.New(config.Mono)
 
-	g.Display = screen.New(g.UI, config)
+	// TODO: move GIF handling to UI.
 	if config.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)
 		fmt.Printf("Saving GIF to %s\n", config.GIFPath)
 	}
 
 	// TODO: shouldn't we just pass Interrupts to New() functions?
-	g.PPU = ppu.New(g.Display)
+	g.PPU = ppu.New(display)
 	g.PPU.Interrupts = ints
 
 	g.Serial = serial.New()
@@ -169,13 +162,14 @@ func New(config *options.Options) *GameBoy {
 		}
 	}
 
-	wram := memory.NewRAM(0xc000, 0x2000)
 	hram := memory.NewRAM(0xff80, 0x7f)
+	wram := memory.NewRAM(0xc000, 0x2000)
 	//prohibited := memory.NewRAM(0xfea0, 0x60)
 	g.JPad = joypad.New() // TODO: interrupts
 	mmu := memory.NewMMU([]memory.Addressable{
-		boot,
 		g.APU,
+		hram,
+		boot,
 		g.PPU,
 		//prohibited,
 		wram,
@@ -183,7 +177,6 @@ func New(config *options.Options) *GameBoy {
 		g.JPad,
 		g.Serial,
 		g.Timer,
-		hram,
 	})
 
 	// Memory space for the CPU, taking DMA transfers into account.
@@ -230,8 +223,9 @@ func (g *GameBoy) ProcessEvents() {
 			}
 
 		// Window-closing event
+		// TODO: check these top-level events in UI.ProcessEvents first.
 		case sdl.QUIT:
-			g.UI.QuitChan <- true
+			// g.UI.QuitChan <- true
 		}
 	}
 }
@@ -242,22 +236,28 @@ func (g *GameBoy) ProcessEvents() {
 func (g *GameBoy) Tick() (res TickResult) {
 	g.ticks++
 
-	// Poll events 1000 times per second.
-	// TODO: move this up one level, the callback should have access to both ui and gb.
-	if g.ticks%4000 == 0 {
-		if g.UI.Enabled {
-			sdl.Do(g.UI.ProcessEvents)
-		} else {
-			sdl.Do(g.ProcessEvents)
-		}
-	}
+	// Poll events 128 times per second.
+	// TODO: check these top-level events in UI.ProcessEvents first.
+	//if g.ticks%32000 == 0 {
+	//	if g.UI.Enabled {
+	//		sdl.Do(g.UI.ProcessEvents)
+	//	} else {
+	//		sdl.Do(g.ProcessEvents)
+	//	}
+	//}
 
-	// Emulation is paused while home screen is active.
-	if g.UI.Enabled {
-		// Still output a silence sample when needed.
-		res.Play = g.ticks%apu.SoundOutRate == 0
-		return
-	}
+	// Emulation is paused while home screen is active. TODO: ui.paused instead.
+	//if g.UI.Enabled {
+	//	// Still output a silence sample when needed.
+	//	res.Play = g.ticks%apu.SoundOutRate == 0
+	//	return
+	//}
+
+	// PPU ticks occur every machine tick.
+	g.PPU.Tick()
+
+	// Timer tick occur every machine tick.
+	g.Timer.Tick()
 
 	// DMA ticks occur every 4 machine ticks.
 	if g.ticks%4 == 0 {
@@ -268,12 +268,6 @@ func (g *GameBoy) Tick() (res TickResult) {
 	if g.ticks%4 == 0 {
 		g.CPU.Tick()
 	}
-
-	// PPU ticks occur every machine tick.
-	g.PPU.Tick()
-
-	// Timer tick occur every machine tick.
-	g.Timer.Tick()
 
 	// APU ticks occur only when we need to generate the next sample.
 	// Note that the Gameboy machine frequency is not an exact multiple of the
@@ -290,16 +284,16 @@ func (g *GameBoy) Tick() (res TickResult) {
 // Stop should be called before quitting the program and will close all needed
 // resources.
 func (g *GameBoy) Stop() {
-	// Make sure GIF file is written to disk.
-	g.Display.Close()
+	// FIXME: Make sure GIF file is written to disk. That sounds like a UI-problem.
+	// g.Display.Close()
 
 	// If debugging at all, dump debug info.
 	if len(g.config.DebugModules) > 0 {
 		fmt.Println(g.CPU)
 		fmt.Println(g.PPU)
 
-		// Dump memory
-		//g.CPU.DumpMemory()
+		// Dump memory TODO: make that configurable, -dumpmem or something.
+		g.CPU.DumpMemory()
 	}
 }
 

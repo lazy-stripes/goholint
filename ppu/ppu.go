@@ -11,7 +11,6 @@ import (
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/ppu/states"
 	"github.com/lazy-stripes/goholint/screen"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 // Package-wide logger.
@@ -71,7 +70,7 @@ type PPU struct {
 	OAM        *OAM
 	Interrupts *interrupts.Interrupts
 	Cycle      int
-	LCD        *screen.Screen
+	LCD        screen.PixelWriter
 	LCDC       uint8
 	STAT       uint8
 	SCY, SCX   uint8
@@ -81,8 +80,9 @@ type PPU struct {
 	BGP        uint8
 	OBP0, OBP1 uint8
 
-	ticks int
-	state states.State
+	enabled bool
+	ticks   int
+	state   states.State
 
 	toDrop uint8 // Pixels to drop for SCX
 	x      uint8
@@ -96,7 +96,7 @@ type PPU struct {
 }
 
 // New PPU instance.
-func New(display *screen.Screen) *PPU {
+func New(display screen.PixelWriter) *PPU {
 	p := PPU{MMU: memory.NewEmptyMMU(), LCD: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,
@@ -154,9 +154,37 @@ func (p *PPU) setLY(value uint8) {
 	}
 }
 
+// updateEnabled checks LCDC's 7th bit then enables or disables the PPCU as
+// needed. It's called whenever LCDC is writen into.
+func (p *PPU) updateEnabled() {
+	enable := p.LCDC&LCDCDisplayEnable != 0
+	switch {
+	case !p.enabled && enable:
+		// Start OAM search on enable.
+		// TODO: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable says that
+		//       "When re-enabling the LCD, the PPU will immediately start
+		//       drawing again, but the screen will stay blank during the
+		//       first frame."
+		p.OAM.Start()
+		p.state = states.OAMSearch
+		p.RequestLCDInterrupt(interrupts.STATMode2)
+	case p.enabled && !enable:
+		// Disable LCD. Clean up internal state.
+		p.LY = 0
+		p.x = 0
+		// [TCAFBD] STAT mode flag is zero when LCD is off.
+		p.state = 0
+	}
+	p.enabled = enable
+}
+
 // Write override that handles read-only registers and bits.
 func (p *PPU) Write(addr uint16, value uint8) {
 	switch addr {
+	case AddrLCDC:
+		log.Debugf("PPU.Write(0x%04x[LCDC], 0x%02x)", addr, value)
+		p.LCDC = value
+		p.updateEnabled()
 	case AddrSTAT:
 		log.Debugf("PPU.Write(0x%04x[STAT], 0x%02x)", addr, value)
 		p.STAT = value & 0xf8
@@ -187,37 +215,12 @@ func (p *PPU) Read(addr uint16) uint8 {
 // Tick advances the CPU state one step. Return whether we reached VBlank so
 // that event polling can happen then.
 func (p *PPU) Tick() {
-	p.Cycle++
-	p.ticks++
-
-	if !p.LCD.Enabled() {
-		if p.LCDC&LCDCDisplayEnable == 0 {
-			// Refresh window with "disabled screen" texture at about the same
-			// rate we'd display the current texture upon VBlank.
-			if p.ticks%(456*153) == 0 {
-				log.Sub("ticks").Desperatef("Disabled: %d ticks", 456*153)
-				p.LCD.VBlank()
-			}
-		} else {
-			p.OAM.Start()
-			p.LCD.Enable()
-			p.state = states.OAMSearch
-			p.RequestLCDInterrupt(interrupts.STATMode2)
-		}
-	} else {
-		if p.LCDC&LCDCDisplayEnable == 0 {
-			// Disable LCD. Clean up internal state.
-			p.LY = 0
-			p.x = 0
-			// [TCAFBD] STAT mode flag is zero when LCD is off.
-			p.state = 0
-			p.LCD.Disable()
-		}
-	}
-
-	if !p.LCD.Enabled() {
+	if !p.enabled {
 		return
 	}
+
+	p.Cycle++
+	p.ticks++
 
 	switch p.state {
 	case states.OAMSearch:
@@ -321,7 +324,7 @@ func (p *PPU) Tick() {
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread.
+				//sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread. // TODO: OnVBlank callbacks here?
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 

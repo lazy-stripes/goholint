@@ -232,7 +232,7 @@ func (m *MBC2) Read(addr uint16) uint8 {
 		if m.RAMEnabled {
 			// Wrap around every 512 bytes (only 9 lowest bits of address used).
 			wrappedAddr := AddrExternalRAM + (addr & (MBC2RAMSize - 1))
-			value := m.RAM.Read(wrappedAddr)
+			value := m.RAM.Read(wrappedAddr) & 0x0f
 			log.Sub("mbc/read").Desperatef("RAM[%04x]: 0x%02x", addr, value)
 			return value
 		}
@@ -273,7 +273,7 @@ func (m *MBC2) Write(addr uint16, value uint8) {
 		}
 		// Wrap around every 512 bytes (only 9 lowest bits of address used).
 		wrappedAddr := AddrExternalRAM + (addr & (MBC2RAMSize - 1))
-		m.RAM.Write(wrappedAddr, value)
+		m.RAM.Write(wrappedAddr, value&0x0f)
 		log.Sub("mbc/write").Desperatef("RAM[%04x]=0x%02x", addr, value)
 
 		// Write save file on enable. FIXME: Buffer it. Put it in a common mbc base struct.
