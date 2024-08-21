@@ -8,7 +8,8 @@ At the moment it feels that the following might be achieved relatively easily:
   * Messages
   * Screenshots
   * GIFs
-* Have a Gameboy and UI instance exist in parallel.
+* Put UI first (branch name should be a hint) and do all high-level stuff
+  (screenshots, GIF, etc) from it.
 * Repaint the UI when the Gameboy returns vblank=true after a tick.
 * ...
 * Profit?

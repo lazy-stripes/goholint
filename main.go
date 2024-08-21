@@ -84,8 +84,6 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	//	return
 	//}
 
-	defer gb.Recover()
-
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
 		res := mainUI.Tick()
@@ -94,6 +92,10 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 			buffer[i] = C.Int8(res.Left)
 			buffer[i+1] = C.Int8(res.Right)
 			i += 2
+		}
+
+		if res.VBlank {
+			sdl.Do(mainUI.Repaint)
 		}
 	}
 }
@@ -179,7 +181,7 @@ func run() {
 		//signal.Notify(mainUI.SIGINTChan, os.Interrupt) // TODO TOO
 
 		// Add CPU-specific context to debug output.
-		logger.Context = gb.CPU.Context
+		//logger.Context = gb.CPU.Context
 		//logger.Context = func() string { return fmt.Sprintf("%s\n%s\n> ", gb.CPU, gb.PPU) } // TEMPORARY
 
 		// An AudioSpec structure containing our parameters. After calling

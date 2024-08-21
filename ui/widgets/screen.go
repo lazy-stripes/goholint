@@ -1,10 +1,10 @@
 package widgets
 
 import (
-	"image"
 	"image/color"
 	"io/ioutil"
 	"time"
+	"unsafe"
 
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/screen"
@@ -24,12 +24,12 @@ type Screen struct {
 	palette    []color.RGBA
 	newPalette []color.RGBA // Store new value until next frame
 
-	enabled   bool
-	buffer    []byte // Texture buffer for each frame
-	blank     []byte // Static texture buffer for "blank screen" frames
-	offset    int
-	zoom      int // Zoom factor applied to the 144×160 screen.
-	Rectangle image.Rectangle
+	enabled bool
+	buffer  []byte // Texture buffer for each frame
+	blank   []byte // Static texture buffer for "blank screen" frames
+	offset  int
+	zoom    int // Zoom factor applied to the 144×160 screen.
+	///Rectangle image.Rectangle
 
 	// Set this to true to save the next frame. Will be reset at VBlank.
 	screenshotRequested bool
@@ -52,24 +52,25 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	screenLen := options.ScreenWidth * options.ScreenHeight * 4
 	blank := make([]byte, screenLen) // TODO: phase out, use a single buffer, redraw blank if/when needed.
 
-	// Keep computed screen size for screenshots.
-	screenRect := image.Rectangle{
-		image.Point{0, 0},
-		image.Point{
-			options.ScreenWidth * int(config.ZoomFactor),
-			options.ScreenHeight * int(config.ZoomFactor),
-		},
-	}
+	// Ignore size hint, the Gameboy's screen is exactly 160×144 pixels.
+	screenRect := sdl.Rect{W: options.ScreenWidth, H: options.ScreenHeight}
+
+	// XXX For testing
+	props := DefaultProperties
+	props.Border = 1
+	props.BorderColor = sdl.Color{R: 255, A: 255}
 
 	s := Screen{
+		widget:  new(&screenRect, props),
+		enabled: true, // FIXME: remove this if we bypass it in PPU.Tick anyway.
 		config:  config,
 		palette: config.Palettes[0],
 		//ui:        ui,
-		//buffer:    buffer,
-		blank:     blank,
-		zoom:      int(config.ZoomFactor),
-		Rectangle: screenRect,
-		gif:       screen.NewGIF(config),
+		buffer: make([]byte, options.ScreenWidth*options.ScreenHeight*4),
+		blank:  blank,
+		zoom:   int(config.ZoomFactor),
+		///Rectangle: screenRect,
+		gif: screen.NewGIF(config),
 	}
 
 	// Pre-instantiate texture buffer for when the scren is off.
@@ -123,16 +124,26 @@ func (s *Screen) Disable() {
 func (s *Screen) Write(colorIndex uint8) {
 	if s.enabled {
 		col := s.palette[colorIndex]
-		s.buffer[s.offset+0] = col.R
-		s.buffer[s.offset+1] = col.G
-		s.buffer[s.offset+2] = col.B
-		s.buffer[s.offset+3] = col.A
-		s.offset += 4
+		// TODO: understand endianness in there.
+		s.buffer[s.offset+3] = col.R
+		s.buffer[s.offset+2] = col.G
+		s.buffer[s.offset+1] = col.B
+		s.buffer[s.offset+0] = col.A
+
+		// If all goes well, we'll get VBlank'ed just as we wrap up.
+		s.offset = (s.offset + 4) % len(s.buffer)
 
 		if s.gif.IsOpen() {
 			s.gif.Write(colorIndex)
 		}
 	}
+}
+
+// Texture updates the widget's internal texture before calling the base class.
+func (u *Screen) Texture() *sdl.Texture {
+	rawPixels := unsafe.Pointer(&u.buffer[0])
+	u.texture.Update(nil, rawPixels, options.ScreenWidth*4)
+	return u.widget.Texture()
 }
 
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL

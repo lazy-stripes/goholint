@@ -40,7 +40,7 @@ type dialog struct {
 type UI struct {
 	emulator *gameboy.GameBoy
 
-	Enabled bool // TODO: rename to paused, invert logic
+	paused bool
 
 	Controls map[options.KeyStroke]Action
 
@@ -217,6 +217,7 @@ func New(config *options.Options) *UI {
 
 func (u *UI) Tick() (res gameboy.TickResult) {
 	// WIP Only tick emulator for now. We'll do the "pause to menu" again from scratch. Weeee.
+	defer u.emulator.Recover()
 	return u.emulator.Tick()
 	//return TickResult{Play: true} // Always return silence. TODO: play samples of our UI SFXes...es here!
 }
@@ -250,13 +251,13 @@ func (u *UI) buildMenu() {
 }
 
 func (u *UI) Show() {
-	u.Enabled = true
+	u.paused = true
 	u.freezeBackground()
 	u.Repaint()
 }
 
 func (u *UI) Hide() {
-	u.Enabled = false
+	u.paused = false
 }
 
 func averagePixels(pixels []color.RGBA) (avg color.RGBA) {
@@ -472,7 +473,7 @@ func (u *UI) Repaint() {
 
 	// If UI is enabled, use frozen/blurred screen as background. Otherwise,
 	// render GameBoy screen and overlay messages.
-	if u.Enabled {
+	if true || u.paused {
 		// TODO: widgets. Gameboy screen may well be one too!
 		//       Widgets are probably gonna need a renderer.
 

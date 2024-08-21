@@ -25,8 +25,8 @@ type Properties struct {
 	VerticalAlign   align.Align // Widget contents alignment (vertical)
 
 	// For debugging if nothing else.
-	Border      int32
-	BorderColor sdl.Color
+	Border      int32     // Border width in pixels
+	BorderColor sdl.Color // Border color
 
 	Zoom int // Zoom factor for the GameBoy display. Used for outlines, margins.
 }

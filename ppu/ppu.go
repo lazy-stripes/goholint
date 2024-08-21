@@ -214,7 +214,7 @@ func (p *PPU) Read(addr uint16) uint8 {
 
 // Tick advances the CPU state one step. Return whether we reached VBlank so
 // that event polling can happen then.
-func (p *PPU) Tick() {
+func (p *PPU) Tick() (vblank bool) {
 	if !p.enabled {
 		return
 	}
@@ -324,7 +324,9 @@ func (p *PPU) Tick() {
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				//sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread. // TODO: OnVBlank callbacks here?
+				// TODO: OnVBlank callbacks here?
+				//sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread.
+				vblank = true
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 
@@ -356,6 +358,8 @@ func (p *PPU) Tick() {
 			}
 		}
 	}
+
+	return
 }
 
 // mapAddress returns the base address for BG or Window map according to LCDC.

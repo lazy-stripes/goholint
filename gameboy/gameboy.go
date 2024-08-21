@@ -32,7 +32,8 @@ const VBlankRate = apu.GameBoyRate / 60
 // TickResult type to group return values from Tick.
 type TickResult struct {
 	Left, Right int8
-	Play        bool
+	Play        bool // If true, use stereo sample in Left and Right.
+	VBlank      bool // If true, repaint UI screen.
 }
 
 // GameBoy structure grouping all our state machines to tick them together.
@@ -254,7 +255,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 	//}
 
 	// PPU ticks occur every machine tick.
-	g.PPU.Tick()
+	res.VBlank = g.PPU.Tick()
 
 	// Timer tick occur every machine tick.
 	g.Timer.Tick()
