@@ -143,13 +143,18 @@ func (w *widget) Texture() *sdl.Texture {
 	// Draw border on top of internal texture.
 	_, _, width, height, _ := w.texture.Query()
 	renderer.SetRenderTarget(w.texture)
-	renderer.SetDrawColor(w.FgColor.R, w.FgColor.G, w.FgColor.B, w.FgColor.A)
+	renderer.SetDrawColor(
+		w.Properties.BorderColor.R,
+		w.Properties.BorderColor.G,
+		w.Properties.BorderColor.B,
+		w.Properties.BorderColor.A,
+	)
 	rect := sdl.Rect{}
 	for i := int32(0); i < w.Border; i++ {
 		rect.X = i
 		rect.Y = i
-		rect.W = width - i
-		rect.H = height - i
+		rect.W = width - 2*i
+		rect.H = height - 2*i
 		renderer.DrawRect(&rect)
 	}
 	renderer.SetRenderTarget(nil)
