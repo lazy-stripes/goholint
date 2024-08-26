@@ -99,7 +99,7 @@ func (w *widget) clear() {
 		w.Background.A)
 	renderer.SetRenderTarget(w.texture)
 	renderer.Clear()
-	renderer.SetRenderTarget(nil)
+	renderer.SetRenderTarget(nil) // TODO: remove? We usually write to the texture after a clear anyway.
 }
 
 // alignX returns the horizontal offset relative to the widget's left for the

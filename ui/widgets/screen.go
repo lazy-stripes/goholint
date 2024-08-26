@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"image"
 	"image/color"
 	"io/ioutil"
 	"time"
@@ -13,7 +14,6 @@ import (
 
 // Screen represents the LCD display for a GameBoy. It works by shifting out
 // individual pixels to a single dedicated texture.
-// TODO: before anything else, find in which package this thing should live. Maybe just an interface with Write and VBlank?
 type Screen struct {
 	*widget
 
@@ -21,14 +21,16 @@ type Screen struct {
 	config *options.Options
 	//ui     *ui.UI
 
-	palette    []color.RGBA
-	newPalette []color.RGBA // Store new value until next frame
+	background *sdl.Texture // Blurred grayscale version of GB display.
 
-	enabled bool
-	buffer  []byte // Texture buffer for each frame
-	blank   []byte // Static texture buffer for "blank screen" frames
-	offset  int
-	zoom    int // Zoom factor applied to the 144×160 screen.
+	palette    []color.RGBA
+	newPalette []color.RGBA // Store new value until next frame.
+
+	paused bool
+	buffer []byte // Texture buffer for each frame.
+	blank  []byte // Static texture buffer for "blank screen" frames.
+	offset int
+	zoom   int // Zoom factor applied to the 144×160 screen.
 	///Rectangle image.Rectangle
 
 	// Set this to true to save the next frame. Will be reset at VBlank.
@@ -62,7 +64,6 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 
 	s := Screen{
 		widget:  new(&screenRect, props),
-		enabled: true, // FIXME: remove this if we bypass it in PPU.Tick anyway.
 		config:  config,
 		palette: config.Palettes[0],
 		//ui:        ui,
@@ -94,6 +95,127 @@ func (s *Screen) makeBlank() {
 	}
 }
 
+func averagePixels(pixels []color.RGBA) (avg color.RGBA) {
+	var sumR, sumG, sumB int
+	for _, pixel := range pixels {
+		sumR += int(pixel.R)
+		sumG += int(pixel.G)
+		sumB += int(pixel.B)
+	}
+
+	avg = color.RGBA{
+		uint8(sumR / len(pixels)),
+		uint8(sumG / len(pixels)),
+		uint8(sumB / len(pixels)),
+		0xff,
+	}
+
+	return avg
+}
+
+// blur returns a copy of the image after applying the box blur algorithm to it.
+// Image has to be at least 2px×2px, or you will have a bad time.
+func blur(img *image.RGBA) (blurred *image.RGBA) {
+	blurred = image.NewRGBA(img.Bounds())
+
+	// Apply blur to inner pixels (radius is 1 pixel).
+	w := img.Bounds().Dx()
+	h := img.Bounds().Dy()
+	for x := 1; x < w-1; x++ {
+		for y := 1; y < h-1; y++ {
+			neighbors := []color.RGBA{
+				img.RGBAAt(x-1, y+1), // Top left
+				img.RGBAAt(x+0, y+1), // Top center
+				img.RGBAAt(x+1, y+1), // Top right
+				img.RGBAAt(x-1, y+0), // Mid left
+				img.RGBAAt(x+0, y+0), // Current pixel
+				img.RGBAAt(x+1, y+0), // Mid right
+				img.RGBAAt(x-1, y-1), // Low left
+				img.RGBAAt(x+0, y-1), // Low center
+				img.RGBAAt(x+1, y-1), // Low right
+			}
+
+			avg := averagePixels(neighbors)
+			blurred.SetRGBA(x, y, avg)
+
+			// Duplicate left column of blurred pixels.
+			if x == 1 {
+				blurred.SetRGBA(0, y, avg)
+			}
+
+			// Duplicate right column of blurred pixels.
+			if x == w-2 {
+				blurred.SetRGBA(w-1, y, avg)
+			}
+
+			// Duplicate top row of blurred pixels.
+			if y == 1 {
+				blurred.SetRGBA(x, 0, avg)
+			}
+
+			// Duplicate bottom row of blurred pixels.
+			if y == h-2 {
+				blurred.SetRGBA(x, h-1, avg)
+			}
+		}
+	}
+
+	// Copy corner pixels.
+	blurred.SetRGBA(0, 0, img.RGBAAt(0, 0))
+	blurred.SetRGBA(w, 0, img.RGBAAt(w, 0))
+	blurred.SetRGBA(0, h, img.RGBAAt(0, h))
+	blurred.SetRGBA(w, h, img.RGBAAt(w, h))
+
+	return blurred
+}
+
+// Pause is called whenever the emulator is paused. This method takes a copy of
+// the current GameBoy screen and turns it to blurred greyscale for use as a
+// background in the main UI.
+func (s *Screen) Pause() {
+	if s.paused {
+		return
+	}
+
+	// Dimensions of UI screen.
+	_, _, w, h, _ := s.background.Query()
+	width := int(w)
+	height := int(h)
+
+	// Intermediate image for easier blurring.
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			// Map source offset (in 160×144 space) to the current UI pixel.
+			srcX := x / s.zoom
+			srcY := y / s.zoom
+			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
+
+			// Extract RGB, compute greyscale, strore in work image.
+			r := s.buffer[srcOffset+0]
+			g := s.buffer[srcOffset+1]
+			b := s.buffer[srcOffset+2]
+			a := s.buffer[srcOffset+3]
+			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
+			grey := uint8(lum)
+
+			img.SetRGBA(x, y, color.RGBA{grey, grey, grey, a})
+		}
+	}
+	// Blur the background. Apply enough times for sufficient effect.
+	// TODO: ... I could make the iterations and overlay configurable I guess?
+	img = blur(blur(blur(img)))
+	rawPixels := unsafe.Pointer(&img.Pix[0])
+	s.background.Update(nil, rawPixels, width*4)
+
+	s.paused = true
+}
+
+func (s *Screen) Unpause() {
+	s.paused = false
+}
+
 // Close frees allocated resources.
 func (s *Screen) Close() {
 	if s.gif.IsOpen() {
@@ -101,49 +223,37 @@ func (s *Screen) Close() {
 	}
 }
 
-// Enable turns on the display. Pixels will be drawn to our texture and showed
-// at VBlank time.
-func (s *Screen) Enable() {
-	s.enabled = true
-}
-
-// Enabled returns whether the display is enabled or not (as part of the Display
-// interface).
-func (s *Screen) Enabled() bool {
-	return s.enabled
-}
-
-// Disable turns off the display. A disabled GB screen will be drawn at VBlank
-// time.
-func (s *Screen) Disable() {
-	s.offset = 0
-	s.enabled = false
-}
-
 // Write adds a new pixel (a mere index into a palette) to the texture buffer.
 func (s *Screen) Write(colorIndex uint8) {
-	if s.enabled {
-		col := s.palette[colorIndex]
-		// TODO: understand endianness in there.
-		s.buffer[s.offset+3] = col.R
-		s.buffer[s.offset+2] = col.G
-		s.buffer[s.offset+1] = col.B
-		s.buffer[s.offset+0] = col.A
+	if s.paused {
+		return
+	}
 
-		// If all goes well, we'll get VBlank'ed just as we wrap up.
-		s.offset = (s.offset + 4) % len(s.buffer)
+	col := s.palette[colorIndex]
+	// TODO: test this on something other than x86 and cry at endianness.
+	s.buffer[s.offset+3] = col.R
+	s.buffer[s.offset+2] = col.G
+	s.buffer[s.offset+1] = col.B
+	s.buffer[s.offset+0] = col.A
 
-		if s.gif.IsOpen() {
-			s.gif.Write(colorIndex)
-		}
+	// If all goes well, we'll get VBlank'ed just as we wrap up.
+	s.offset = (s.offset + 4) % len(s.buffer)
+
+	if s.gif.IsOpen() {
+		s.gif.Write(colorIndex)
 	}
 }
 
 // Texture updates the widget's internal texture before calling the base class.
-func (u *Screen) Texture() *sdl.Texture {
-	rawPixels := unsafe.Pointer(&u.buffer[0])
-	u.texture.Update(nil, rawPixels, options.ScreenWidth*4)
-	return u.widget.Texture()
+func (s *Screen) Texture() *sdl.Texture {
+	// If paused, show the blurred background instead.
+	if s.paused {
+		return s.background
+	}
+
+	rawPixels := unsafe.Pointer(&s.buffer[0])
+	s.texture.Update(nil, rawPixels, options.ScreenWidth*4)
+	return s.widget.Texture()
 }
 
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL

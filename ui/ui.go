@@ -2,12 +2,11 @@ package ui
 
 import (
 	"fmt"
-	"image"
-	"image/color"
 	"os"
+	"os/signal"
+	"runtime/pprof"
 	"strings"
 	"time"
-	"unsafe"
 
 	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/gameboy"
@@ -38,11 +37,13 @@ type dialog struct {
 // UI structure to manage user commands and overlay.
 // TODO: move Gameboy inside UI, implement UI.Tick(), see if it works.
 type UI struct {
-	emulator *gameboy.GameBoy
+	Emulator *gameboy.GameBoy
 
 	paused bool
 
 	Controls map[options.KeyStroke]Action
+
+	SigINTChan chan os.Signal
 
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
@@ -51,23 +52,22 @@ type UI struct {
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
-	dialogs []dialog       // Subwidgets for various systems.
-	root    *widgets.Stack // WIP
+	screen  *widgets.Screen
+	dialogs *widgets.Stack
+	root    *widgets.Group
 
 	zoomFactor int // From -zoom to compute offsets in various textures
 
 	renderer   *sdl.Renderer
-	background *sdl.Texture // UI texture (background)
-	texture    *sdl.Texture // UI texture (foreground)
+	background *sdl.Texture // UI texture (background, emulator screen)
+	foreground *sdl.Texture // UI texture (foreground, UI overlay)
 	screenRect *sdl.Rect    // Screen dimensions (accounting for zoom factor)
 	font       *ttf.Font
-
-	gbScreen       *sdl.Texture // GameBoy screen texture
-	gbScreenBuffer []byte       // GameBoy screen pixels
 
 	fgColor sdl.Color // Text color
 	bgColor sdl.Color // Text outline color
 
+	ticks uint
 }
 
 // Return a UI instance given a renderer to create the overlay texture.
@@ -185,13 +185,14 @@ func New(config *options.Options) *UI {
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
 	gbScreen := widgets.NewScreen(screenRect, config)
-	emulator := gameboy.New(config, gbScreen)
+	emulator := gameboy.New(gbScreen, config)
 
 	ui := &UI{
 		QuitChan:   make(chan bool),
-		emulator:   emulator,
+		SigINTChan: make(chan os.Signal, 1),
+		Emulator:   emulator,
 		background: background,
-		texture:    texture, // TODO: rename to foreground?
+		foreground: texture, // TODO: rename to foreground?
 		renderer:   renderer,
 		screenRect: screenRect,
 		font:       font,
@@ -199,8 +200,18 @@ func New(config *options.Options) *UI {
 		fgColor:    fg,
 		bgColor:    bg,
 		//root:       widgets.NewStack(screenRect, nil),
-		root: widgets.NewStack(screenRect, []widgets.Widget{gbScreen}),
+		dialogs: widgets.NewStack(screenRect, nil),
+		root:    widgets.NewGroup(screenRect, nil), // WIP, still not sure how I'll organize this. I still like bg/fg.
+		screen:  gbScreen,
 	}
+
+	// The UI should primarily show the emulator's screen, with some menu or
+	// special widget on top whenever emulation is paused.
+	ui.root.Add(gbScreen)
+
+	// Create menu stack with extra widgets. Those will only be shown when the
+	// emulator is paused.
+	ui.buildMenu()
 
 	// FIXME: more helper functions.
 	//ui.addDialog(dialog{
@@ -208,193 +219,77 @@ func New(config *options.Options) *UI {
 	//	"Input",
 	//})
 
-	//ui.buildMenu()
-
 	ui.SetControls(config.Keymap)
+
+	go ui.handleSIGINT()
 
 	return ui
 }
 
+// Print debug data on CTRL+C.
+func (u *UI) handleSIGINT() {
+	// Wait for signal, quit cleanly with potential extra debug info if needed.
+	signal.Notify(u.SigINTChan, os.Interrupt)
+
+	<-u.SigINTChan
+	fmt.Println("\nTerminated...")
+
+	// TODO: quit-time cleanup in gb, ui, etc.
+	//gb.Display.Close()
+
+	// TODO: only dump RAM/VRAM/Other if requested in parameters.
+	fmt.Print(u.Emulator.CPU)
+	fmt.Print(u.Emulator.PPU)
+	u.Emulator.CPU.DumpMemory()
+
+	// Force stopping CPU profiling.
+	pprof.StopCPUProfile()
+
+	// FIXME: quit cleanly
+	os.Exit(-1)
+}
+
 func (u *UI) Tick() (res gameboy.TickResult) {
 	// WIP Only tick emulator for now. We'll do the "pause to menu" again from scratch. Weeee.
-	defer u.emulator.Recover()
-	return u.emulator.Tick()
+	u.ticks++
+	if u.ticks%32000 == 0 {
+		sdl.Do(u.ProcessEvents)
+	}
+	defer u.Emulator.Recover()
+	return u.Emulator.Tick()
 	//return TickResult{Play: true} // Always return silence. TODO: play samples of our UI SFXes...es here!
-}
-
-func (u *UI) addDialog(d dialog) {
-	u.dialogs = append(u.dialogs, d)
-}
-
-func (u *UI) showDialog(idx int) func() {
-	return func() { u.root.Show(uint(idx)) }
 }
 
 func (u *UI) buildMenu() {
 	mainMenu := widgets.NewMenu(u.screenRect)
 
 	// Main menu should always be the Stack's bottom widget. It's shown first.
-	u.root.Add(mainMenu)
-	u.root.Show(0)
+	u.dialogs.Add(mainMenu)
 
 	mainMenu.AddChoice("Resume", u.Hide)
 
-	for i, d := range u.dialogs {
-		// Each choice outside of the defaults (resume or quit) will just
-		// show the corresponding widget in the root stack.
-		mainMenu.AddChoice(d.title, u.showDialog(i+1)) // Main menu is entry 0
-		u.root.Add(d)
-	}
+	// FIXME: just do this manually, like addChoice("Input", widgets.NewInput)
+	//for i, d := range u.dialogs {
+	//	// Each choice outside of the defaults (resume or quit) will just
+	//	// show the corresponding widget in the root stack.
+	//	mainMenu.AddChoice(d.title, u.dialogs.Show(i+1)) // Main menu is entry 0
+	//	u.dialogs.Add(d)
+	//}
 
 	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true })
 	mainMenu.Select(0) // highlight first entry
+
 }
 
 func (u *UI) Show() {
 	u.paused = true
-	u.freezeBackground()
+	u.screen.Pause()
 	u.Repaint()
 }
 
 func (u *UI) Hide() {
 	u.paused = false
-}
-
-func averagePixels(pixels []color.RGBA) (avg color.RGBA) {
-	var sumR, sumG, sumB int
-	for _, pixel := range pixels {
-		sumR += int(pixel.R)
-		sumG += int(pixel.G)
-		sumB += int(pixel.B)
-	}
-
-	avg = color.RGBA{
-		uint8(sumR / len(pixels)),
-		uint8(sumG / len(pixels)),
-		uint8(sumB / len(pixels)),
-		0xff,
-	}
-
-	return avg
-}
-
-// blur returns a copy of the image after applying the box blur algorithm to it.
-// Image has to be at least 2px×2px, or you will have a bad time.
-func blur(img *image.RGBA) (blurred *image.RGBA) {
-	blurred = image.NewRGBA(img.Bounds())
-
-	// Apply blur to inner pixels (radius is 1 pixel).
-	w := img.Bounds().Dx()
-	h := img.Bounds().Dy()
-	for x := 1; x < w-1; x++ {
-		for y := 1; y < h-1; y++ {
-			neighbors := []color.RGBA{
-				img.RGBAAt(x-1, y+1), // Top left
-				img.RGBAAt(x+0, y+1), // Top center
-				img.RGBAAt(x+1, y+1), // Top right
-				img.RGBAAt(x-1, y+0), // Mid left
-				img.RGBAAt(x+0, y+0), // Current pixel
-				img.RGBAAt(x+1, y+0), // Mid right
-				img.RGBAAt(x-1, y-1), // Low left
-				img.RGBAAt(x+0, y-1), // Low center
-				img.RGBAAt(x+1, y-1), // Low right
-			}
-
-			avg := averagePixels(neighbors)
-			blurred.SetRGBA(x, y, avg)
-
-			// Duplicate left column of blurred pixels.
-			if x == 1 {
-				blurred.SetRGBA(0, y, avg)
-			}
-
-			// Duplicate right column of blurred pixels.
-			if x == w-2 {
-				blurred.SetRGBA(w-1, y, avg)
-			}
-
-			// Duplicate top row of blurred pixels.
-			if y == 1 {
-				blurred.SetRGBA(x, 0, avg)
-			}
-
-			// Duplicate bottom row of blurred pixels.
-			if y == h-2 {
-				blurred.SetRGBA(x, h-1, avg)
-			}
-		}
-	}
-
-	// Copy corner pixels.
-	blurred.SetRGBA(0, 0, img.RGBAAt(0, 0))
-	blurred.SetRGBA(w, 0, img.RGBAAt(w, 0))
-	blurred.SetRGBA(0, h, img.RGBAAt(0, h))
-	blurred.SetRGBA(w, h, img.RGBAAt(w, h))
-
-	return blurred
-}
-
-// freezeBackground takes a copy of the current GameBoy screen and turns it to
-// blurred greyscale for use as a background in the main UI.
-func (u *UI) freezeBackground() {
-	// We need the screen buffer here. This tightly couples UI and screen.
-	// I'm sure it's fine.
-
-	// Dimensions of UI screen.
-	_, _, w, h, _ := u.background.Query()
-	width := int(w)
-	height := int(h)
-
-	// Intermediate image for easier blurring.
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
-			// Map source offset (in 160×144 space) to the current UI pixel.
-			srcX := x / u.zoomFactor
-			srcY := y / u.zoomFactor
-			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
-
-			// Extract RGB, compute greyscale, strore in work image.
-			r := u.gbScreenBuffer[srcOffset+0]
-			g := u.gbScreenBuffer[srcOffset+1]
-			b := u.gbScreenBuffer[srcOffset+2]
-			a := u.gbScreenBuffer[srcOffset+3]
-			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
-			grey := uint8(lum)
-
-			img.SetRGBA(x, y, color.RGBA{grey, grey, grey, a})
-		}
-	}
-	// Blur the background. Apply enough times for sufficient effect.
-	// TODO: ... I could make the iterations and overlay configurable I guess?
-	img = blur(blur(blur(img)))
-	rawPixels := unsafe.Pointer(&img.Pix[0])
-	u.background.Update(nil, rawPixels, width*4)
-}
-
-// ScreenBuffer creates a new SDL texture suitable to use for the emulator's
-// screen, and a pixel buffer that it returns, which the PPU should write into.
-// This lets us do funny stuff with the GameBoy display's pixels in the UI that
-// we couldn't easily do if we only had access to a texture.
-func (u *UI) ScreenBuffer() (buffer []byte) {
-	texture, err := u.renderer.CreateTexture(
-		sdl.PIXELFORMAT_ABGR8888,
-		sdl.TEXTUREACCESS_STATIC,
-		options.ScreenWidth,
-		options.ScreenHeight)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create screen texture: %s\n", err)
-		return nil // XXX Honestly, at this point we might as well panic()
-	}
-
-	// Save texture for repaints.
-	u.gbScreen = texture
-
-	// Return buffer for the screen to render into.
-	u.gbScreenBuffer = make([]byte, options.ScreenWidth*options.ScreenHeight*4)
-
-	return u.gbScreenBuffer
+	u.screen.Unpause()
 }
 
 // SetControls validates and sets the given control map for the emulator's UI.
@@ -403,14 +298,14 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	actions := map[string]Action{
 		"quit":   u.Quit,
 		"home":   u.Home,
-		"up":     u.propagate(widgets.ButtonUp),
-		"down":   u.propagate(widgets.ButtonDown),
-		"left":   u.propagate(widgets.ButtonLeft),
-		"right":  u.propagate(widgets.ButtonRight),
-		"a":      u.propagate(widgets.ButtonA),
-		"b":      u.propagate(widgets.ButtonB),
-		"select": u.propagate(widgets.ButtonSelect),
-		"start":  u.propagate(widgets.ButtonStart),
+		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),
+		"down":   u.ButtonPressAction(widgets.ButtonDown, u.Emulator.JoypadDown),
+		"left":   u.ButtonPressAction(widgets.ButtonLeft, u.Emulator.JoypadLeft),
+		"right":  u.ButtonPressAction(widgets.ButtonRight, u.Emulator.JoypadRight),
+		"a":      u.ButtonPressAction(widgets.ButtonA, u.Emulator.JoypadA),
+		"b":      u.ButtonPressAction(widgets.ButtonB, u.Emulator.JoypadB),
+		"select": u.ButtonPressAction(widgets.ButtonSelect, u.Emulator.JoypadSelect),
+		"start":  u.ButtonPressAction(widgets.ButtonStart, u.Emulator.JoypadStart),
 	}
 
 	u.Controls = make(map[options.KeyStroke]Action)
@@ -420,11 +315,13 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	return nil
 }
 
-func (u *UI) propagate(e widgets.Event) Action {
+func (u *UI) ButtonPressAction(e widgets.Event, gbAction gameboy.Action) Action {
 	// Convert keystroke into simpler one-shot widget event. We only care about
 	// given event type to tell if a key was pressed.
 	return func(eventType uint32) {
-		if u.root != nil && eventType == sdl.KEYDOWN {
+		if !u.paused {
+			gbAction(eventType)
+		} else if u.root != nil && eventType == sdl.KEYDOWN {
 			u.root.ProcessEvent(e)
 			u.Repaint()
 		}
@@ -466,66 +363,65 @@ func (u *UI) ProcessEvents() {
 
 func (u *UI) Repaint() {
 	// Reset background texture.
-	u.renderer.SetRenderTarget(u.texture)
+	u.renderer.SetRenderTarget(u.foreground)
 	u.renderer.SetDrawColor(0, 0, 0, 0)
 	u.renderer.Clear()
 	u.renderer.SetRenderTarget(nil)
 
 	// If UI is enabled, use frozen/blurred screen as background. Otherwise,
 	// render GameBoy screen and overlay messages.
-	if true || u.paused {
-		// TODO: widgets. Gameboy screen may well be one too!
-		//       Widgets are probably gonna need a renderer.
 
-		// Render blurred greyscale background to window.
-		u.renderer.SetRenderTarget(nil)
-		u.renderer.Copy(u.background, nil, nil)
+	// TODO: The machinery works, now to see how to compose those widgets.
 
-		// Render overlay on foreground texture and copy it to window.
-		u.renderer.SetRenderTarget(u.texture)
-		u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
-		u.renderer.FillRect(u.screenRect)
+	// Render blurred greyscale background to window.
+	u.renderer.SetRenderTarget(nil)
+	u.renderer.Copy(u.background, nil, nil)
 
-		u.renderer.SetRenderTarget(nil)
-		u.texture.SetBlendMode(sdl.BLENDMODE_BLEND)
-		u.renderer.Copy(u.texture, nil, nil)
+	// Render overlay on foreground texture and copy it to window.
+	u.renderer.SetRenderTarget(u.foreground)
+	u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
+	u.renderer.FillRect(u.screenRect)
 
-		// Retrieve texture for root widget and copy it to window.
-		root := u.root.Texture()
+	u.renderer.SetRenderTarget(nil)
+	u.foreground.SetBlendMode(sdl.BLENDMODE_BLEND)
+	u.renderer.Copy(u.foreground, nil, nil)
 
-		u.renderer.SetRenderTarget(nil)
-		root.SetBlendMode(sdl.BLENDMODE_BLEND)
-		u.renderer.Copy(root, nil, nil)
+	// Retrieve texture for root widget and copy it to window.
+	root := u.root.Texture()
 
-		// Debug stuff
-		if log.Enabled() && logger.Level >= logger.Debug {
-			u.renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
-			for x := int32(0); x < u.screenRect.W; x += 8 {
-				u.renderer.DrawLine(x, 0, x, u.screenRect.H)
-			}
-			for y := int32(0); y < u.screenRect.H; y += 8 {
-				u.renderer.DrawLine(0, y, u.screenRect.W, y)
-			}
+	u.renderer.SetRenderTarget(nil)
+	root.SetBlendMode(sdl.BLENDMODE_BLEND)
+	u.renderer.Copy(root, nil, nil)
+
+	// Debug stuff
+	if log.Enabled() && logger.Level >= logger.Debug {
+		u.renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
+		for x := int32(0); x < u.screenRect.W; x += 8 {
+			u.renderer.DrawLine(x, 0, x, u.screenRect.H)
 		}
-
-	} else {
-		// GameBoy screen and text/message.
-
-		// SDL bindings used to accept a slice but no longer do as of 0.4.33.
-		rawPixels := unsafe.Pointer(&u.gbScreenBuffer[0])
-		u.gbScreen.Update(nil, rawPixels, options.ScreenWidth*4)
-
-		u.renderer.SetRenderTarget(nil)
-		u.renderer.Copy(u.gbScreen, nil, nil)
-
-		// Messages. I'm leaving them in the background for now.
-		if u.text != "" || u.message != "" {
-			u.repaintText() // FIXME: make it clearer that it's rendering to u.texture.
-			// I *really* need some more generic function to render text anyway.
-			u.renderer.SetRenderTarget(nil)
-			u.renderer.Copy(u.texture, nil, nil)
+		for y := int32(0); y < u.screenRect.H; y += 8 {
+			u.renderer.DrawLine(0, y, u.screenRect.W, y)
 		}
 	}
+
+	//} else {
+	//	// GameBoy screen and text/message.
+	//
+	//	// SDL bindings used to accept a slice but no longer do as of 0.4.33.
+	//	rawPixels := unsafe.Pointer(&u.gbScreenBuffer[0])
+	//	u.gbScreen.Update(nil, rawPixels, options.ScreenWidth*4)
+	//
+	//	u.renderer.SetRenderTarget(nil)
+	//	u.renderer.Copy(u.gbScreen, nil, nil)
+	//
+	//	// Messages. I'm leaving them in the background for now.
+	//	if u.text != "" || u.message != "" {
+	//		u.repaintText() // FIXME: make it clearer that it's rendering to u.texture.
+	//		// I *really* need some more generic function to render text anyway.
+	//		u.renderer.SetRenderTarget(nil)
+	//		u.renderer.Copy(u.foreground, nil, nil)
+	//	}
+	//}
 
 	u.renderer.Present()
 }
@@ -533,7 +429,7 @@ func (u *UI) Repaint() {
 // Refresh UI texture with permanent text and current message (if any).
 func (u *UI) repaintText() {
 	// Reset texture.
-	u.renderer.SetRenderTarget(u.texture)
+	u.renderer.SetRenderTarget(u.foreground)
 	u.renderer.SetDrawColor(0, 0, 0, 0)
 
 	row := 1
@@ -570,7 +466,7 @@ func (u *UI) renderText(s string, row int) {
 	defer text.Free()
 
 	// Position vertically. Bottom row is row number 1.
-	_, _, _, h, _ := u.texture.Query()
+	_, _, _, h, _ := u.foreground.Query()
 	y := h - int32((u.font.Height())*row) - Margin // TODO: FontSize config
 
 	// Add margin between successive rows.

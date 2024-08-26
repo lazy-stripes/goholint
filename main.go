@@ -51,8 +51,6 @@ var goholint struct {
 	ticks uint64
 }
 
-var gb *gameboy.GameBoy
-
 var mainUI *ui.UI
 
 // Audio callback function that SDL will call at a regular interval that
@@ -84,6 +82,7 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	//	return
 	//}
 
+	// FIXME: move loop below to mainUI.FillAudioBuffer(buffer)
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
 		res := mainUI.Tick()
@@ -98,26 +97,6 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 			sdl.Do(mainUI.Repaint)
 		}
 	}
-}
-
-// Print debug data on CTRL+C.
-func handleSIGINT(c chan os.Signal, gb *gameboy.GameBoy) {
-	// Wait for signal, quit cleanly with potential extra debug info if needed.
-	<-c
-	fmt.Println("\nTerminated...")
-
-	// TODO: quit-time cleanup in gb, ui, etc.
-	//gb.Display.Close()
-
-	// TODO: only dump RAM/VRAM/Other if requested in parameters.
-	fmt.Print(gb.CPU)
-	fmt.Print(gb.PPU)
-	gb.CPU.DumpMemory()
-
-	// Force stopping CPU profiling.
-	pprof.StopCPUProfile()
-
-	os.Exit(-1)
 }
 
 // Separate function to forcefully run in the main thread.
@@ -175,11 +154,6 @@ func run() {
 			bufio.NewReader(os.Stdin).ReadBytes('\n')
 		}
 
-		// Handle SIGINT, store pointers to CPU and PPU for debug info.
-		//c := make(chan os.Signal, 1)
-		//go handleSIGINT(c, gb)
-		//signal.Notify(mainUI.SIGINTChan, os.Interrupt) // TODO TOO
-
 		// Add CPU-specific context to debug output.
 		//logger.Context = gb.CPU.Context
 		//logger.Context = func() string { return fmt.Sprintf("%s\n%s\n> ", gb.CPU, gb.PPU) } // TEMPORARY
@@ -204,7 +178,7 @@ func run() {
 		sdl.PauseAudio(false)
 	})
 
-	defer gb.Stop()
+	defer mainUI.Emulator.Stop()
 
 	<-mainUI.QuitChan // Wait for the callback or an action to signal us.
 

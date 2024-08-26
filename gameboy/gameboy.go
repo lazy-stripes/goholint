@@ -19,8 +19,6 @@ import (
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/serial"
 	"github.com/lazy-stripes/goholint/timer"
-
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 // Package-wide logger.
@@ -50,8 +48,6 @@ type GameBoy struct {
 	Timer   *timer.Timer
 	JPad    *joypad.Joypad
 
-	Controls map[options.KeyStroke]Action
-
 	// Current palette.
 	paletteIndex int
 
@@ -59,47 +55,47 @@ type GameBoy struct {
 	recording bool
 }
 
-// SetControls validates and sets the given control map for the emulator.
-func (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
-	// Intermediate mapping between labels and actual actions. This feels
-	// unnecessarily complicated, but should make sense when I start translating
-	// these from a config file. I hope.
-	actions := map[string]Action{
-		"up":              g.JoypadUp,
-		"down":            g.JoypadDown,
-		"left":            g.JoypadLeft,
-		"right":           g.JoypadRight,
-		"a":               g.JoypadA,
-		"b":               g.JoypadB,
-		"select":          g.JoypadSelect,
-		"start":           g.JoypadStart,
-		"screenshot":      g.Screenshot,
-		"recordgif":       g.StartStopRecord,
-		"nextpalette":     g.NextPalette,
-		"previouspalette": g.PreviousPalette,
-		"togglevoice1":    g.ToggleVoice1,
-		"togglevoice2":    g.ToggleVoice2,
-		"togglevoice3":    g.ToggleVoice3,
-		"togglevoice4":    g.ToggleVoice4,
-		"quit":            g.Quit,
-		"home":            g.Home,
-	}
-
-	g.Controls = make(map[options.KeyStroke]Action)
-	for label, keyStroke := range keymap {
-		g.Controls[keyStroke] = actions[label]
-	}
-	return nil
-}
+/// SetControls validates and sets the given control map for the emulator.
+//unc (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
+//	// Intermediate mapping between labels and actual actions. This feels
+//	// unnecessarily complicated, but should make sense when I start translating
+//	// these from a config file. I hope.
+//	actions := map[string]Action{
+//		"up":              g.JoypadUp,
+//		"down":            g.JoypadDown,
+//		"left":            g.JoypadLeft,
+//		"right":           g.JoypadRight,
+//		"a":               g.JoypadA,
+//		"b":               g.JoypadB,
+//		"select":          g.JoypadSelect,
+//		"start":           g.JoypadStart,
+//		"screenshot":      g.Screenshot,
+//		"recordgif":       g.StartStopRecord,
+//		"nextpalette":     g.NextPalette,
+//		"previouspalette": g.PreviousPalette,
+//		"togglevoice1":    g.ToggleVoice1,
+//		"togglevoice2":    g.ToggleVoice2,
+//		"togglevoice3":    g.ToggleVoice3,
+//		"togglevoice4":    g.ToggleVoice4,
+//		"quit":            g.Quit,
+//		"home":            g.Home,
+//	}
+//
+//	g.Controls = make(map[options.KeyStroke]Action)
+//	for label, keyStroke := range keymap {
+//		g.Controls[keyStroke] = actions[label]
+//	}
+//	return nil
+//
 
 // New just instantiates most of the emulator. No biggie.
 // TODO: try cleaning this mess up a little.
-func New(config *options.Options, display screen.PixelWriter) *GameBoy {
+func New(display screen.PixelWriter, config *options.Options) *GameBoy {
 	g := GameBoy{
 		config: config,
 	}
 
-	g.SetControls(config.Keymap)
+	//g.SetControls(config.Keymap)
 
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
@@ -202,35 +198,6 @@ func New(config *options.Options, display screen.PixelWriter) *GameBoy {
 	return &g
 }
 
-func (g *GameBoy) ProcessEvents() {
-	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-		eventType := event.GetType()
-		switch eventType {
-
-		// Button presses and UI keys
-		case sdl.KEYDOWN, sdl.KEYUP:
-			keyEvent := event.(*sdl.KeyboardEvent)
-			keyStroke := options.KeyStroke{
-				Code: keyEvent.Keysym.Sym,
-				Mod:  sdl.Keymod(keyEvent.Keysym.Mod & options.ModMask),
-			}
-			if action := g.Controls[keyStroke]; action != nil {
-				action(eventType)
-			} else {
-				if eventType == sdl.KEYDOWN {
-					log.Infof("unknown key code: 0x%x", keyStroke.Code)
-					log.Infof("        modifier: 0x%x", sdl.GetModState())
-				}
-			}
-
-		// Window-closing event
-		// TODO: check these top-level events in UI.ProcessEvents first.
-		case sdl.QUIT:
-			// g.UI.QuitChan <- true
-		}
-	}
-}
-
 // Tick advances the whole emulator one step at a theoretical 4MHz. Since we're
 // using SDL audio for timing this, we also return the current value of audio
 // samples for each stereo channel as well as whether they should be played now.
@@ -289,7 +256,7 @@ func (g *GameBoy) Stop() {
 	// g.Display.Close()
 
 	// If debugging at all, dump debug info.
-	if len(g.config.DebugModules) > 0 {
+	if g.config.DebugModules != nil {
 		fmt.Println(g.CPU)
 		fmt.Println(g.PPU)
 
