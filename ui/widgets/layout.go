@@ -27,6 +27,11 @@ func (l *VerticalLayout) Add(child Widget) {
 	l.repaint()
 }
 
+// Texture bypasses the base Group method to just render aligned children as-is.
+func (l *VerticalLayout) Texture() *sdl.Texture {
+	return l.widget.Texture()
+}
+
 // repaint renders children top-down and spaces them vertically.
 func (l *VerticalLayout) repaint() {
 	l.clear()
@@ -68,6 +73,7 @@ func (l *VerticalLayout) repaint() {
 
 		y += h
 	}
+	renderer.SetRenderTarget(nil)
 }
 
 // HorizontalLayout renders its children widgets from left to right, horizontally
@@ -87,6 +93,11 @@ func NewHorizontalLayout(size *sdl.Rect, children []Widget, props ...Properties)
 func (l *HorizontalLayout) Add(child Widget) {
 	l.Group.Add(child)
 	l.repaint()
+}
+
+// Texture bypasses the base Group method to just render aligned children as-is.
+func (l *HorizontalLayout) Texture() *sdl.Texture {
+	return l.widget.Texture()
 }
 
 func (l *HorizontalLayout) ProcessEvent(e Event) bool {
