@@ -33,13 +33,14 @@ func (g *Group) ProcessEvent(e Event) bool {
 // Texture draws children texture in order (bottom to top).
 func (g *Group) Texture() *sdl.Texture {
 	g.clear()
-	renderer.SetRenderTarget(g.texture)
 	for _, c := range g.children {
-		t := c.Texture()
-		t.SetBlendMode(sdl.BLENDMODE_BLEND)
-		renderer.Copy(t, nil, nil)
+		if c.IsVisible() {
+			t := c.Texture()
+			renderer.SetRenderTarget(g.texture)
+			renderer.Copy(t, nil, nil)
+			renderer.SetRenderTarget(nil)
+		}
 	}
-	renderer.SetRenderTarget(nil)
 	return g.texture
 }
 
