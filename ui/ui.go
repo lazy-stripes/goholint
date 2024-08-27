@@ -208,16 +208,12 @@ func New(config *options.Options) *UI {
 	// The UI should primarily show the emulator's screen, with some menu or
 	// special widget on top whenever emulation is paused.
 	ui.root.Add(gbScreen)
+	ui.root.Add(ui.dialogs)
+	ui.dialogs.Hide(true)
 
 	// Create menu stack with extra widgets. Those will only be shown when the
 	// emulator is paused.
 	ui.buildMenu()
-
-	// FIXME: more helper functions.
-	//ui.addDialog(dialog{
-	//	widgets.NewInput(screenRect, 5, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ui.Hide),
-	//	"Input",
-	//})
 
 	ui.SetControls(config.Keymap)
 
@@ -250,14 +246,17 @@ func (u *UI) handleSIGINT() {
 }
 
 func (u *UI) Tick() (res gameboy.TickResult) {
-	// WIP Only tick emulator for now. We'll do the "pause to menu" again from scratch. Weeee.
 	u.ticks++
-	if u.ticks%32000 == 0 {
+	if u.ticks%1000 == 0 {
 		sdl.Do(u.ProcessEvents)
 	}
-	defer u.Emulator.Recover()
-	return u.Emulator.Tick()
-	//return TickResult{Play: true} // Always return silence. TODO: play samples of our UI SFXes...es here!
+
+	// FIXME: pause on vblank. Should be using gb.Tick() return here anyway.
+	if !u.paused {
+		defer u.Emulator.Recover()
+		return u.Emulator.Tick()
+	}
+	return gameboy.TickResult{Play: true} // Always return silence. TODO: play samples of our UI SFXes...es here!
 }
 
 func (u *UI) buildMenu() {
@@ -278,18 +277,20 @@ func (u *UI) buildMenu() {
 
 	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true })
 	mainMenu.Select(0) // highlight first entry
-
 }
 
 func (u *UI) Show() {
 	u.paused = true
 	u.screen.Pause()
+	u.dialogs.Hide(false)
 	u.Repaint()
 }
 
 func (u *UI) Hide() {
 	u.paused = false
 	u.screen.Unpause()
+	u.dialogs.Hide(true)
+	u.Repaint()
 }
 
 // SetControls validates and sets the given control map for the emulator's UI.

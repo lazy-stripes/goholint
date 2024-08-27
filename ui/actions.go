@@ -20,7 +20,11 @@ func (u *UI) Home(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	u.Hide()
+	if u.paused {
+		u.Hide()
+	} else {
+		u.Show()
+	}
 }
 
 // TODO: so many things! Save states, toggle features...
