@@ -33,6 +33,8 @@ func texture(size *sdl.Rect) *sdl.Texture {
 		log.Warningf("failed to create texture: %v", err)
 	}
 
+	texture.SetBlendMode(sdl.BLENDMODE_BLEND)
+
 	return texture
 }
 
@@ -41,6 +43,14 @@ func Init(r *sdl.Renderer) {
 }
 
 type Widget interface {
+	// Hide sets the widget's internal visiblity flag. This can be used to
+	// temporarily hide a widget within a group or layout without removing the
+	// widget from it.
+	Hide(bool)
+
+	// IsVisible just returns the current value of the internal visibility flag.
+	IsVisible() bool
+
 	// ProcessEvent returns true if the widget caught and handled the event,
 	// false if it did not.
 	ProcessEvent(Event) bool
@@ -61,7 +71,8 @@ type widget struct {
 
 	texture *sdl.Texture
 
-	width, height int32 // XXX could this be derived from texture?
+	width, height int32 // Widget's actual size (may not be the same as texture)
+	hidden        bool  // If true, widget may not show up in groups and layouts
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
@@ -128,6 +139,17 @@ func (w *widget) alignY(height int32) (offset int32) {
 		offset = w.height - height
 	}
 	return
+}
+
+// Hide takes a boolean that will define whether the widget should be hidden or
+// visible. A widget is visible by default at creation time.
+func (w *widget) Hide(hidden bool) {
+	w.hidden = hidden
+}
+
+// IsVIsible makes the visibility flag accessible to the interface.
+func (w *widget) IsVisible() bool {
+	return !w.hidden
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
