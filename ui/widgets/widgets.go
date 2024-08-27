@@ -163,14 +163,15 @@ func (w *widget) ProcessEvent(e Event) bool {
 // Texture should be called by subclasses to apply unused properties like border
 // to the widget's internal texture.
 func (w *widget) Texture() *sdl.Texture {
+	// TODO: clear() and return transparent texture on hidden?
 	// Draw border on top of internal texture.
 	_, _, width, height, _ := w.texture.Query()
 	renderer.SetRenderTarget(w.texture)
 	renderer.SetDrawColor(
-		w.Properties.BorderColor.R,
-		w.Properties.BorderColor.G,
-		w.Properties.BorderColor.B,
-		w.Properties.BorderColor.A,
+		w.BorderColor.R,
+		w.BorderColor.G,
+		w.BorderColor.B,
+		w.BorderColor.A,
 	)
 	rect := sdl.Rect{}
 	for i := int32(0); i < w.Border; i++ {
