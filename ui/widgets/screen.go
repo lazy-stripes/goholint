@@ -231,10 +231,10 @@ func (s *Screen) Write(colorIndex uint8) {
 
 	col := s.palette[colorIndex]
 	// TODO: test this on something other than x86 and cry at endianness.
-	s.buffer[s.offset+3] = col.R
-	s.buffer[s.offset+2] = col.G
-	s.buffer[s.offset+1] = col.B
-	s.buffer[s.offset+0] = col.A
+	s.buffer[s.offset+0] = col.R
+	s.buffer[s.offset+1] = col.G
+	s.buffer[s.offset+2] = col.B
+	s.buffer[s.offset+3] = col.A
 
 	// If all goes well, we'll get VBlank'ed just as we wrap up.
 	s.offset = (s.offset + 4) % len(s.buffer)

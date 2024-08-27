@@ -21,7 +21,8 @@ var renderer *sdl.Renderer
 
 func texture(size *sdl.Rect) *sdl.Texture {
 	texture, err := renderer.CreateTexture(
-		sdl.PIXELFORMAT_RGBA8888,
+		// FIXME: someday, endianness will break this.
+		sdl.PIXELFORMAT_ABGR8888,
 		sdl.TEXTUREACCESS_TARGET,
 		size.W,
 		size.H,
