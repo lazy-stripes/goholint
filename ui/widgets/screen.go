@@ -21,7 +21,7 @@ type Screen struct {
 	config *options.Options
 	//ui     *ui.UI
 
-	background *sdl.Texture // Blurred grayscale version of GB display.
+	frozen *sdl.Texture // Blurred grayscale version of GB display.
 
 	palette    []color.RGBA
 	newPalette []color.RGBA // Store new value until next frame.
@@ -58,18 +58,18 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	screenRect := sdl.Rect{W: options.ScreenWidth, H: options.ScreenHeight}
 
 	// XXX For testing
-	props := DefaultProperties
-	props.Border = 1
-	props.BorderColor = sdl.Color{R: 255, A: 255}
+	//props := DefaultProperties
+	//props.Border = 1
+	//props.BorderColor = sdl.Color{R: 255, A: 255}
 
 	s := Screen{
-		widget:  new(&screenRect, props),
+		frozen:  texture(sizeHint),
+		widget:  new(&screenRect),
 		config:  config,
 		palette: config.Palettes[0],
-		//ui:        ui,
-		buffer: make([]byte, options.ScreenWidth*options.ScreenHeight*4),
-		blank:  blank,
-		zoom:   int(config.ZoomFactor),
+		buffer:  make([]byte, options.ScreenWidth*options.ScreenHeight*4),
+		blank:   blank,
+		zoom:    int(config.ZoomFactor),
 		///Rectangle: screenRect,
 		gif: screen.NewGIF(config),
 	}
@@ -178,9 +178,8 @@ func (s *Screen) Pause() {
 	}
 
 	// Dimensions of UI screen.
-	_, _, w, h, _ := s.background.Query()
-	width := int(w)
-	height := int(h)
+	width := int(options.ScreenWidth * s.config.ZoomFactor)
+	height := int(options.ScreenHeight * s.config.ZoomFactor)
 
 	// Intermediate image for easier blurring.
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -207,7 +206,7 @@ func (s *Screen) Pause() {
 	// TODO: ... I could make the iterations and overlay configurable I guess?
 	img = blur(blur(blur(img)))
 	rawPixels := unsafe.Pointer(&img.Pix[0])
-	s.background.Update(nil, rawPixels, width*4)
+	s.frozen.Update(nil, rawPixels, width*4)
 
 	s.paused = true
 }
@@ -248,7 +247,7 @@ func (s *Screen) Write(colorIndex uint8) {
 func (s *Screen) Texture() *sdl.Texture {
 	// If paused, show the blurred background instead.
 	if s.paused {
-		return s.background
+		return s.frozen
 	}
 
 	rawPixels := unsafe.Pointer(&s.buffer[0])
