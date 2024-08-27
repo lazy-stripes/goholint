@@ -363,36 +363,9 @@ func (u *UI) ProcessEvents() {
 }
 
 func (u *UI) Repaint() {
-	// Reset background texture.
-	u.renderer.SetRenderTarget(u.foreground)
-	u.renderer.SetDrawColor(0, 0, 0, 0)
-	u.renderer.Clear()
+	// At this point, we can pretty much just render the root widget.
 	u.renderer.SetRenderTarget(nil)
-
-	// If UI is enabled, use frozen/blurred screen as background. Otherwise,
-	// render GameBoy screen and overlay messages.
-
-	// TODO: The machinery works, now to see how to compose those widgets.
-
-	// Render blurred greyscale background to window.
-	u.renderer.SetRenderTarget(nil)
-	u.renderer.Copy(u.background, nil, nil)
-
-	// Render overlay on foreground texture and copy it to window.
-	u.renderer.SetRenderTarget(u.foreground)
-	u.renderer.SetDrawColor(0xcc, 0xcc, 0xcc, 0x90)
-	u.renderer.FillRect(u.screenRect)
-
-	u.renderer.SetRenderTarget(nil)
-	u.foreground.SetBlendMode(sdl.BLENDMODE_BLEND)
-	u.renderer.Copy(u.foreground, nil, nil)
-
-	// Retrieve texture for root widget and copy it to window.
-	root := u.root.Texture()
-
-	u.renderer.SetRenderTarget(nil)
-	root.SetBlendMode(sdl.BLENDMODE_BLEND)
-	u.renderer.Copy(root, nil, nil)
+	u.renderer.Copy(u.root.Texture(), nil, nil)
 
 	// Debug stuff
 	if log.Enabled() && logger.Level >= logger.Debug {
