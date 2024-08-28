@@ -346,11 +346,12 @@ func (s *Screen) VBlank() {
 	//	}
 	//}
 	//
-	//if s.newPalette != nil {
-	//	s.palette = s.newPalette
-	//	s.newPalette = nil
-	//	s.makeBlank() // Recreate blank screen texture buffer with new colors.
-	//}
+
+	// Apply new palette if one was requested.
+	if s.newPalette != nil {
+		s.palette = s.newPalette
+		s.newPalette = nil
+	}
 
 	// Invoke all stored callbacks and clear slice.
 	for _, cb := range s.vblankCallbacks {
@@ -387,8 +388,8 @@ func (s *Screen) StopRecord() {
 	s.stopRecording = true
 }
 
-// Palette will set a new palette for the display and GIF.
+// Palette will set a new palette for the display and GIF. The new palette will
+// only go into effect at VBlank time.
 func (s *Screen) Palette(p []color.RGBA) {
-	// Wait until next frame to apply new palette.
 	s.newPalette = p
 }

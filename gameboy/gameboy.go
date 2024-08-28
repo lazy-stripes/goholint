@@ -38,55 +38,18 @@ type TickResult struct {
 type GameBoy struct {
 	config *options.Options
 
-	ticks   uint64
-	APU     *apu.APU
-	CPU     *cpu.CPU
-	PPU     *ppu.PPU
-	Display *screen.Screen
-	DMA     *memory.DMA
-	Serial  *serial.Serial
-	Timer   *timer.Timer
-	JPad    *joypad.Joypad
-
-	// Current palette.
-	paletteIndex int
+	ticks  uint64
+	APU    *apu.APU
+	CPU    *cpu.CPU
+	PPU    *ppu.PPU
+	DMA    *memory.DMA
+	Serial *serial.Serial
+	Timer  *timer.Timer
+	JPad   *joypad.Joypad
 
 	// For GIF record toggle.
 	recording bool
 }
-
-/// SetControls validates and sets the given control map for the emulator.
-//unc (g *GameBoy) SetControls(keymap options.Keymap) (err error) {
-//	// Intermediate mapping between labels and actual actions. This feels
-//	// unnecessarily complicated, but should make sense when I start translating
-//	// these from a config file. I hope.
-//	actions := map[string]Action{
-//		"up":              g.JoypadUp,
-//		"down":            g.JoypadDown,
-//		"left":            g.JoypadLeft,
-//		"right":           g.JoypadRight,
-//		"a":               g.JoypadA,
-//		"b":               g.JoypadB,
-//		"select":          g.JoypadSelect,
-//		"start":           g.JoypadStart,
-//		"screenshot":      g.Screenshot,
-//		"recordgif":       g.StartStopRecord,
-//		"nextpalette":     g.NextPalette,
-//		"previouspalette": g.PreviousPalette,
-//		"togglevoice1":    g.ToggleVoice1,
-//		"togglevoice2":    g.ToggleVoice2,
-//		"togglevoice3":    g.ToggleVoice3,
-//		"togglevoice4":    g.ToggleVoice4,
-//		"quit":            g.Quit,
-//		"home":            g.Home,
-//	}
-//
-//	g.Controls = make(map[options.KeyStroke]Action)
-//	for label, keyStroke := range keymap {
-//		g.Controls[keyStroke] = actions[label]
-//	}
-//	return nil
-//
 
 // New just instantiates most of the emulator. No biggie.
 // TODO: try cleaning this mess up a little.
@@ -94,8 +57,6 @@ func New(display screen.Display, config *options.Options) *GameBoy {
 	g := GameBoy{
 		config: config,
 	}
-
-	//g.SetControls(config.Keymap)
 
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)

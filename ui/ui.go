@@ -39,8 +39,6 @@ type dialog struct {
 type UI struct {
 	Emulator *gameboy.GameBoy
 
-	paused bool
-
 	Controls map[options.KeyStroke]Action
 
 	SigINTChan chan os.Signal
@@ -48,6 +46,14 @@ type UI struct {
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
 
+	config *options.Options
+
+	paused bool
+
+	// Current palette.
+	paletteIndex int
+
+	// TODO: move to screen? Where should Messages be handled?
 	msgTimer *time.Timer // Timer for clearing messages
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
@@ -72,7 +78,6 @@ type UI struct {
 
 // Return a UI instance given a renderer to create the overlay texture.
 func New(config *options.Options) *UI {
-
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		options.ScreenWidth*int32(config.ZoomFactor),
@@ -188,6 +193,7 @@ func New(config *options.Options) *UI {
 	emulator := gameboy.New(gbScreen, config)
 
 	ui := &UI{
+		config:     config,
 		QuitChan:   make(chan bool),
 		SigINTChan: make(chan os.Signal, 1),
 		Emulator:   emulator,
@@ -298,9 +304,15 @@ func (u *UI) Hide() {
 // SetControls validates and sets the given control map for the emulator's UI.
 func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	// Intermediate mapping between labels and actual actions.
+	// TODO: re-add all the stuff previously done on the gb side (screenshots, gif, etc)
 	actions := map[string]Action{
-		"quit":   u.Quit,
-		"home":   u.Home,
+		// High-level actions.
+		"quit":            u.Quit,
+		"home":            u.Home,
+		"nextpalette":     u.NextPalette,
+		"previouspalette": u.PreviousPalette,
+
+		// Button presses that could either be handled by GB or UI.
 		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),
 		"down":   u.ButtonPressAction(widgets.ButtonDown, u.Emulator.JoypadDown),
 		"left":   u.ButtonPressAction(widgets.ButtonLeft, u.Emulator.JoypadLeft),
@@ -309,6 +321,13 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		"b":      u.ButtonPressAction(widgets.ButtonB, u.Emulator.JoypadB),
 		"select": u.ButtonPressAction(widgets.ButtonSelect, u.Emulator.JoypadSelect),
 		"start":  u.ButtonPressAction(widgets.ButtonStart, u.Emulator.JoypadStart),
+		//		"screenshot":      g.Screenshot,
+		//		"recordgif":       g.StartStopRecord,
+		//		"togglevoice1":    g.ToggleVoice1,
+		//		"togglevoice2":    g.ToggleVoice2,
+		//		"togglevoice3":    g.ToggleVoice3,
+		//		"togglevoice4":    g.ToggleVoice4,
+
 	}
 
 	u.Controls = make(map[options.KeyStroke]Action)

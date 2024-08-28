@@ -35,4 +35,33 @@ func (u *UI) Home(eventType uint32) {
 	}
 }
 
+// NextPalette switches colors to the next defined palette, wrapping around.
+// There should always be at least a default palette in the config object.
+func (u *UI) NextPalette(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	u.paletteIndex = (u.paletteIndex + 1) % len(u.config.Palettes)
+	u.screen.Palette(u.config.Palettes[u.paletteIndex])
+	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+}
+
+// PreviousPalette switches colors to the previous defined palette, wrapping
+// around. There should always be at least a default palette in the config
+// object.
+func (u *UI) PreviousPalette(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	u.paletteIndex -= 1
+	if u.paletteIndex < 0 {
+		// Wrap around (can't use % with negative values).
+		u.paletteIndex = len(u.config.Palettes) - 1
+	}
+	u.screen.Palette(u.config.Palettes[u.paletteIndex])
+	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+}
+
 // TODO: so many things! Save states, toggle features...

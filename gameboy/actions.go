@@ -77,37 +77,6 @@ func (g *GameBoy) StartStopRecord(eventType uint32) {
 	}
 }
 
-// NextPalette switches colors to the next defined palette, wrapping around.
-// There should always be at least a default palette in the config object.
-// TODO: move to UI, call emulator.SetPalette() then display message. (ui/actions.go?)
-func (g *GameBoy) NextPalette(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-
-	g.paletteIndex = (g.paletteIndex + 1) % len(g.config.Palettes)
-	//g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
-}
-
-// PreviousPalette switches colors to the previous defined palette, wrapping
-// around. There should always be at least a default palette in the config
-// object.
-// TODO: move to UI, call emulator.SetPalette() then display message. (ui/actions.go?)
-func (g *GameBoy) PreviousPalette(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-
-	g.paletteIndex -= 1
-	if g.paletteIndex < 0 {
-		// Wrap around (can't use % with negative values).
-		g.paletteIndex = len(g.config.Palettes) - 1
-	}
-	//g.Display.Palette(g.config.Palettes[g.paletteIndex])
-	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
-}
-
 // Helper strings to format UI messages.
 var voiceNames = [4]string{
 	"Square 1",
