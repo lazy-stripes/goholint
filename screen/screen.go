@@ -19,7 +19,14 @@ type ColorIndex uint8
 // Palette containing 4 indexed colors.
 type Palette [4]color.NRGBA
 
-type PixelWriter interface {
+type Display interface {
+	// Write shifts out a pixel (a color index from 0 to 3 into the current
+	// palette) to the display.
 	Write(colorIndex uint8)
 
+	// VBlank should be called when vertical blanking starts.
+	VBlank()
+
+	// OnVBlank takes a function that will get called once when VBlank starts.
+	OnVBlank(func())
 }

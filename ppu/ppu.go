@@ -70,7 +70,7 @@ type PPU struct {
 	OAM        *OAM
 	Interrupts *interrupts.Interrupts
 	Cycle      int
-	LCD        screen.PixelWriter
+	Display    screen.Display
 	LCDC       uint8
 	STAT       uint8
 	SCY, SCX   uint8
@@ -96,8 +96,8 @@ type PPU struct {
 }
 
 // New PPU instance.
-func New(display screen.PixelWriter) *PPU {
-	p := PPU{MMU: memory.NewEmptyMMU(), LCD: display}
+func New(display screen.Display) *PPU {
+	p := PPU{MMU: memory.NewEmptyMMU(), Display: display}
 	p.Add(memory.Registers{
 		AddrLCDC: &p.LCDC,
 		AddrSTAT: &p.STAT,
@@ -324,9 +324,8 @@ func (p *PPU) Tick() (vblank bool) {
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				// TODO: OnVBlank callbacks here?
-				//sdl.Do(p.LCD.VBlank) // Keep GPU stuff in OS thread.
-				vblank = true
+				p.Display.VBlank()
+				vblank = true // XXX This may not be needed if we can do everything via OnVBlank callbacks?
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 
@@ -406,7 +405,7 @@ func (p *PPU) pop(drop bool) uint8 {
 			palette := *p.palettes[pixel.Palette]
 			// This was shamefully taken from coffee-gb.
 			color := (palette >> (pixel.Color << 1)) & 3
-			p.LCD.Write(color)
+			p.Display.Write(color)
 		}
 		return 1
 	}

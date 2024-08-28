@@ -21,6 +21,8 @@ type Screen struct {
 
 	frozen *sdl.Texture // Blurred grayscale version of GB display.
 
+	vblankCallbacks []func()
+
 	palette    []color.RGBA
 	newPalette []color.RGBA // Store new value until next frame.
 
@@ -246,6 +248,16 @@ func (s *Screen) Texture() *sdl.Texture {
 	return s.widget.Texture()
 }
 
+// OnVBlank takes a callback function that will be invoked once when VBlank() is
+// called. Use this method to ensure certain operations only happen when a
+// screen frame has been fully drawn.
+//
+// The given callback is stored into an internal list. At the end of VBlank, all
+// callbacks in the list will be invoked in the order they were given.
+func (s *Screen) OnVBlank(callback func()) {
+	s.vblankCallbacks = append(s.vblankCallbacks, callback)
+}
+
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *Screen) VBlank() {
@@ -339,6 +351,12 @@ func (s *Screen) VBlank() {
 	//	s.newPalette = nil
 	//	s.makeBlank() // Recreate blank screen texture buffer with new colors.
 	//}
+
+	// Invoke all stored callbacks and clear slice.
+	for _, cb := range s.vblankCallbacks {
+		cb()
+	}
+	s.vblankCallbacks = s.vblankCallbacks[:0]
 }
 
 // Dump writes the current pixel buffer to file for debugging purposes.

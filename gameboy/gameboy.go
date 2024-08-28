@@ -90,7 +90,7 @@ type GameBoy struct {
 
 // New just instantiates most of the emulator. No biggie.
 // TODO: try cleaning this mess up a little.
-func New(display screen.PixelWriter, config *options.Options) *GameBoy {
+func New(display screen.Display, config *options.Options) *GameBoy {
 	g := GameBoy{
 		config: config,
 	}
