@@ -21,8 +21,25 @@ var renderer *sdl.Renderer
 
 func texture(size *sdl.Rect) *sdl.Texture {
 	texture, err := renderer.CreateTexture(
-		// FIXME: someday, endianness will break this.
-		sdl.PIXELFORMAT_ABGR8888,
+		// My understanding of RGBA8888 was too naive, but fortunately I finally
+		// found the explanation on the SDL_Color wiki page:
+		//
+		// "The bits of this structure can be directly reinterpreted as an
+		// integer-packed color which uses the SDL_PIXELFORMAT_RGBA32 format
+		// (SDL_PIXELFORMAT_ABGR8888 on little-endian systems and
+		// SDL_PIXELFORMAT_RGBA8888 on big-endian systems)."
+		//
+		// So I just needed PIXELFORMAT_RGBA32 all along. For more context, the
+		// Wikipedia page about RGBA has a neat little table describing it:
+		//
+		// |          | Little-endian | Big-endian |
+		// | -------- |-------------- | ---------- |
+		// | RGBA8888 | ABGR32        | RGBA32     |
+		// | ARGB32   | BGRA8888      | ARGB8888   |
+		// | RGBA32   | ABGR8888      | RGBA8888   |
+		//
+		// TL;DR: just use RGBA32, you big stripy dumbass.
+		uint32(sdl.PIXELFORMAT_RGBA32),
 		sdl.TEXTUREACCESS_TARGET,
 		size.W,
 		size.H,
