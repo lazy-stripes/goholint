@@ -366,8 +366,9 @@ func (u *UI) ProcessEvents() {
 
 func (u *UI) Repaint() {
 	// At this point, we can pretty much just render the root widget.
+	texture := u.root.Texture()
 	u.renderer.SetRenderTarget(nil)
-	u.renderer.Copy(u.root.Texture(), nil, nil)
+	u.renderer.Copy(texture, nil, nil)
 
 	// Debug stuff
 	if log.Enabled() && logger.Level >= logger.Debug {
