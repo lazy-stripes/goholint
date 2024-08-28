@@ -213,7 +213,7 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")
 
-	// Default palette is palette 0.
+	// Default palette is palette 0. TODO: "default" entry in [palettes] section.
 	applyColor(colorSection, "gb-0", &o.Palettes[0][0])
 	applyColor(colorSection, "gb-1", &o.Palettes[0][1])
 	applyColor(colorSection, "gb-2", &o.Palettes[0][2])

@@ -209,7 +209,7 @@ func New(config *options.Options) *UI {
 	// special widget on top whenever emulation is paused.
 	ui.root.Add(gbScreen)
 	ui.root.Add(ui.dialogs)
-	ui.dialogs.Hide(true)
+	ui.dialogs.SetVisible(false)
 
 	// Create menu stack with extra widgets. Those will only be shown when the
 	// emulator is paused.
@@ -246,6 +246,7 @@ func (u *UI) handleSIGINT() {
 	os.Exit(-1)
 }
 
+// TODO: FillAudioBuffer
 func (u *UI) Tick() (res gameboy.TickResult) {
 	u.ticks++
 	if u.ticks%1000 == 0 {
@@ -283,14 +284,14 @@ func (u *UI) buildMenu() {
 func (u *UI) Show() {
 	u.paused = true
 	u.screen.Pause()
-	u.dialogs.Hide(false)
+	u.dialogs.SetVisible(true)
 	u.Repaint()
 }
 
 func (u *UI) Hide() {
 	u.paused = false
 	u.screen.Unpause()
-	u.dialogs.Hide(true)
+	u.dialogs.SetVisible(false)
 	u.Repaint()
 }
 

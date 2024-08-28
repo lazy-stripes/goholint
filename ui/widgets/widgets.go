@@ -15,8 +15,8 @@ var log = logger.New("widgets", "widget-level debug")
 // are expected to be able to handle their own size (i.e. labels).
 var noSizeHint = &sdl.Rect{}
 
-// This feels dirty but I'm going for convenient right now.
-
+// Globally available renderer instance. This feels dirty but I'm going for
+// convenient right now.
 var renderer *sdl.Renderer
 
 func texture(size *sdl.Rect) *sdl.Texture {
@@ -61,10 +61,10 @@ func Init(r *sdl.Renderer) {
 }
 
 type Widget interface {
-	// Hide sets the widget's internal visiblity flag. This can be used to
+	// SetVisible sets the widget's internal visiblity flag. This can be used to
 	// temporarily hide a widget within a group or layout without removing the
 	// widget from it.
-	Hide(bool)
+	SetVisible(bool)
 
 	// IsVisible just returns the current value of the internal visibility flag.
 	IsVisible() bool
@@ -90,7 +90,7 @@ type widget struct {
 	texture *sdl.Texture
 
 	width, height int32 // Widget's actual size (may not be the same as texture)
-	hidden        bool  // If true, widget may not show up in groups and layouts
+	visible       bool  // If false, widget may not show up in groups/layouts
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
@@ -112,6 +112,7 @@ func new(sizeHint *sdl.Rect, props ...Properties) *widget {
 		texture:    texture(&size),
 		width:      size.W,
 		height:     size.H,
+		visible:    true,
 	}
 	widget.clear()
 	return widget
@@ -159,15 +160,15 @@ func (w *widget) alignY(height int32) (offset int32) {
 	return
 }
 
-// Hide takes a boolean that will define whether the widget should be hidden or
+// SetVisible takes a boolean that will define whether the widget should be hidden or
 // visible. A widget is visible by default at creation time.
-func (w *widget) Hide(hidden bool) {
-	w.hidden = hidden
+func (w *widget) SetVisible(visible bool) {
+	w.visible = visible
 }
 
 // IsVIsible makes the visibility flag accessible to the interface.
 func (w *widget) IsVisible() bool {
-	return !w.hidden
+	return w.visible
 }
 
 // ProcessEvent should be overridden in widgets that actually do process events.
@@ -180,7 +181,7 @@ func (w *widget) ProcessEvent(e Event) bool {
 // Texture should be called by subclasses to apply unused properties like border
 // to the widget's internal texture.
 func (w *widget) Texture() *sdl.Texture {
-	// TODO: clear() and return transparent texture on hidden?
+	// TODO: clear() and return transparent texture if not visible?
 	// Draw border on top of internal texture.
 	_, _, width, height, _ := w.texture.Query()
 	renderer.SetRenderTarget(w.texture)

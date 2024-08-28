@@ -72,12 +72,6 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 		gif: screen.NewGIF(config),
 	}
 
-	// Pre-instantiate texture buffer for when the scren is off.
-	s.makeBlank()
-
-	// Init texture and trigger stuff usually happening at VBlank.
-	s.VBlank() // XXX: is this needed?
-
 	return &s
 }
 
@@ -255,10 +249,6 @@ func (s *Screen) Texture() *sdl.Texture {
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *Screen) VBlank() {
-	//// Refresh UI at the end of this function, which will draw the GameBoy
-	//// screen and whatever text overlays we use here.
-	//defer s.ui.Repaint()
-	//
 	//if s.enabled {
 	//	// Reset offset for drawing the next frame.
 	//	s.offset = 0

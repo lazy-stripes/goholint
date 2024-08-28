@@ -7,6 +7,7 @@ import (
 )
 
 // Action type for user interactions. This might move to a ui package someday.
+// FIXME: I want SDL out of Gameboy code, phase this out, use booleans directly.
 type Action func(eventType uint32)
 
 // JoypadUp updates the Joypad's registers for the Up direction.
