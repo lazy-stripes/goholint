@@ -17,8 +17,17 @@ import (
 type Screen struct {
 	*widget
 
+	// FIXME: I use this virtually everywhere... do I dare a global options.Runtime instance?
 	config *options.Options
 
+	paused bool
+
+	// Overlay messages.
+	msgTimer *time.Timer // Timer for clearing messages
+	message  string      // Temporary text on timer
+	text     string      // Permanent text
+
+	buffer []byte       // Texture buffer for each frame.
 	frozen *sdl.Texture // Blurred grayscale version of GB display.
 
 	vblankCallbacks []func()
@@ -26,8 +35,6 @@ type Screen struct {
 	palette    []color.RGBA
 	newPalette []color.RGBA // Store new value until next frame.
 
-	paused bool
-	buffer []byte // Texture buffer for each frame.
 	blank  []byte // Static texture buffer for "blank screen" frames.
 	offset int
 	zoom   int // Zoom factor applied to the 144×160 screen.
@@ -75,6 +82,29 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	}
 
 	return &s
+}
+
+// Set permanent text (useful for persistent UI). Call with empty string to
+// clear.
+func (s *Screen) Text(text string) {
+	s.text = text
+}
+
+// Clear temporary message. Texture will be repainted next VBlank.
+func (s *Screen) clearMessage() {
+	s.message = ""
+}
+
+// Message shows a temporary message that will be cleared after the given
+// duration (in seconds). The message stacks with permanent text set via Text().
+func (s *Screen) Message(text string, seconds time.Duration) {
+	// Stop reset timer, a new one will be started.
+	// TODO: stack messages (up to, like, 3 or something)
+	if s.msgTimer != nil {
+		s.msgTimer.Stop()
+	}
+	s.message = text
+	s.msgTimer = time.AfterFunc(time.Second*seconds, s.clearMessage)
 }
 
 // makeBlank prepares a static texture buffer to represent the screen when it

@@ -5,8 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime/pprof"
-	"strings"
-	"time"
 
 	"github.com/lazy-stripes/goholint/assets"
 	"github.com/lazy-stripes/goholint/gameboy"
@@ -52,11 +50,6 @@ type UI struct {
 
 	// Current palette.
 	paletteIndex int
-
-	// TODO: move to screen? Where should Messages be handled?
-	msgTimer *time.Timer // Timer for clearing messages
-	message  string      // Temporary text on timer
-	text     string      // Permanent text
 
 	screen  *widgets.Screen
 	dialogs *widgets.Stack
@@ -423,29 +416,29 @@ func (u *UI) Repaint() {
 }
 
 // Refresh UI texture with permanent text and current message (if any).
-func (u *UI) repaintText() {
-	// Reset texture.
-	u.renderer.SetRenderTarget(u.foreground)
-	u.renderer.SetDrawColor(0, 0, 0, 0)
-
-	row := 1
-	if u.text != "" {
-		u.renderText(u.text, row)
-		row++
-	}
-
-	// TODO: stack messages
-	if u.message != "" {
-		// Allow messages to have several lines. However, we need to iterate in
-		// reverse as we render text from the bottom up.
-		lines := strings.Split(u.message, "\n")
-		for i := range lines {
-			line := lines[len(lines)-1-i]
-			u.renderText(line, row)
-			row++
-		}
-	}
-}
+//func (u *UI) repaintText() {
+//	// Reset texture.
+//	u.renderer.SetRenderTarget(u.foreground)
+//	u.renderer.SetDrawColor(0, 0, 0, 0)
+//
+//	row := 1
+//	if u.text != "" {
+//		u.renderText(u.text, row)
+//		row++
+//	}
+//
+//	// TODO: stack messages
+//	if u.message != "" {
+//		// Allow messages to have several lines. However, we need to iterate in
+//		// reverse as we render text from the bottom up.
+//		lines := strings.Split(u.message, "\n")
+//		for i := range lines {
+//			line := lines[len(lines)-1-i]
+//			u.renderText(line, row)
+//			row++
+//		}
+//	}
+//}
 
 // Refresh UI texture with permanent text and current message (if any).
 // TODO: widgets.Label
@@ -491,30 +484,4 @@ func (u *UI) renderText(s string, row int) {
 			W: text.W,
 			H: text.H,
 		})
-}
-
-// Set permanent text (useful for persistent UI). Call with empty string to
-// clear.
-func (u *UI) Text(text string) {
-	u.text = text
-}
-
-// Clear temporary message and repaint texture.
-func (u *UI) clearMessage() {
-	// Make sure to execute in the UI thread in case we were called from a
-	// timer thread.
-	u.message = ""
-	sdl.Do(u.Repaint)
-}
-
-// Message shows a temporary message that will be cleared after the given
-// duration (in seconds). This message stacks with permanent text set with Text().
-func (u *UI) Message(text string, seconds time.Duration) {
-	// Stop reset timer, a new one will be started.
-	// TODO: stack messages (up to, like, 3 or something)
-	if u.msgTimer != nil {
-		u.msgTimer.Stop()
-	}
-	u.message = text
-	u.msgTimer = time.AfterFunc(time.Second*seconds, u.clearMessage)
 }

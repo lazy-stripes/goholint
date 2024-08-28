@@ -95,8 +95,9 @@ func (l *HorizontalLayout) Add(child Widget) {
 	l.repaint()
 }
 
-// Texture bypasses the base Group method to just render aligned children as-is.
+// Texture overrides the base Group method to render aligned children as-is.
 func (l *HorizontalLayout) Texture() *sdl.Texture {
+	l.repaint()
 	return l.widget.Texture()
 }
 

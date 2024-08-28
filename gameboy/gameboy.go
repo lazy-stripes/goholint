@@ -211,6 +211,7 @@ func (g *GameBoy) Stop() {
 
 // Recover should be called at the end of each Tick. If the program panics, it
 // should then display some useful debug info before crashing.
+// TODO: there is some overlap with handleSIGINT, maybe part or all of this could be done from UI too.
 func (g *GameBoy) Recover() {
 	if r := recover(); r != nil {
 		fmt.Printf("Goholint seems to have crashed (%v). I'm sorry.\n\n", r)
