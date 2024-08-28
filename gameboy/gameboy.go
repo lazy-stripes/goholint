@@ -204,23 +204,6 @@ func New(display screen.PixelWriter, config *options.Options) *GameBoy {
 func (g *GameBoy) Tick() (res TickResult) {
 	g.ticks++
 
-	// Poll events 128 times per second.
-	// TODO: check these top-level events in UI.ProcessEvents first.
-	//if g.ticks%32000 == 0 {
-	//	if g.UI.Enabled {
-	//		sdl.Do(g.UI.ProcessEvents)
-	//	} else {
-	//		sdl.Do(g.ProcessEvents)
-	//	}
-	//}
-
-	// Emulation is paused while home screen is active. TODO: ui.paused instead.
-	//if g.UI.Enabled {
-	//	// Still output a silence sample when needed.
-	//	res.Play = g.ticks%apu.SoundOutRate == 0
-	//	return
-	//}
-
 	// PPU ticks occur every machine tick.
 	res.VBlank = g.PPU.Tick()
 

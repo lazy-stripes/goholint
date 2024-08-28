@@ -17,9 +17,7 @@ import (
 type Screen struct {
 	*widget
 
-	// TODO: make it a widget after I move them back to the ui package.
 	config *options.Options
-	//ui     *ui.UI
 
 	frozen *sdl.Texture // Blurred grayscale version of GB display.
 
@@ -229,7 +227,6 @@ func (s *Screen) Write(colorIndex uint8) {
 	}
 
 	col := s.palette[colorIndex]
-	// TODO: test this on something other than x86 and cry at endianness.
 	s.buffer[s.offset+0] = col.R
 	s.buffer[s.offset+1] = col.G
 	s.buffer[s.offset+2] = col.B

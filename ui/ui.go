@@ -222,7 +222,8 @@ func New(config *options.Options) *UI {
 	return ui
 }
 
-// Print debug data on CTRL+C.
+// handleSIGINT prints and dumps debug data on CTRL+C. This should be run as a
+// goroutine at startup after creating UI.
 func (u *UI) handleSIGINT() {
 	// Wait for signal, quit cleanly with potential extra debug info if needed.
 	signal.Notify(u.SigINTChan, os.Interrupt)

@@ -6,9 +6,6 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// TODO: most if not all of these should move to ui/actions.go and call
-//       dedicated method of the Gameboy object.
-
 // Action type for user interactions. This might move to a ui package someday.
 type Action func(eventType uint32)
 
@@ -172,26 +169,3 @@ func (g *GameBoy) ToggleVoice4(eventType uint32) {
 	g.APU.Muted[3] = !g.APU.Muted[3]
 	// g.UI.Message(g.voiceStatusMsg(3), 2)
 }
-
-// Quit cleanly quits the program.
-func (g *GameBoy) Quit(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-	// g.UI.QuitChan <- true
-}
-
-// Home stops the emulation to display some kind of home menu. Clearing it
-// should be done from the UI itself. Which, in itself, is going to be another
-// whole thing.
-//
-// Doing this should pave the way for high-level stuff the emulator should do on
-// VBlank like saving or loading states and suchlike.
-func (g *GameBoy) Home(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-	// g.UI.Show()
-}
-
-// TODO: so many things! Save states, toggle features...

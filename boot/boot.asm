@@ -129,13 +129,13 @@ scale_logo_2:
 	RET
 
 logo_data:
-	; Logo (raw bitmap)
+	; Logo (raw bitmap).
 	DB $36,$CC,$C6,$00,$00,$07,$01,$19,$08,$8B,$00,$01,$00,$0E,$66,$66
 	DB $CC,$0D,$00,$0B,$03,$73,$00,$80,$CC,$E7,$E6,$6C,$CC,$C7,$DD,$D9
 	DB $D9,$99,$BB,$B9,$33,$3E,$66,$66,$DD,$DD,$D9,$99,$BB,$BB,$00,$00
 
 acorn_tiles:
-	; More video data
+	; Top and bottom tiles for the acorn.
 	DB $87,$7e,$87,$5e,$87,$5e,$87,$7e,$46,$3c,$4e,$3c,$3c,$18,$18,$00
 	DB $00,$00,$18,$00,$24,$18,$3c,$00,$7e,$3c,$df,$7e,$ff,$7e,$ff,$00
 
