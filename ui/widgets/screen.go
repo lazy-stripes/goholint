@@ -9,6 +9,7 @@ import (
 
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/screen"
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -23,21 +24,22 @@ type Screen struct {
 	paused bool
 
 	// Overlay messages.
+	overlay  *VerticalLayout
 	msgTimer *time.Timer // Timer for clearing messages
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
 	buffer []byte       // Texture buffer for each frame.
 	frozen *sdl.Texture // Blurred grayscale version of GB display.
+	screen *sdl.Texture // Gameboy display texture (160×144)
 
-	vblankCallbacks []func()
+	vblankCallbacks []func() // List of callbacks to invoke at VBlank time.
 
-	palette    []color.RGBA
-	newPalette []color.RGBA // Store new value until next frame.
+	newPalette []color.RGBA // Requested new palette, will be set next VBlank.
+	palette    []color.RGBA // Current palette.
 
 	blank  []byte // Static texture buffer for "blank screen" frames.
 	offset int
-	zoom   int // Zoom factor applied to the 144×160 screen.
 	///Rectangle image.Rectangle
 
 	// Set this to true to save the next frame. Will be reset at VBlank.
@@ -53,15 +55,11 @@ type Screen struct {
 // New returns an SDL2 display with a greyish palette and takes a zoom
 // factor to size the window (current default is 2x).
 func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
-	// Request a buffer from UI, which will be used to draw the emulator's
-	// output.
-	//buffer := ui.ScreenBuffer()
-
 	// Go bindings use byte slices but SDL thinks in terms of uint32
 	screenLen := options.ScreenWidth * options.ScreenHeight * 4
-	blank := make([]byte, screenLen) // TODO: phase out, use a single buffer, redraw blank if/when needed.
+	blank := make([]byte, screenLen) // TODO: phase out, just redraw blank to internal texture if/when needed.
 
-	// Ignore size hint, the Gameboy's screen is exactly 160×144 pixels.
+	// Ignore size hint for main texture, Gameboy's screen is 160×144 pixels.
 	screenRect := sdl.Rect{W: options.ScreenWidth, H: options.ScreenHeight}
 
 	// XXX For testing
@@ -69,14 +67,18 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	//props.Border = 1
 	//props.BorderColor = sdl.Color{R: 255, A: 255}
 
+	layoutProps := DefaultProperties
+	layoutProps.VerticalAlign = align.Bottom
+	layoutProps.HorizontalAlign = align.Left
+
 	s := Screen{
-		frozen:  texture(sizeHint),
-		widget:  new(&screenRect),
+		widget:  new(sizeHint),
+		overlay: NewVerticalLayout(sizeHint, nil, layoutProps),
+		screen:  texture(&screenRect),
 		config:  config,
 		palette: config.Palettes[0],
 		buffer:  make([]byte, options.ScreenWidth*options.ScreenHeight*4),
 		blank:   blank,
-		zoom:    int(config.ZoomFactor),
 		///Rectangle: screenRect,
 		gif: screen.NewGIF(config),
 	}
@@ -202,6 +204,7 @@ func (s *Screen) Pause() {
 	}
 
 	// Dimensions of UI screen.
+	// FIXME: this should all be deduced from the widget texture, but scaling up the gb screen is where the friction happens.
 	width := int(options.ScreenWidth * s.config.ZoomFactor)
 	height := int(options.ScreenHeight * s.config.ZoomFactor)
 
@@ -211,8 +214,8 @@ func (s *Screen) Pause() {
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			// Map source offset (in 160×144 space) to the current UI pixel.
-			srcX := x / s.zoom
-			srcY := y / s.zoom
+			srcX := x / int(s.config.ZoomFactor)
+			srcY := y / int(s.config.ZoomFactor)
 			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
 
 			// Extract RGB, compute greyscale, strore in work image.
@@ -266,15 +269,36 @@ func (s *Screen) Write(colorIndex uint8) {
 	}
 }
 
-// Texture updates the widget's internal texture before calling the base class.
-func (s *Screen) Texture() *sdl.Texture {
-	// If paused, show the blurred background instead.
+// clear overrides the VerticalLayout method to draw the gameboy screen to the
+// background texture.
+func (s *Screen) clear() {
+	renderer.SetRenderTarget(s.texture)
 	if s.paused {
-		return s.frozen
+		renderer.Copy(s.frozen, nil, nil)
+	} else {
+		rawPixels := unsafe.Pointer(&s.buffer[0])
+		s.screen.Update(nil, rawPixels, options.ScreenWidth*4)
+		renderer.Copy(s.screen, nil, nil)
 	}
+	renderer.SetRenderTarget(nil)
+}
 
-	rawPixels := unsafe.Pointer(&s.buffer[0])
-	s.texture.Update(nil, rawPixels, options.ScreenWidth*4)
+// Texture will draw the screen and optionally the text overlay on top.
+func (s *Screen) Texture() *sdl.Texture {
+	// If paused, only show the blurred background instead.
+	if !s.paused {
+		rawPixels := unsafe.Pointer(&s.buffer[0])
+		s.screen.Update(nil, rawPixels, options.ScreenWidth*4)
+		// TODO: maybe having a proper RenderTo(texture) that would take care of the target might help.
+		renderer.SetRenderTarget(s.texture)
+		renderer.Copy(s.screen, nil, nil)
+
+		// TODO: don't draw overlay if not needed.
+		overlayTexture := s.overlay.Texture()
+		renderer.SetRenderTarget(s.texture)
+		renderer.Copy(overlayTexture, nil, nil)
+		renderer.SetRenderTarget(nil)
+	}
 	return s.widget.Texture()
 }
 

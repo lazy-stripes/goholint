@@ -6,8 +6,6 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// Let's do this.
-
 // VerticalLayout renders its children widgets from top to bottom, vertically
 // centered.
 type VerticalLayout struct {
@@ -41,7 +39,7 @@ func (l *VerticalLayout) repaint() {
 
 	for _, c := range l.children {
 		// Render child to texture. Keep track of height.
-		// TODO: obviously, at some point, make a HorizontalLayout using common code.
+		// TODO: common layout code.
 		t := c.Texture()
 		_, _, _, h, _ := t.Query()
 		totalHeight += h

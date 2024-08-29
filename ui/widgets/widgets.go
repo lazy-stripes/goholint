@@ -66,7 +66,7 @@ type Widget interface {
 	// widget from it.
 	SetVisible(bool)
 
-	// IsVisible just returns the current value of the internal visibility flag.
+	// IsVisible returns the current value of the internal visibility flag.
 	IsVisible() bool
 
 	// ProcessEvent returns true if the widget caught and handled the event,

@@ -174,9 +174,10 @@ func New(config *options.Options) *UI {
 		FgColor:         fg,
 		HorizontalAlign: align.Center,
 		VerticalAlign:   align.Middle,
-		//Border:     1,
-		Background: sdl.Color{0x20, 0x7f, 0x20, 0x7f},
-		Zoom:       int(config.ZoomFactor),
+		Border:          1,
+		BorderColor:     sdl.Color{0xff, 0x00, 0x00, 0xff},
+		//Background:      sdl.Color{0x20, 0x7f, 0x20, 0x7f},
+		Zoom: int(config.ZoomFactor),
 	}
 
 	widgets.Init(renderer)
