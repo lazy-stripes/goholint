@@ -103,7 +103,7 @@ scroll_logo:
 	JR NZ, .start_scroll
 
 	DEC B				; Set B=0 first time
-	JR NZ, end			; ... next time, will jump to end of boot.
+	JR NZ, check		; ... next time, will jump to end of boot.
 
 	LD D,$20
 	JR .start_scroll
@@ -139,8 +139,18 @@ acorn_tiles:
 	DB $87,$7e,$87,$5e,$87,$5e,$87,$7e,$46,$3c,$4e,$3c,$3c,$18,$18,$00
 	DB $00,$00,$18,$00,$24,$18,$3c,$00,$7e,$3c,$df,$7e,$ff,$7e,$ff,$00
 
+check:
+	; Check header to lock up if no cartridge is present. I don't have room for
+	; much code here, so we just check a header byte for which $ff isn't a valid
+	; value.
+	LD HL, $014a	; Destination code, should be $00 or $01.
+	LD A, $ff
+	CP A, [HL]
+.check_failure
+	JR Z, .check_failure
+
 SECTION "end", ROM0[$00fc]
-; Disable boot ROM before handing over control to the cartridge.
 end:
-	LD A,$01
+	; Disable boot ROM before handing over control to the cartridge.
+	LD A, $01
 	LD [$FF00+$50],A	; Turn off DMG rom

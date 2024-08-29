@@ -1,7 +1,7 @@
 all: boot.rom
 
-install:
-	mv -f boot.rom ../assets/boot.rom
+install: boot.rom
+	cp -f boot.rom ../assets/boot.rom
 
 clean:
 	rm -f boot.o boot.rom
