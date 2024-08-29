@@ -1,5 +1,7 @@
 .vscode/
 bin/
+boot/*.o
+boot/*.rom
 goholint
 goholint-*.png
 goholint-*.gif

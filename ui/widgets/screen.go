@@ -30,7 +30,6 @@ type Screen struct {
 	text     string      // Permanent text
 
 	buffer []byte       // Texture buffer for each frame.
-	frozen *sdl.Texture // Blurred grayscale version of GB display.
 	screen *sdl.Texture // Gameboy display texture (160×144)
 
 	vblankCallbacks []func() // List of callbacks to invoke at VBlank time.
@@ -233,7 +232,7 @@ func (s *Screen) Pause() {
 	// TODO: ... I could make the iterations and overlay configurable I guess?
 	img = blur(blur(blur(img)))
 	rawPixels := unsafe.Pointer(&img.Pix[0])
-	s.frozen.Update(nil, rawPixels, width*4)
+	s.texture.Update(nil, rawPixels, width*4)
 
 	s.paused = true
 }
@@ -267,20 +266,6 @@ func (s *Screen) Write(colorIndex uint8) {
 	if s.gif.IsOpen() {
 		s.gif.Write(colorIndex)
 	}
-}
-
-// clear overrides the VerticalLayout method to draw the gameboy screen to the
-// background texture.
-func (s *Screen) clear() {
-	renderer.SetRenderTarget(s.texture)
-	if s.paused {
-		renderer.Copy(s.frozen, nil, nil)
-	} else {
-		rawPixels := unsafe.Pointer(&s.buffer[0])
-		s.screen.Update(nil, rawPixels, options.ScreenWidth*4)
-		renderer.Copy(s.screen, nil, nil)
-	}
-	renderer.SetRenderTarget(nil)
 }
 
 // Texture will draw the screen and optionally the text overlay on top.

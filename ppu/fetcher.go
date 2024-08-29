@@ -148,7 +148,7 @@ func (f *Fetcher) Tick() {
 		// Mix sprite pixels with FIFO, taking into account offset if sprite
 		// is only partially displayed (i.e. entering screen from the left).
 		var palette uint8
-		if f.spriteFlags&0x10 == 0 {
+		if f.spriteFlags&SpritePalette == 0 {
 			palette = PixelOBP0
 		} else {
 			palette = PixelOBP1
@@ -172,7 +172,7 @@ func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint16, tileID uint8
 		offset = tileDataAddr + (uint16(tileID) * 16)
 	}
 	if flags&SpriteFlipY != 0 {
-		// If flipping, get line at (spriteSize-1-line)
+		// If flipping, get line at (tileSize-1-line)
 		tileLine = 7 - tileLine
 	}
 	addr := offset + (uint16(tileLine) * 2)
