@@ -101,6 +101,11 @@ func (f *Fetcher) Tick() {
 	case states.ReadSpriteID:
 		// Read directly from OAM RAM.
 		f.spriteID = f.oamRAM.Read(f.sprite.Address + 2) // We already read X&Y
+		f.state = states.ReadSpriteFlags
+
+	case states.ReadSpriteFlags:
+		f.spriteFlags = f.oamRAM.Read(f.sprite.Address + 3)
+		f.state = states.ReadSpriteData0
 
 		// Account for 8×16 sprites. Quoting PanDocs [4.3 OAM]:
 		//
@@ -112,18 +117,20 @@ func (f *Fetcher) Tick() {
 		// tile is “NN & $FE”, and the bottom 8×8 tile is “NN | $01”.
 		if *f.lcdc&LCDCSpriteSize != 0 {
 			if f.spriteLine < 8 {
-				f.spriteID &= 0xfe
+				if f.spriteFlags&SpriteFlipY != 0 {
+					f.spriteID |= 0x01 // Swap tiles
+				} else {
+					f.spriteID &= 0xfe
+				}
 			} else {
-				f.spriteID |= 0x01
+				if f.spriteFlags&SpriteFlipY != 0 {
+					f.spriteID &= 0xfe // Swap tiles
+				} else {
+					f.spriteID |= 0x01
+				}
 				f.spriteLine -= 8
 			}
 		}
-
-		f.state = states.ReadSpriteFlags
-
-	case states.ReadSpriteFlags:
-		f.spriteFlags = f.oamRAM.Read(f.sprite.Address + 3)
-		f.state = states.ReadSpriteData0
 
 	case states.ReadSpriteData0:
 		f.ReadTileLine(0, 0x8000, f.spriteID, false, f.spriteLine, f.spriteFlags, &f.spriteData)
@@ -158,6 +165,7 @@ func (f *Fetcher) Tick() {
 // depending on current state.
 func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint16, tileID uint8, signedID bool, tileLine uint8, flags uint8, data *[8]uint8) {
 	var offset uint16
+
 	if signedID {
 		offset = uint16(int16(tileDataAddr) + int16(int8(tileID))*16)
 	} else {
@@ -165,8 +173,7 @@ func (f *Fetcher) ReadTileLine(bitPlane uint8, tileDataAddr uint16, tileID uint8
 	}
 	if flags&SpriteFlipY != 0 {
 		// If flipping, get line at (spriteSize-1-line)
-		height := uint8(8<<((*f.lcdc&LCDCSpriteSize)>>2) - 1)
-		tileLine = height - tileLine
+		tileLine = 7 - tileLine
 	}
 	addr := offset + (uint16(tileLine) * 2)
 
