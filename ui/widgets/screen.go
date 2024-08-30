@@ -51,8 +51,9 @@ type Screen struct {
 	recordTime     time.Time
 }
 
-// New returns an SDL2 display with a greyish palette and takes a zoom
-// factor to size the window (current default is 2x).
+// NewScreen returns a widget suitable for use as a Gameboy display (conforming
+// to the screen.Display interface) and supporting screenshots, palette changes,
+// GIF recording and overlay messages.
 func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	// Go bindings use byte slices but SDL thinks in terms of uint32
 	screenLen := options.ScreenWidth * options.ScreenHeight * 4
@@ -204,6 +205,7 @@ func (s *Screen) Pause() {
 
 	// Dimensions of UI screen.
 	// FIXME: this should all be deduced from the widget texture, but scaling up the gb screen is where the friction happens.
+	// TODO: draw.NearestNeighbor.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
 	width := int(options.ScreenWidth * s.config.ZoomFactor)
 	height := int(options.ScreenHeight * s.config.ZoomFactor)
 
@@ -293,6 +295,7 @@ func (s *Screen) Texture() *sdl.Texture {
 //
 // The given callback is stored into an internal list. At the end of VBlank, all
 // callbacks in the list will be invoked in the order they were given.
+// FIXME: what happens if screen is disabled?
 func (s *Screen) OnVBlank(callback func()) {
 	s.vblankCallbacks = append(s.vblankCallbacks, callback)
 }
@@ -382,6 +385,7 @@ func (s *Screen) VBlank() {
 	//		//       but scope is being an issue.
 	//		//       Maybe through some debug.DumpRAM() where debug would hold
 	//		//       the necessary references. Meh.
+	//      //       ... except now maybe I can do that from the UI when gb.Tick returns vblank!
 	//	}
 	//}
 	//
