@@ -20,13 +20,14 @@ func NewVerticalLayout(size *sdl.Rect, children []Widget, props ...Properties) *
 	return l
 }
 
-func (l *VerticalLayout) Add(child Widget) {
-	l.Group.Add(child)
-	l.repaint()
-}
+//func (l *VerticalLayout) Add(child Widget) {
+//	l.Group.Add(child)
+//	l.repaint()
+//}
 
 // Texture bypasses the base Group method to just render aligned children as-is.
 func (l *VerticalLayout) Texture() *sdl.Texture {
+	l.repaint()
 	return l.widget.Texture()
 }
 
@@ -88,10 +89,10 @@ func NewHorizontalLayout(size *sdl.Rect, children []Widget, props ...Properties)
 	return l
 }
 
-func (l *HorizontalLayout) Add(child Widget) {
-	l.Group.Add(child)
-	l.repaint()
-}
+//func (l *HorizontalLayout) Add(child Widget) {
+//	l.Group.Add(child)
+//	l.repaint()
+//}
 
 // Texture overrides the base Group method to render aligned children as-is.
 func (l *HorizontalLayout) Texture() *sdl.Texture {
@@ -99,14 +100,14 @@ func (l *HorizontalLayout) Texture() *sdl.Texture {
 	return l.widget.Texture()
 }
 
-func (l *HorizontalLayout) ProcessEvent(e Event) bool {
-	// Repaint if one of our children handled the event.
-	caught := l.Group.ProcessEvent(e)
-	if caught {
-		l.repaint()
-	}
-	return caught
-}
+//func (l *HorizontalLayout) ProcessEvent(e Event) bool {
+//	// Repaint if one of our children handled the event.
+//	caught := l.Group.ProcessEvent(e)
+//	if caught {
+//		l.repaint()
+//	}
+//	return caught
+//}
 
 // repaint renders children left-right and spaces them horizontally.
 func (l *HorizontalLayout) repaint() {

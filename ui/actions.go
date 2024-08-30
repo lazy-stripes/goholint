@@ -39,7 +39,7 @@ func (u *UI) NextPalette(eventType uint32) {
 
 	u.paletteIndex = (u.paletteIndex + 1) % len(u.config.Palettes)
 	u.screen.Palette(u.config.Palettes[u.paletteIndex])
-	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping
@@ -56,7 +56,7 @@ func (u *UI) PreviousPalette(eventType uint32) {
 		u.paletteIndex = len(u.config.Palettes) - 1
 	}
 	u.screen.Palette(u.config.Palettes[u.paletteIndex])
-	//g.UI.Message(g.config.PaletteNames[g.paletteIndex], 2)
+	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
 }
 
 // TODO: so many things! Save states, toggle features...

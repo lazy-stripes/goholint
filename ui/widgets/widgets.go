@@ -33,7 +33,7 @@ func texture(size *sdl.Rect) *sdl.Texture {
 		// Wikipedia page about RGBA has a neat little table describing it:
 		//
 		// |          | Little-endian | Big-endian |
-		// | -------- |-------------- | ---------- |
+		// |----------|---------------|------------|
 		// | RGBA8888 | ABGR32        | RGBA32     |
 		// | ARGB32   | BGRA8888      | ARGB8888   |
 		// | RGBA32   | ABGR8888      | RGBA8888   |
@@ -208,7 +208,7 @@ func (w *widget) Texture() *sdl.Texture {
 func (w *widget) Destroy() {
 	if w.texture != nil {
 		if err := w.texture.Destroy(); err != nil {
-			fmt.Printf("error while destroying texture: %v", err)
+			fmt.Printf("error while destroying texture: %v\n", err)
 		}
 	}
 }

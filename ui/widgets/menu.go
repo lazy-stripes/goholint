@@ -35,8 +35,9 @@ func NewMenu(sizeHint *sdl.Rect) *Menu {
 	props.Margin = int32(DefaultProperties.Zoom * 8)
 	props.VerticalAlign = align.Middle
 	m.labelProps = props
+	m.labelProps.Font = DefaultProperties.TitleFont
 	m.labelSizeHint = *sizeHint
-	m.labelSizeHint.H = int32(DefaultProperties.TitleFont.Height())
+	m.labelSizeHint.H = int32(m.labelProps.Font.Height())
 
 	return &m
 }

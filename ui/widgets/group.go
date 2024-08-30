@@ -62,8 +62,6 @@ func (g *Group) Remove(child Widget) {
 	}
 	if index > -1 {
 		// Make a new slice without the offending item.
-		// FIXME: This is not optimized at all. Make it work first!
-		// TODO: Actually what I really want is Widget.SetVisible(bool).
 		newChildren := make([]Widget, 0)
 		newChildren = append(newChildren, g.children[:index]...)
 		newChildren = append(newChildren, g.children[index+1:]...)

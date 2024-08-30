@@ -10,6 +10,7 @@ import (
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
+	"github.com/lazy-stripes/goholint/utils"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -25,9 +26,9 @@ type Screen struct {
 
 	// Overlay messages.
 	overlay  *VerticalLayout
-	msgTimer *time.Timer // Timer for clearing messages
-	message  string      // Temporary text on timer
-	text     string      // Permanent text
+	msgTimer *time.Timer // Timer for clearing messages.
+	message  *Label      // Temporary text on timer.
+	text     *Label      // Permanent text.
 
 	screen *sdl.Texture // Gameboy display texture (160×144).
 	frame  *image.RGBA  // Buffer for each frame.
@@ -82,25 +83,41 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 // Set permanent text (useful for persistent UI). Call with empty string to
 // clear.
 func (s *Screen) Text(text string) {
-	s.text = text
+	if s.text != nil {
+		s.overlay.Remove(s.text)
+		s.text.Destroy()
+		s.text = nil
+	}
+
+	if text != "" {
+		s.text = NewLabel(noSizeHint, text)
+		s.overlay.Add(s.text)
+	}
 }
 
 // Clear temporary message. Texture will be repainted next VBlank.
 func (s *Screen) clearMessage() {
-	s.message = ""
+	if s.message != nil {
+		s.overlay.Remove(s.message)
+		s.message.Destroy()
+		s.message = nil
+	}
 }
 
 // Message shows a temporary message that will be cleared after the given
 // duration (in seconds). The message stacks with permanent text set via Text().
-func (s *Screen) Message(text string, seconds time.Duration) {
+func (s *Screen) Message(text string, secs time.Duration) {
 	// Stop reset timer, a new one will be started.
 	// TODO: stack messages (up to, like, 3 or something)
 	if s.msgTimer != nil {
 		s.msgTimer.Stop()
+		s.clearMessage()
 	}
-	s.message = text
-	s.msgTimer = time.AfterFunc(time.Second*seconds, s.clearMessage)
 
+	s.message = NewLabel(noSizeHint, text)
+	s.overlay.Add(s.message)
+
+	s.msgTimer = time.AfterFunc(secs*time.Second, utils.WrapSDL(s.clearMessage))
 }
 
 func averagePixels(pixels []color.RGBA) (avg color.RGBA) {

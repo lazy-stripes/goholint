@@ -58,9 +58,7 @@ type UI struct {
 	zoomFactor int // From -zoom to compute offsets in various textures
 
 	renderer   *sdl.Renderer
-	background *sdl.Texture // UI texture (background, emulator screen)
-	foreground *sdl.Texture // UI texture (foreground, UI overlay)
-	screenRect *sdl.Rect    // Screen dimensions (accounting for zoom factor)
+	screenRect *sdl.Rect // Screen dimensions (accounting for zoom factor)
 	font       *ttf.Font
 
 	fgColor sdl.Color // Text color
@@ -120,28 +118,6 @@ func New(config *options.Options) *UI {
 		panic(err)
 	}
 
-	texture, err := renderer.CreateTexture(
-		sdl.PIXELFORMAT_RGBA8888,
-		sdl.TEXTUREACCESS_TARGET,
-		options.ScreenWidth*int32(config.ZoomFactor),
-		options.ScreenHeight*int32(config.ZoomFactor))
-	if err != nil {
-		panic(err)
-	}
-
-	// We set background to full UI texture size for higher-def blurring.
-	background, err := renderer.CreateTexture(
-		sdl.PIXELFORMAT_ABGR8888,
-		sdl.TEXTUREACCESS_TARGET,
-		options.ScreenWidth*int32(config.ZoomFactor),
-		options.ScreenHeight*int32(config.ZoomFactor))
-	if err != nil {
-		panic(err)
-	}
-
-	// Background transparency.
-	texture.SetBlendMode(sdl.BLENDMODE_BLEND)
-
 	// Keep computed screen size for drawing.
 	screenRect := &sdl.Rect{
 		X: 0,
@@ -165,8 +141,14 @@ func New(config *options.Options) *UI {
 		A: config.UIBackground.A,
 	}
 
+	// By default, use BG color at zero transparency for clearing widgets. It
+	// makes the outline of labels blend better.
+	background := bg
+	background.A = 0
+
 	// Store default widget properties in the widget package namespace. This
 	// will be copied to every new widget.
+	// FIXME: should that be set directly from options package?
 	widgets.DefaultProperties = widgets.Properties{
 		Font:            font,
 		TitleFont:       titleFont,
@@ -176,8 +158,9 @@ func New(config *options.Options) *UI {
 		VerticalAlign:   align.Middle,
 		Border:          1,
 		BorderColor:     sdl.Color{0xff, 0x00, 0x00, 0xff},
-		//Background:      sdl.Color{0x20, 0x7f, 0x20, 0x7f},
-		Zoom: int(config.ZoomFactor),
+		//Background:      sdl.Color{0xff, 0xff, 0xff, 0x00},
+		Background: background,
+		Zoom:       int(config.ZoomFactor),
 	}
 
 	widgets.Init(renderer)
@@ -191,18 +174,15 @@ func New(config *options.Options) *UI {
 		QuitChan:   make(chan bool),
 		SigINTChan: make(chan os.Signal, 1),
 		Emulator:   emulator,
-		background: background,
-		foreground: texture, // TODO: rename to foreground?
 		renderer:   renderer,
 		screenRect: screenRect,
 		font:       font,
 		zoomFactor: int(config.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
-		//root:       widgets.NewStack(screenRect, nil),
-		dialogs: widgets.NewStack(screenRect, nil),
-		root:    widgets.NewGroup(screenRect, nil), // WIP, still not sure how I'll organize this. I still like bg/fg.
-		screen:  gbScreen,
+		dialogs:    widgets.NewStack(screenRect, nil),
+		root:       widgets.NewGroup(screenRect, nil), // WIP, still not sure how I'll organize this. I still like bg/fg.
+		screen:     gbScreen,
 	}
 
 	// The UI should primarily show the emulator's screen, with some menu or
@@ -384,12 +364,13 @@ func (u *UI) Repaint() {
 	u.renderer.Copy(texture, nil, nil)
 
 	// Debug stuff
+	var gridSize int32 = 8
 	if log.Enabled() && logger.Level >= logger.Debug {
 		u.renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
-		for x := int32(0); x < u.screenRect.W; x += 8 {
+		for x := int32(0); x < u.screenRect.W; x += gridSize * int32(u.config.ZoomFactor) {
 			u.renderer.DrawLine(x, 0, x, u.screenRect.H)
 		}
-		for y := int32(0); y < u.screenRect.H; y += 8 {
+		for y := int32(0); y < u.screenRect.H; y += gridSize * int32(u.config.ZoomFactor) {
 			u.renderer.DrawLine(0, y, u.screenRect.W, y)
 		}
 	}
@@ -443,46 +424,46 @@ func (u *UI) Repaint() {
 
 // Refresh UI texture with permanent text and current message (if any).
 // TODO: widgets.Label
-func (u *UI) renderText(s string, row int) {
-	// Instantiate text with an outline effect. There's probably an easier way.
-	outlineWidth := int(u.zoomFactor)
-	u.font.SetOutline(outlineWidth)
-
-	outline, _ := u.font.RenderUTF8Solid(s, u.bgColor)
-	defer outline.Free()
-
-	u.font.SetOutline(0)
-	text, _ := u.font.RenderUTF8Solid(s, u.fgColor)
-	defer text.Free()
-
-	// Position vertically. Bottom row is row number 1.
-	_, _, _, h, _ := u.foreground.Query()
-	y := h - int32((u.font.Height())*row) - Margin // TODO: FontSize config
-
-	// Add margin between successive rows.
-	if row > 1 {
-		y -= Margin * int32(outlineWidth) * 2
-	}
-
-	outlineTexture, _ := u.renderer.CreateTextureFromSurface(outline)
-	defer outlineTexture.Destroy()
-	u.renderer.Copy(outlineTexture,
-		nil,
-		&sdl.Rect{
-			X: Margin,
-			Y: y - int32(u.zoomFactor),
-			W: outline.W,
-			H: outline.H,
-		})
-
-	msgTexture, _ := u.renderer.CreateTextureFromSurface(text)
-	defer msgTexture.Destroy()
-	u.renderer.Copy(msgTexture,
-		nil,
-		&sdl.Rect{
-			X: Margin + int32(u.zoomFactor),
-			Y: y,
-			W: text.W,
-			H: text.H,
-		})
-}
+//func (u *UI) renderText(s string, row int) {
+//	// Instantiate text with an outline effect. There's probably an easier way.
+//	outlineWidth := int(u.zoomFactor)
+//	u.font.SetOutline(outlineWidth)
+//
+//	outline, _ := u.font.RenderUTF8Solid(s, u.bgColor)
+//	defer outline.Free()
+//
+//	u.font.SetOutline(0)
+//	text, _ := u.font.RenderUTF8Solid(s, u.fgColor)
+//	defer text.Free()
+//
+//	// Position vertically. Bottom row is row number 1.
+//	_, _, _, h, _ := u.foreground.Query()
+//	y := h - int32((u.font.Height())*row) - Margin // TODO: FontSize config
+//
+//	// Add margin between successive rows.
+//	if row > 1 {
+//		y -= Margin * int32(outlineWidth) * 2
+//	}
+//
+//	outlineTexture, _ := u.renderer.CreateTextureFromSurface(outline)
+//	defer outlineTexture.Destroy()
+//	u.renderer.Copy(outlineTexture,
+//		nil,
+//		&sdl.Rect{
+//			X: Margin,
+//			Y: y - int32(u.zoomFactor),
+//			W: outline.W,
+//			H: outline.H,
+//		})
+//
+//	msgTexture, _ := u.renderer.CreateTextureFromSurface(text)
+//	defer msgTexture.Destroy()
+//	u.renderer.Copy(msgTexture,
+//		nil,
+//		&sdl.Rect{
+//			X: Margin + int32(u.zoomFactor),
+//			Y: y,
+//			W: text.W,
+//			H: text.H,
+//		})
+//}

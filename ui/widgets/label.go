@@ -16,7 +16,12 @@ type Label struct {
 //       I'd just need to move all widgets back up to the ui package.
 // TODO: actual font size
 func NewLabel(sizeHint *sdl.Rect, text string, props ...Properties) *Label {
-	return newLabel(sizeHint, text, DefaultProperties.TitleFont, props...)
+	p := DefaultProperties
+	if len(props) > 0 {
+		p = props[0]
+	}
+
+	return newLabel(sizeHint, text, p.Font, props...)
 }
 
 func newLabel(sizeHint *sdl.Rect, text string, font *ttf.Font, props ...Properties) *Label {
