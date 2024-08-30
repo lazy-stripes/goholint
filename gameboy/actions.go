@@ -8,46 +8,46 @@ import (
 
 // Action type for user interactions. This might move to a ui package someday.
 // FIXME: I want SDL out of Gameboy code, phase this out, use booleans directly.
-type Action func(eventType uint32)
+type Action func(state bool)
 
 // JoypadUp updates the Joypad's registers for the Up direction.
-func (g *GameBoy) JoypadUp(eventType uint32) {
-	g.JPad.Up.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadUp(state bool) {
+	g.JPad.Up.State = state
 }
 
 // JoypadDown updates the Joypad's registers for the Down direction.
-func (g *GameBoy) JoypadDown(eventType uint32) {
-	g.JPad.Down.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadDown(state bool) {
+	g.JPad.Down.State = state
 }
 
 // JoypadLeft updates the Joypad's registers for the Left direction.
-func (g *GameBoy) JoypadLeft(eventType uint32) {
-	g.JPad.Left.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadLeft(state bool) {
+	g.JPad.Left.State = state
 }
 
 // JoypadRight updates the Joypad's registers for the Right direction.
-func (g *GameBoy) JoypadRight(eventType uint32) {
-	g.JPad.Right.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadRight(state bool) {
+	g.JPad.Right.State = state
 }
 
 // JoypadA updates the Joypad's registers for the A button.
-func (g *GameBoy) JoypadA(eventType uint32) {
-	g.JPad.A.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadA(state bool) {
+	g.JPad.A.State = state
 }
 
 // JoypadB updates the Joypad's registers for the B button.
-func (g *GameBoy) JoypadB(eventType uint32) {
-	g.JPad.B.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadB(state bool) {
+	g.JPad.B.State = state
 }
 
 // JoypadSelect updates the Joypad's registers for the Select button.
-func (g *GameBoy) JoypadSelect(eventType uint32) {
-	g.JPad.Select.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadSelect(state bool) {
+	g.JPad.Select.State = state
 }
 
 // JoypadStart updates the Joypad's registers for the Start button.
-func (g *GameBoy) JoypadStart(eventType uint32) {
-	g.JPad.Start.State = (eventType == sdl.KEYDOWN)
+func (g *GameBoy) JoypadStart(state bool) {
+	g.JPad.Start.State = state
 }
 
 // Screenshot saves the current frame to disk as a PNG file.

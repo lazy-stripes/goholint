@@ -336,7 +336,7 @@ func (u *UI) ButtonPressAction(e widgets.Event, gbAction gameboy.Action) Action 
 	// given event type to tell if a key was pressed.
 	return func(eventType uint32) {
 		if !u.paused {
-			gbAction(eventType)
+			gbAction(eventType == sdl.KEYDOWN)
 		} else if u.root != nil && eventType == sdl.KEYDOWN {
 			u.root.ProcessEvent(e)
 			u.Repaint()
