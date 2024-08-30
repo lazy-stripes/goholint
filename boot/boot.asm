@@ -16,6 +16,9 @@ main:
 	LD A, $77
 	LD [HL], A			; $ff24 = $77 → S02-S01 volume 7
 
+	LD A, $04			; Setup SCX
+	LD [$FF00+$43], A
+
 	LD A, $9c			; Setup BG palette
 	LD [$FF00+$47], A
 
@@ -143,14 +146,12 @@ check:
 	; Check header to lock up if no cartridge is present. I don't have room for
 	; much code here, so we just check a header byte for which $ff isn't a valid
 	; value.
-	LD HL, $014a		; Destination code, should be $00 or $01.
-	LD A, $ff
-	CP A, [HL]
+	LD A, [$014a]		; Destination code, should be $00 or $01.
+	CP A, $ff
 .check_failure
 	JR Z, .check_failure
 
-SECTION "end", ROM0[$00fc]
+SECTION "end", ROM0[$00fe]
 end:
 	; Disable boot ROM before handing over control to the cartridge.
-	LD A, $01
 	LD [$FF00+$50], A	; Turn off DMG rom
