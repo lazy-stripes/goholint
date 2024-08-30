@@ -29,16 +29,15 @@ type Screen struct {
 	message  string      // Temporary text on timer
 	text     string      // Permanent text
 
-	buffer []byte       // Texture buffer for each frame.
-	screen *sdl.Texture // Gameboy display texture (160×144)
+	screen *sdl.Texture // Gameboy display texture (160×144).
+	frame  *image.RGBA  // Buffer for each frame.
+	offset int          // Current pixel offset in frame.
 
 	vblankCallbacks []func() // List of callbacks to invoke at VBlank time.
 
 	newPalette []color.RGBA // Requested new palette, will be set next VBlank.
 	palette    []color.RGBA // Current palette.
 
-	blank  []byte // Static texture buffer for "blank screen" frames.
-	offset int
 	///Rectangle image.Rectangle
 
 	// Set this to true to save the next frame. Will be reset at VBlank.
@@ -55,12 +54,8 @@ type Screen struct {
 // to the screen.Display interface) and supporting screenshots, palette changes,
 // GIF recording and overlay messages.
 func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
-	// Go bindings use byte slices but SDL thinks in terms of uint32
-	screenLen := options.ScreenWidth * options.ScreenHeight * 4
-	blank := make([]byte, screenLen) // TODO: phase out, just redraw blank to internal texture if/when needed.
-
 	// Ignore size hint for main texture, Gameboy's screen is 160×144 pixels.
-	screenRect := sdl.Rect{W: options.ScreenWidth, H: options.ScreenHeight}
+	w, h := options.ScreenWidth, options.ScreenHeight
 
 	// XXX For testing
 	//props := DefaultProperties
@@ -74,13 +69,11 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	s := Screen{
 		widget:  new(sizeHint),
 		overlay: NewVerticalLayout(sizeHint, nil, layoutProps),
-		screen:  texture(&screenRect),
-		config:  config,
+		screen:  texture(&sdl.Rect{W: int32(w), H: int32(h)}),
+		frame:   image.NewRGBA(image.Rect(0, 0, w, h)),
 		palette: config.Palettes[0],
-		buffer:  make([]byte, options.ScreenWidth*options.ScreenHeight*4),
-		blank:   blank,
-		///Rectangle: screenRect,
-		gif: screen.NewGIF(config),
+		gif:     screen.NewGIF(config),
+		config:  config,
 	}
 
 	return &s
@@ -107,18 +100,7 @@ func (s *Screen) Message(text string, seconds time.Duration) {
 	}
 	s.message = text
 	s.msgTimer = time.AfterFunc(time.Second*seconds, s.clearMessage)
-}
 
-// makeBlank prepares a static texture buffer to represent the screen when it
-// is off.
-func (s *Screen) makeBlank() {
-	col := s.palette[3] // Background color
-	for offset := 0; offset < len(s.blank); offset += 4 {
-		s.blank[s.offset+0] = col.R
-		s.blank[s.offset+1] = col.G
-		s.blank[s.offset+2] = col.B
-		s.blank[s.offset+3] = col.A
-	}
 }
 
 func averagePixels(pixels []color.RGBA) (avg color.RGBA) {
@@ -220,10 +202,10 @@ func (s *Screen) Pause() {
 			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
 
 			// Extract RGB, compute greyscale, strore in work image.
-			r := s.buffer[srcOffset+0]
-			g := s.buffer[srcOffset+1]
-			b := s.buffer[srcOffset+2]
-			a := s.buffer[srcOffset+3]
+			r := s.frame.Pix[srcOffset+0]
+			g := s.frame.Pix[srcOffset+1]
+			b := s.frame.Pix[srcOffset+2]
+			a := s.frame.Pix[srcOffset+3]
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
 
@@ -257,13 +239,13 @@ func (s *Screen) Write(colorIndex uint8) {
 	}
 
 	col := s.palette[colorIndex]
-	s.buffer[s.offset+0] = col.R
-	s.buffer[s.offset+1] = col.G
-	s.buffer[s.offset+2] = col.B
-	s.buffer[s.offset+3] = col.A
+	s.frame.Pix[s.offset+0] = col.R
+	s.frame.Pix[s.offset+1] = col.G
+	s.frame.Pix[s.offset+2] = col.B
+	s.frame.Pix[s.offset+3] = col.A
 
 	// If all goes well, we'll get VBlank'ed just as we wrap up.
-	s.offset = (s.offset + 4) % len(s.buffer)
+	s.offset = (s.offset + 4) % len(s.frame.Pix)
 
 	if s.gif.IsOpen() {
 		s.gif.Write(colorIndex)
@@ -274,8 +256,8 @@ func (s *Screen) Write(colorIndex uint8) {
 func (s *Screen) Texture() *sdl.Texture {
 	// If paused, only show the blurred background instead.
 	if !s.paused {
-		rawPixels := unsafe.Pointer(&s.buffer[0])
-		s.screen.Update(nil, rawPixels, options.ScreenWidth*4)
+		rawPixels := unsafe.Pointer(&s.frame.Pix[0])
+		s.screen.Update(nil, rawPixels, s.frame.Stride)
 		// TODO: maybe having a proper RenderTo(texture) that would take care of the target might help.
 		renderer.SetRenderTarget(s.texture)
 		renderer.Copy(s.screen, nil, nil)
@@ -405,7 +387,7 @@ func (s *Screen) VBlank() {
 
 // Dump writes the current pixel buffer to file for debugging purposes.
 func (s *Screen) Dump() {
-	ioutil.WriteFile("lcd-buffer-dump.bin", s.buffer, 0644)
+	ioutil.WriteFile("lcd-buffer-dump.bin", s.frame.Pix, 0644)
 }
 
 // Screenshot will make the display dump the next frame to file.
