@@ -132,7 +132,7 @@ func (u *UI) ToggleVoice2(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	u.Emulator.APU.Muted[1] = !u.Emulator.APU.Muted[1]
+	u.Emulator.ToggleVoice2()
 	u.screen.Message(u.voiceStatusMsg(1), 2)
 }
 
@@ -141,7 +141,7 @@ func (u *UI) ToggleVoice3(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	u.Emulator.APU.Muted[2] = !u.Emulator.APU.Muted[2]
+	u.Emulator.ToggleVoice3()
 	u.screen.Message(u.voiceStatusMsg(2), 2)
 }
 
@@ -150,7 +150,7 @@ func (u *UI) ToggleVoice4(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
-	u.Emulator.APU.Muted[3] = !u.Emulator.APU.Muted[3]
+	u.Emulator.ToggleVoice4()
 	u.screen.Message(u.voiceStatusMsg(3), 2)
 }
 
