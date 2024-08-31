@@ -59,4 +59,68 @@ func (u *UI) PreviousPalette(eventType uint32) {
 	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
 }
 
+// Helper strings to format UI messages.
+var voiceNames = [4]string{
+	"Square 1",
+	"Square 2",
+	"Wave",
+	"Noise",
+}
+
+// TODO: have gb.ToggleVoice return current state, keep track of voice states here.
+func (u *UI) voiceStatusMsg(voice int) string {
+	var sb strings.Builder
+	for _, m := range u.Emulator.APU.Muted {
+		if m {
+			sb.WriteRune('-')
+		} else {
+			sb.WriteRune('♪')
+		}
+	}
+	sb.WriteRune('\n')
+	sb.WriteString(voiceNames[voice])
+	if u.Emulator.APU.Muted[voice] {
+		sb.WriteString(" muted")
+	} else {
+		sb.WriteString(" enabled")
+	}
+	return sb.String()
+}
+
+// ToggleVoice1 mutes or unmutes the first audio generator (Square 1).
+func (u *UI) ToggleVoice1(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	u.Emulator.ToggleVoice1()
+	u.screen.Message(u.voiceStatusMsg(0), 2)
+}
+
+// ToggleVoice2 mutes or unmutes the second audio generator (Square 2).
+func (u *UI) ToggleVoice2(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	u.Emulator.APU.Muted[1] = !u.Emulator.APU.Muted[1]
+	u.screen.Message(u.voiceStatusMsg(1), 2)
+}
+
+// ToggleVoice3 mutes or unmutes the third audio generator (Wave).
+func (u *UI) ToggleVoice3(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	u.Emulator.APU.Muted[2] = !u.Emulator.APU.Muted[2]
+	u.screen.Message(u.voiceStatusMsg(2), 2)
+}
+
+// ToggleVoice4 mutes or unmutes the fourth audio generator (Noise).
+func (u *UI) ToggleVoice4(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+	u.Emulator.APU.Muted[3] = !u.Emulator.APU.Muted[3]
+	u.screen.Message(u.voiceStatusMsg(3), 2)
+}
+
 // TODO: so many things! Save states, toggle features...

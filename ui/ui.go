@@ -281,10 +281,19 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	// TODO: re-add all the stuff previously done on the gb side (screenshots, gif, etc)
 	actions := map[string]Action{
 		// High-level actions.
-		"quit":            u.Quit,
-		"home":            u.Home,
+		"home": u.Home,
+		"quit": u.Quit,
+
+		// TODO: restrict those to when we're not paused. Maybe I could have
+		//       subcontrols for widgets? Might need a bespoke root widget type.
 		"nextpalette":     u.NextPalette,
 		"previouspalette": u.PreviousPalette,
+		//		"screenshot":      g.Screenshot,
+		//		"recordgif":       g.StartStopRecord,
+		"togglevoice1": u.ToggleVoice1,
+		"togglevoice2": u.ToggleVoice2,
+		"togglevoice3": u.ToggleVoice3,
+		"togglevoice4": u.ToggleVoice4,
 
 		// Button presses that could either be handled by GB or UI.
 		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),
@@ -295,13 +304,6 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		"b":      u.ButtonPressAction(widgets.ButtonB, u.Emulator.JoypadB),
 		"select": u.ButtonPressAction(widgets.ButtonSelect, u.Emulator.JoypadSelect),
 		"start":  u.ButtonPressAction(widgets.ButtonStart, u.Emulator.JoypadStart),
-		//		"screenshot":      g.Screenshot,
-		//		"recordgif":       g.StartStopRecord,
-		//		"togglevoice1":    g.ToggleVoice1,
-		//		"togglevoice2":    g.ToggleVoice2,
-		//		"togglevoice3":    g.ToggleVoice3,
-		//		"togglevoice4":    g.ToggleVoice4,
-
 	}
 
 	u.Controls = make(map[options.KeyStroke]Action)
