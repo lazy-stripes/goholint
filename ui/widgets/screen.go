@@ -30,9 +30,10 @@ type Screen struct {
 	message  *Label      // Temporary text on timer.
 	text     *Label      // Permanent text.
 
-	screen *sdl.Texture // Gameboy display texture (160×144).
-	frame  *image.RGBA  // Buffer for each frame.
-	offset int          // Current pixel offset in frame.
+	screen      *sdl.Texture // Gameboy display texture (160×144).
+	backBuffer  *image.RGBA  // Work buffer for the frame in progress.
+	frontBuffer *image.RGBA  // Buffer for the displayed frame.
+	offset      int          // Current pixel offset in frame.
 
 	vblankCallbacks []func() // List of callbacks to invoke at VBlank time.
 
@@ -68,16 +69,24 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	layoutProps.HorizontalAlign = align.Left
 
 	s := Screen{
-		widget:  new(sizeHint),
-		overlay: NewVerticalLayout(sizeHint, nil, layoutProps),
-		screen:  texture(&sdl.Rect{W: int32(w), H: int32(h)}),
-		frame:   image.NewRGBA(image.Rect(0, 0, w, h)),
-		palette: config.Palettes[0],
-		gif:     screen.NewGIF(config),
-		config:  config,
+		widget:      new(sizeHint),
+		overlay:     NewVerticalLayout(sizeHint, nil, layoutProps),
+		screen:      texture(&sdl.Rect{W: int32(w), H: int32(h)}),
+		backBuffer:  image.NewRGBA(image.Rect(0, 0, w, h)),
+		frontBuffer: image.NewRGBA(image.Rect(0, 0, w, h)),
+		palette:     config.Palettes[0],
+		gif:         screen.NewGIF(config),
+		config:      config,
 	}
 
 	return &s
+}
+
+// Frame returns the current front buffer. This allows the UI to grab whatever
+// is currently being displayed for GIFs of screenshots without having to worry
+// about VBlank.
+func (s *Screen) Frame() *image.RGBA {
+	return s.frontBuffer
 }
 
 // Set permanent text (useful for persistent UI). Call with empty string to
@@ -219,10 +228,10 @@ func (s *Screen) Pause() {
 			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
 
 			// Extract RGB, compute greyscale, strore in work image.
-			r := s.frame.Pix[srcOffset+0]
-			g := s.frame.Pix[srcOffset+1]
-			b := s.frame.Pix[srcOffset+2]
-			a := s.frame.Pix[srcOffset+3]
+			r := s.frontBuffer.Pix[srcOffset+0]
+			g := s.frontBuffer.Pix[srcOffset+1]
+			b := s.frontBuffer.Pix[srcOffset+2]
+			a := s.frontBuffer.Pix[srcOffset+3]
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
 
@@ -256,13 +265,13 @@ func (s *Screen) Write(colorIndex uint8) {
 	}
 
 	col := s.palette[colorIndex]
-	s.frame.Pix[s.offset+0] = col.R
-	s.frame.Pix[s.offset+1] = col.G
-	s.frame.Pix[s.offset+2] = col.B
-	s.frame.Pix[s.offset+3] = col.A
+	s.backBuffer.Pix[s.offset+0] = col.R
+	s.backBuffer.Pix[s.offset+1] = col.G
+	s.backBuffer.Pix[s.offset+2] = col.B
+	s.backBuffer.Pix[s.offset+3] = col.A
 
 	// If all goes well, we'll get VBlank'ed just as we wrap up.
-	s.offset = (s.offset + 4) % len(s.frame.Pix)
+	s.offset = (s.offset + 4) % len(s.backBuffer.Pix)
 
 	if s.gif.IsOpen() {
 		s.gif.Write(colorIndex)
@@ -273,8 +282,8 @@ func (s *Screen) Write(colorIndex uint8) {
 func (s *Screen) Texture() *sdl.Texture {
 	// If paused, only show the blurred background instead.
 	if !s.paused {
-		rawPixels := unsafe.Pointer(&s.frame.Pix[0])
-		s.screen.Update(nil, rawPixels, s.frame.Stride)
+		rawPixels := unsafe.Pointer(&s.frontBuffer.Pix[0])
+		s.screen.Update(nil, rawPixels, s.frontBuffer.Stride)
 		// TODO: maybe having a proper RenderTo(texture) that would take care of the target might help.
 		renderer.SetRenderTarget(s.texture)
 		renderer.Copy(s.screen, nil, nil)
@@ -304,6 +313,9 @@ func (s *Screen) OnVBlank(callback func()) {
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *Screen) VBlank() {
+	// Swap buffers.
+	s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
+
 	//if s.enabled {
 	//	// Reset offset for drawing the next frame.
 	//	s.offset = 0
@@ -406,7 +418,7 @@ func (s *Screen) VBlank() {
 
 // Dump writes the current pixel buffer to file for debugging purposes.
 func (s *Screen) Dump() {
-	ioutil.WriteFile("lcd-buffer-dump.bin", s.frame.Pix, 0644)
+	ioutil.WriteFile("lcd-buffer-dump.bin", s.frontBuffer.Pix, 0644)
 }
 
 // Screenshot will make the display dump the next frame to file.
