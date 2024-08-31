@@ -1,11 +1,5 @@
 package gameboy
 
-import (
-	"strings"
-
-	"github.com/veandco/go-sdl2/sdl"
-)
-
 // Action type for user interactions. This might move to a ui package someday.
 // FIXME: I want SDL out of Gameboy code, phase this out, use booleans directly.
 type Action func(state bool)
@@ -48,33 +42,6 @@ func (g *GameBoy) JoypadSelect(state bool) {
 // JoypadStart updates the Joypad's registers for the Start button.
 func (g *GameBoy) JoypadStart(state bool) {
 	g.JPad.Start.State = state
-}
-
-// Screenshot saves the current frame to disk as a PNG file.
-// TODO: configurable folder, obviously.
-func (g *GameBoy) Screenshot(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-
-	//g.Display.Screenshot()
-}
-
-// StartStopRecord starts recording video output to GIF and closes the file
-// when done. Defined as a single action to toggle between the two and avoid
-// opening several GIFs at once.
-func (g *GameBoy) StartStopRecord(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
-		return
-	}
-
-	if g.recording { // TODO: query directly from screen?
-		//g.Display.StopRecord()
-		g.recording = false
-	} else {
-		g.recording = true
-		//g.Display.StartRecord()
-	}
 }
 
 // ToggleVoice1 mutes or unmutes the first audio generator (Square 1).

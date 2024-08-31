@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/lazy-stripes/goholint/utils"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -57,6 +59,35 @@ func (u *UI) PreviousPalette(eventType uint32) {
 	}
 	u.screen.Palette(u.config.Palettes[u.paletteIndex])
 	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
+}
+
+// Screenshot saves the current frame to disk as a PNG file.
+// TODO: configurable folder, obviously.
+// TODO: move to ui
+func (u *UI) Screenshot(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	//g.Display.Screenshot()
+}
+
+// StartStopRecord starts recording video output to GIF and closes the file
+// when done. Defined as a single action to toggle between the two and avoid
+// opening several GIFs at once.
+// TODO: move to ui
+func (u *UI) StartStopRecord(eventType uint32) {
+	if eventType != sdl.KEYDOWN {
+		return
+	}
+
+	//if u.recording { // TODO: query directly from screen?
+	//	//g.Display.StopRecord()
+	//	u.recording = false
+	//} else {
+	//	u.recording = true
+	//	//g.Display.StartRecord()
+	//}
 }
 
 // Helper strings to format UI messages.
