@@ -97,6 +97,7 @@ func (s *Screen) Text(text string) {
 
 // Clear temporary message. Texture will be repainted next VBlank.
 func (s *Screen) clearMessage() {
+	// TODO: might need a lock here.
 	if s.message != nil {
 		s.overlay.Remove(s.message)
 		s.message.Destroy()
@@ -109,8 +110,7 @@ func (s *Screen) clearMessage() {
 func (s *Screen) Message(text string, secs time.Duration) {
 	// Stop reset timer, a new one will be started.
 	// TODO: stack messages (up to, like, 3 or something)
-	if s.msgTimer != nil {
-		s.msgTimer.Stop()
+	if s.msgTimer != nil && s.msgTimer.Stop() {
 		s.clearMessage()
 	}
 
@@ -280,10 +280,12 @@ func (s *Screen) Texture() *sdl.Texture {
 		renderer.Copy(s.screen, nil, nil)
 
 		// TODO: don't draw overlay if not needed.
-		overlayTexture := s.overlay.Texture()
-		renderer.SetRenderTarget(s.texture)
-		renderer.Copy(overlayTexture, nil, nil)
-		renderer.SetRenderTarget(nil)
+		if s.text != nil || s.message != nil {
+			overlayTexture := s.overlay.Texture()
+			renderer.SetRenderTarget(s.texture)
+			renderer.Copy(overlayTexture, nil, nil)
+			renderer.SetRenderTarget(nil)
+		}
 	}
 	return s.widget.Texture()
 }
