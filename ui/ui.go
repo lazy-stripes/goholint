@@ -64,6 +64,8 @@ type UI struct {
 	fgColor sdl.Color // Text color
 	bgColor sdl.Color // Text outline color
 
+	recording bool // True if currently recording to GIF.
+
 	ticks uint
 }
 
@@ -162,7 +164,6 @@ func New(config *options.Options) *UI {
 		Background: background,
 		Zoom:       int(config.ZoomFactor),
 	}
-
 	widgets.Init(renderer)
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
@@ -288,12 +289,12 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		//       subcontrols for widgets? Might need a bespoke root widget type.
 		"nextpalette":     u.NextPalette,
 		"previouspalette": u.PreviousPalette,
+		"recordgif":       u.StartStopRecord,
 		"screenshot":      u.Screenshot,
-		//		"recordgif":       g.StartStopRecord,
-		"togglevoice1": u.ToggleVoice1,
-		"togglevoice2": u.ToggleVoice2,
-		"togglevoice3": u.ToggleVoice3,
-		"togglevoice4": u.ToggleVoice4,
+		"togglevoice1":    u.ToggleVoice1,
+		"togglevoice2":    u.ToggleVoice2,
+		"togglevoice3":    u.ToggleVoice3,
+		"togglevoice4":    u.ToggleVoice4,
 
 		// Button presses that could either be handled by GB or UI.
 		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/lazy-stripes/goholint/options"
-	"github.com/lazy-stripes/goholint/utils"
 	"golang.org/x/image/draw"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -33,7 +32,7 @@ func (u *UI) Home(eventType uint32) {
 		u.Hide()
 	} else {
 		// Wait for full frame before pausing emulator.
-		u.screen.OnVBlank(utils.WrapSDL(u.Show))
+		u.screen.OnVBlank(u.Show)
 	}
 }
 
@@ -110,13 +109,13 @@ func (u *UI) StartStopRecord(eventType uint32) {
 		return
 	}
 
-	//if u.recording { // TODO: query directly from screen?
-	//	//g.Display.StopRecord()
-	//	u.recording = false
-	//} else {
-	//	u.recording = true
-	//	//g.Display.StartRecord()
-	//}
+	if u.recording { // TODO: query directly from screen?
+		u.screen.StopRecord()
+		u.recording = false
+	} else {
+		u.recording = true
+		u.screen.StartRecord() // TODO: pass file descriptor there.
+	}
 }
 
 // Helper strings to format UI messages.

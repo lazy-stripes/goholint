@@ -96,9 +96,9 @@ func (g *GIF) IsOpen() bool {
 	return g.fd != nil
 }
 
-// New starts recording a new GIF file to the provided descriptor and starts recording screen output. This should
-// be called at VBlank time to prevent incomplete frames.
-func (g *GIF) New(file *os.File, palette []color.RGBA) {
+// Open starts recording a new GIF file to the provided descriptor using the
+// given palette.
+func (g *GIF) Open(file *os.File, palette []color.RGBA) {
 	if g.IsOpen() {
 		log.Sub("gif").Warning("GIF recording already in progress, closing it.")
 		g.Close()
@@ -111,7 +111,7 @@ func (g *GIF) New(file *os.File, palette []color.RGBA) {
 
 	// Pre-instanciate "disabled screen" frame with current palette.
 	g.disabled = image.NewPaletted(FrameBounds, g.palette)
-	draw.Draw(g.disabled, g.disabled.Bounds(), &image.Uniform{g.palette[0]}, image.Point{}, draw.Src)
+	draw.Draw(g.disabled, g.disabled.Bounds(), &image.Uniform{g.palette[3]}, image.Point{}, draw.Src)
 
 	// Dimensions and colors for generated GIF file.
 	gifConfig := image.Config{

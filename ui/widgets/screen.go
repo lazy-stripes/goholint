@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"io/ioutil"
@@ -303,48 +304,50 @@ func (s *Screen) OnVBlank(callback func()) {
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL
 // buffer should be ready to display.
 func (s *Screen) VBlank() {
-	// Swap buffers.
-	s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
+	// Specifically invoke VBlank code in the UI thread if we want to display
+	// messages and such.
+	sdl.Do(s.vblank)
+}
 
-	//if s.enabled {
-	//	// Reset offset for drawing the next frame.
-	//	s.offset = 0
-	//}
-	//
-	//// Update GIF frame if recording. We do this before checking startRecording
-	//// otherwise the call to SaveFrame will always insert a "disabled" frame in
-	//// first position (since we haven't yet had time to build a full frame in
-	//// that specific case).
-	//// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package. Or use the GameBoy timer itself.
-	//if s.gif.IsOpen() {
-	//	d := time.Since(s.recordTime)
-	//	text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
-	//	s.ui.Text(text)
-	//	s.gif.SaveFrame()
-	//}
-	//
-	//// Create GIF here if requested.
-	//if s.startRecording {
-	//	f, err := options.CreateFileIn("gifs", ".gif")
-	//	if err == nil {
-	//		s.startRecording = false
-	//		s.recordTime = time.Now()
-	//		s.ui.Text("•REC [00:00]")
-	//		s.gif.New(f, s.palette)
-	//
-	//		fmt.Printf("Recording GIF to %s\n", f.Name())
-	//	} else {
-	//		log.Warningf("creating gif file failed: %v", err)
-	//	}
-	//}
-	//
-	//if s.stopRecording {
-	//	s.stopRecording = false
-	//	s.gif.Close()
-	//	s.ui.Text("")
-	//	s.ui.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
-	//}
-	//
+func (s *Screen) vblank() {
+	if s.enabled {
+		// Swap buffers.
+		s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
+
+		// Reset offset for drawing the next frame.
+		s.offset = 0
+	}
+
+	// Update GIF frame if recording.
+	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package. Or use the GameBoy timer itself.
+	if s.gif.IsOpen() {
+		d := time.Since(s.recordTime)
+		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
+		s.Text(text)
+		s.gif.SaveFrame() // TODO: SaveFrame(frontBuffer) instead of using Write
+	}
+
+	// Create GIF here if requested.
+	if s.startRecording {
+		f, err := options.CreateFileIn("gifs", ".gif")
+		if err == nil {
+			s.startRecording = false
+			s.recordTime = time.Now()
+			s.Text("•REC [00:00]")
+			s.gif.Open(f, s.palette)
+
+			fmt.Printf("Recording GIF to %s\n", f.Name())
+		} else {
+			log.Warningf("creating gif file failed: %v", err)
+		}
+	}
+
+	if s.stopRecording {
+		s.stopRecording = false
+		s.gif.Close()
+		s.Text("")
+		s.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
+	}
 
 	//
 	//	// Semi-hack to dump RAM and debug Marioland. In time it should be made
