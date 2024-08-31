@@ -1,9 +1,14 @@
 package ui
 
 import (
+	"fmt"
+	"image"
+	"image/png"
 	"strings"
 
+	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/utils"
+	"golang.org/x/image/draw"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -63,13 +68,37 @@ func (u *UI) PreviousPalette(eventType uint32) {
 
 // Screenshot saves the current frame to disk as a PNG file.
 // TODO: configurable folder, obviously.
-// TODO: move to ui
 func (u *UI) Screenshot(eventType uint32) {
 	if eventType != sdl.KEYDOWN {
 		return
 	}
 
-	//g.Display.Screenshot()
+	f, err := options.CreateFileIn("screenshots", ".png")
+	if err != nil {
+		log.Warningf("creating screenshot file failed: %v", err)
+		return
+	}
+	defer f.Close()
+
+	// Grab current frame, resize and save.
+	src := u.screen.Frame()
+	dstRect := image.Rect(
+		0,
+		0,
+		int(u.screenRect.W),
+		int(u.screenRect.H),
+	)
+	dst := image.NewRGBA(dstRect)
+	draw.NearestNeighbor.Scale(dst, dstRect, src, src.Bounds(), draw.Over, nil)
+
+	if err := png.Encode(f, dst); err != nil {
+		log.Warningf("saving screenshot failed: %v", err)
+		return
+	}
+
+	u.screen.Message("Screenshot saved", 2)
+	fmt.Printf("Screenshot saved to %s\n", f.Name())
+
 }
 
 // StartStopRecord starts recording video output to GIF and closes the file

@@ -355,40 +355,7 @@ func (s *Screen) VBlank() {
 	//	s.ui.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
 	//}
 	//
-	//if s.screenshotRequested {
-	//	s.screenshotRequested = false
-	//
-	//	f, err := options.CreateFileIn("screenshots", ".png")
-	//	if err != nil {
-	//		log.Warningf("creating screenshot file failed: %v", err)
-	//		return
-	//	}
-	//	defer f.Close()
-	//
-	//	// Populate image from buffer, taking zoom into account.
-	//	img := image.NewRGBA(s.Rectangle)
-	//	for x := 0; x < img.Rect.Dx(); x++ {
-	//		for y := 0; y < img.Rect.Dy(); y++ {
-	//			srcX := x / s.zoom
-	//			srcY := y / s.zoom
-	//			srcOffset := srcY*options.ScreenWidth*4 + srcX*4
-	//			dstOffset := y*options.ScreenWidth*s.zoom*4 + x*4
-	//
-	//			// Copy RGBA components.
-	//			img.Pix[dstOffset+0] = s.buffer[srcOffset+0]
-	//			img.Pix[dstOffset+1] = s.buffer[srcOffset+1]
-	//			img.Pix[dstOffset+2] = s.buffer[srcOffset+2]
-	//			img.Pix[dstOffset+3] = s.buffer[srcOffset+3]
-	//		}
-	//	}
-	//
-	//	if err := png.Encode(f, img); err != nil {
-	//		log.Warningf("saving screenshot failed: %v", err)
-	//		return
-	//	}
-	//
-	//	s.ui.Message("Screenshot saved", 2)
-	//	fmt.Printf("Screenshot saved to %s\n", f.Name())
+
 	//
 	//	// Semi-hack to dump RAM and debug Marioland. In time it should be made
 	//	// into a "Game Genie" kind of feature. For now, this will do.

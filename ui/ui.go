@@ -288,7 +288,7 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		//       subcontrols for widgets? Might need a bespoke root widget type.
 		"nextpalette":     u.NextPalette,
 		"previouspalette": u.PreviousPalette,
-		//		"screenshot":      g.Screenshot,
+		"screenshot":      u.Screenshot,
 		//		"recordgif":       g.StartStopRecord,
 		"togglevoice1": u.ToggleVoice1,
 		"togglevoice2": u.ToggleVoice2,
