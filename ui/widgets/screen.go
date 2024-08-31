@@ -12,6 +12,7 @@ import (
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/lazy-stripes/goholint/utils"
 	"github.com/veandco/go-sdl2/sdl"
+	"golang.org/x/image/draw"
 )
 
 // Screen represents the LCD display for a GameBoy. It works by shifting out
@@ -211,38 +212,27 @@ func (s *Screen) Pause() {
 		return
 	}
 
-	// Dimensions of UI screen.
-	// FIXME: this should all be deduced from the widget texture, but scaling up the gb screen is where the friction happens.
-	// TODO: draw.NearestNeighbor.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
-	width := int(options.ScreenWidth * s.config.ZoomFactor)
-	height := int(options.ScreenHeight * s.config.ZoomFactor)
-
-	// Intermediate image for easier blurring.
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
-			// Map source offset (in 160×144 space) to the current UI pixel.
-			srcX := x / int(s.config.ZoomFactor)
-			srcY := y / int(s.config.ZoomFactor)
-			srcOffset := (srcY * options.ScreenWidth * 4) + (srcX * 4)
-
-			// Extract RGB, compute greyscale, strore in work image.
-			r := s.frontBuffer.Pix[srcOffset+0]
-			g := s.frontBuffer.Pix[srcOffset+1]
-			b := s.frontBuffer.Pix[srcOffset+2]
-			a := s.frontBuffer.Pix[srcOffset+3]
+	// Turn front buffer to greyscale, resize and blur.
+	bounds := s.frontBuffer.Bounds()
+	for x := 0; x < bounds.Dx(); x++ {
+		for y := 0; y < bounds.Dy(); y++ {
+			pixel := s.frontBuffer.At(x, y).(color.RGBA)
+			r, g, b, a := pixel.R, pixel.G, pixel.B, pixel.A
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
-
-			img.SetRGBA(x, y, color.RGBA{grey, grey, grey, a})
+			s.frontBuffer.SetRGBA(x, y, color.RGBA{grey, grey, grey, a})
 		}
 	}
-	// Blur the background. Apply enough times for sufficient effect.
-	// TODO: ... I could make the iterations and overlay configurable I guess?
-	img = blur(blur(blur(img)))
-	rawPixels := unsafe.Pointer(&img.Pix[0])
-	s.texture.Update(nil, rawPixels, width*4)
+
+	// Resize to texture size before blurring.
+	src := s.frontBuffer
+	dstRect := image.Rect(0, 0, int(s.width), int(s.height))
+	dst := image.NewRGBA(dstRect)
+	draw.NearestNeighbor.Scale(dst, dstRect, src, src.Bounds(), draw.Over, nil)
+
+	blurred := blur(blur(blur(dst)))
+	rawPixels := unsafe.Pointer(&blurred.Pix[0])
+	s.texture.Update(nil, rawPixels, int(s.width)*4)
 
 	s.paused = true
 }
