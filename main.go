@@ -64,24 +64,6 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
 	buffer := *(*[]C.Int8)(unsafe.Pointer(&hdr))
 
-	// TODO: move all that to UI.Tick(), decide whether to Tick the GB or just fill the sound buffer.
-	// Poll events 1000 times per second.
-	//if goholint.ticks%4000 == 0 {
-	//	if g.UI.Enabled {
-	//		sdl.Do(g.UI.ProcessEvents)
-	//	} else {
-	//		sdl.Do(g.ProcessEvents)
-	//	}
-	//}
-
-	// Emulation is paused while home screen is active.
-	// TODO: UI.paused. Also add sounds to UI and just drain them to sound buffer, that will be fun.
-	//if g.UI.Enabled {
-	//	// Still output a silence sample when needed.
-	//	res.Play = g.ticks%apu.SoundOutRate == 0
-	//	return
-	//}
-
 	// FIXME: move loop below to mainUI.FillAudioBuffer(buffer)
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
@@ -155,7 +137,7 @@ func run() {
 		}
 
 		// Add CPU-specific context to debug output.
-		//logger.Context = gb.CPU.Context
+		logger.Context = mainUI.Emulator.CPU.Context
 		//logger.Context = func() string { return fmt.Sprintf("%s\n%s\n> ", gb.CPU, gb.PPU) } // TEMPORARY
 
 		// An AudioSpec structure containing our parameters. After calling

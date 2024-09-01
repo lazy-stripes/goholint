@@ -312,11 +312,12 @@ func (s *Screen) Texture() *sdl.Texture {
 	if !s.paused {
 		rawPixels := unsafe.Pointer(&s.frontBuffer.Pix[0])
 		s.screen.Update(nil, rawPixels, s.frontBuffer.Stride)
-		// TODO: maybe having a proper RenderTo(texture) that would take care of the target might help.
+		// TODO: maybe having a proper RenderTo(texture) that would take care of
+		// the target might help.
 		renderer.SetRenderTarget(s.texture)
 		renderer.Copy(s.screen, nil, nil)
 
-		// TODO: don't draw overlay if not needed.
+		// Don't draw overlay if not needed.
 		if s.text != nil || s.message != nil {
 			overlayTexture := s.overlay.Texture()
 			renderer.SetRenderTarget(s.texture)
@@ -333,7 +334,6 @@ func (s *Screen) Texture() *sdl.Texture {
 //
 // The given callback is stored into an internal list. At the end of VBlank, all
 // callbacks in the list will be invoked in the order they were given.
-// FIXME: what happens if screen is disabled?
 func (s *Screen) OnVBlank(callback func()) {
 	if s.enabled {
 		s.vblankCallbacks = append(s.vblankCallbacks, callback)
@@ -352,13 +352,11 @@ func (s *Screen) VBlank() {
 }
 
 func (s *Screen) vblank() {
-	if s.enabled {
-		// Swap buffers.
-		s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
+	// Swap buffers.
+	s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
 
-		// Reset offset for drawing the next frame.
-		s.offset = 0
-	}
+	// Reset offset for drawing the next frame.
+	s.offset = 0
 
 	// Update GIF frame if recording.
 	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package. Or use the GameBoy timer itself.
@@ -390,20 +388,6 @@ func (s *Screen) vblank() {
 		s.Text("")
 		s.Message(fmt.Sprintf("%d frames saved", len(s.gif.GIF.Image)), 2)
 	}
-
-	//
-	//	// Semi-hack to dump RAM and debug Marioland. In time it should be made
-	//	// into a "Game Genie" kind of feature. For now, this will do.
-	//	if logger.Level >= logger.Debug {
-	//		// TODO: I'd like to be able to call some cpu.DumpRAM() here to make
-	//		//       sure I'm getting the exact RAM state for the current frame
-	//		//       but scope is being an issue.
-	//		//       Maybe through some debug.DumpRAM() where debug would hold
-	//		//       the necessary references. Meh.
-	//      //       ... except now maybe I can do that from the UI when gb.Tick returns vblank!
-	//	}
-	//}
-	//
 
 	// Apply new palette if one was requested.
 	if s.newPalette != nil {
