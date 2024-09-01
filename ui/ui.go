@@ -51,7 +51,7 @@ type UI struct {
 	// Current palette.
 	paletteIndex int
 
-	screen  *widgets.Screen
+	screen  *widgets.DebugScreen
 	dialogs *widgets.Stack
 	root    *widgets.Group
 
@@ -167,8 +167,10 @@ func New(config *options.Options) *UI {
 	widgets.Init(renderer)
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
-	gbScreen := widgets.NewScreen(screenRect, config)
+	//gbScreen := widgets.NewScreen(screenRect, config)
+	gbScreen := widgets.NewDebugScreen(screenRect, config)
 	emulator := gameboy.New(gbScreen, config)
+	gbScreen.PPU = emulator.PPU // XXX Kind of a catch-22 here
 
 	ui := &UI{
 		config:     config,
