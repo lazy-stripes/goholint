@@ -52,7 +52,8 @@ type Screen struct {
 	gif            *screen.GIF
 	startRecording bool
 	stopRecording  bool
-	recordTime     time.Time
+	recordTime     time.Time     // Record timer.
+	recordSkipped  time.Duration // Time to skip after unpausing.
 }
 
 // NewScreen returns a widget suitable for use as a Gameboy display (conforming
@@ -255,6 +256,13 @@ func (s *Screen) Pause() {
 		return
 	}
 
+	// Save the duration of our GIF recording so far. We'll use it when we
+	// unpause so whatever time was spent paused isn't counted in the recording
+	// timer.
+	if s.gif.IsOpen() {
+		s.recordSkipped = time.Since(s.recordTime)
+	}
+
 	// Turn front buffer to greyscale, resize and blur.
 	bounds := s.frontBuffer.Bounds()
 	for x := 0; x < bounds.Dx(); x++ {
@@ -281,6 +289,10 @@ func (s *Screen) Pause() {
 }
 
 func (s *Screen) Unpause() {
+	if s.gif.IsOpen() {
+		s.recordTime = time.Now().Add(-s.recordSkipped)
+	}
+
 	s.paused = false
 }
 
