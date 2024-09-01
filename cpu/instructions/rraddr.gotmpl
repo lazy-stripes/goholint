@@ -12,7 +12,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		// Flags z 0 0 c
 		result := op.cpu.temp8 >> 1
 		if op.cpu.F&FlagC != 0 {
-			result |= (1<<7)
+			result |= (1 << 7)
 		}
 		op.cpu.F = 0x00
 		if result == 0 {

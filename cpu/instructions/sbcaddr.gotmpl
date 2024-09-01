@@ -14,17 +14,16 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- end}}
 	result := int(op.cpu.A) - int(op.cpu.temp8) - carry
 	// Trusting the Internet on this one.
-	if (op.cpu.A ^ op.cpu.temp8 ^ uint8(result&0xff)) & (1 << 4) != 0 {
+	if (op.cpu.A^op.cpu.temp8^uint8(result&0xff))&(1<<4) != 0 {
 		op.cpu.F |= FlagH
 	}
 	if result < 0 {
 		op.cpu.F |= FlagC
 	}
-	op.cpu.A = uint8(result&0xff)
+	op.cpu.A = uint8(result & 0xff)
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-    return true
+	return true
 }
-
 

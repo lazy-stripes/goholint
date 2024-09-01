@@ -9,7 +9,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.temp8 = op.cpu.Memory.Read(op.cpu.{{.Register}}())
 		op.step++
 	case 1:
-		op.cpu.temp8 |= uint8(1<<{{.Bit}})
+		op.cpu.temp8 |= uint8(1 << {{.Bit}})
 		op.cpu.Memory.Write(op.cpu.{{.Register}}(), op.cpu.temp8)
 		done = true
 	}

@@ -5,8 +5,8 @@ type {{name .}} struct {
 
 func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	// Flags: z 1 1 c
-	c.F |= FlagN|FlagH
+	c.F |= FlagN | FlagH
 	c.A ^= 0xff
-    return true
+	return true
 }
 

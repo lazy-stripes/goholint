@@ -12,7 +12,7 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- else}}
 	value := op.cpu.NextByte()
 {{- end}}
-	if (op.cpu.A & 0x0f) + (value & 0x0f) + carry > 0x0f {
+	if (op.cpu.A&0x0f)+(value&0x0f)+carry > 0x0f {
 		op.cpu.F |= FlagH
 	}
 	result := uint16(op.cpu.A) + uint16(value) + uint16(carry)
@@ -23,7 +23,6 @@ func (op *{{name .}}) Tick() (done bool) {
 	if op.cpu.A == 0 {
 		op.cpu.F |= FlagZ
 	}
-    return true
+	return true
 }
-
 

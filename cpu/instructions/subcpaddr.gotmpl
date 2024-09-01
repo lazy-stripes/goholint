@@ -24,7 +24,6 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- if eq .Instruction "SUB" }}
 	op.cpu.A = result
 {{- end}}
-    return true
+	return true
 }
-
 

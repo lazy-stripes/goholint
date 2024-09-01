@@ -7,7 +7,7 @@ func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	carry := (c.F & FlagC) >> 4
 	// Flags: z 0 h c
 	c.F = 0
-	if (c.A & 0x0f) + (c.{{.Register}} & 0x0f) + carry > 0x0f {
+	if (c.A&0x0f)+(c.{{.Register}}&0x0f)+carry > 0x0f {
 		c.F |= FlagH
 	}
 	result := uint16(c.A) + uint16(c.{{.Register}}) + uint16(carry)
@@ -18,6 +18,6 @@ func (op *{{name .}}) Execute(c *CPU) (done bool) {
 	if c.A == 0 {
 		c.F |= FlagZ
 	}
-    return true
+	return true
 }
 

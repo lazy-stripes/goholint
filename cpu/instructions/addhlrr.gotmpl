@@ -10,7 +10,7 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- if eq .High "S"}}
 	rr := uint(op.cpu.SP)
 {{- else}}
-    rr := uint(op.cpu.{{.Low}}) | uint(op.cpu.{{.High}})<<8
+	rr := uint(op.cpu.{{.Low}}) | uint(op.cpu.{{.High}})<<8
 {{- end}}
 	if hl&0xfff+rr&0xfff > 0xfff {
 		op.cpu.F |= FlagH
@@ -20,6 +20,6 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.F |= FlagC
 	}
 	op.cpu.SetHL(uint16(result & 0xffff))
-    return true
+	return true
 }
 

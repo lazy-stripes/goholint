@@ -19,7 +19,6 @@ func (op *{{name .}}) Execute(c *CPU) (done bool) {
 {{- if eq .Instruction "SUB" }}
 	c.A = result
 {{- end}}
-    return true
+	return true
 }
-
 

@@ -1,7 +1,7 @@
 {{- /* Common bit used by RRA and extended RR r instructions. */ -}}
 	result := c.{{.Register}} >> 1
 	if c.F&FlagC > 0 {
-		result |= (1<<7)
+		result |= (1 << 7)
 	}
 	// Flags z 0 0 c
 	c.F = 0x00

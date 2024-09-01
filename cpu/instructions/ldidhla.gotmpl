@@ -6,7 +6,7 @@ type {{name .}} struct {
 func (op *{{name .}}) Tick() (done bool) {
 	hl := op.cpu.HL()
 	op.cpu.Memory.Write(hl, op.cpu.A)
-	op.cpu.SetHL(hl{{.Operator}}1)
+	op.cpu.SetHL(hl {{.Operator}} 1)
 	return true
 }
 
