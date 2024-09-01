@@ -132,6 +132,11 @@ func (s *Screen) Frame() *image.RGBA {
 // clear.
 func (s *Screen) Text(text string) {
 	if s.text != nil {
+		// Do not recreate label if text hasn't changed.
+		if s.text.text == text {
+			return
+		}
+
 		s.overlay.Remove(s.text)
 		s.text.Destroy()
 		s.text = nil
