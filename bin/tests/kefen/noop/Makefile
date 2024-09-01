@@ -6,4 +6,4 @@ noop.gb: noop.o
 	rgbfix -f hg noop.gb
 
 noop.o: noop.asm header.asm
-	rgbasm -o noop.o noop.asm
+	rgbasm -l -o noop.o noop.asm

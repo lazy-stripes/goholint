@@ -5,6 +5,9 @@
 ; Useful constants.
 INCLUDE "../include/const.asm"
 
+; Interrupt jumps
+INCLUDE "../include/interrupts.asm"
+
 SECTION "header", ROM0[$0100]
     ; Main entry point
     NOP

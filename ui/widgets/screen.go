@@ -32,6 +32,7 @@ type Screen struct {
 	message  *Label      // Temporary text on timer.
 	text     *Label      // Permanent text.
 
+	enabled     bool
 	screen      *sdl.Texture // Gameboy display texture (160×144).
 	backBuffer  *image.RGBA  // Work buffer for the frame in progress.
 	frontBuffer *image.RGBA  // Buffer for the displayed frame.
@@ -81,7 +82,43 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 		config:      config,
 	}
 
+	s.drawDisabled()
+
 	return &s
+}
+
+func (s *Screen) Enable(enabled bool) {
+	s.enabled = enabled
+	if !enabled {
+		s.drawDisabled()
+		sdl.PushEvent(&sdl.RenderEvent{Type: sdl.RENDER_TARGETS_RESET})
+	}
+}
+
+func (s *Screen) Enabled() bool {
+	return s.enabled
+}
+
+func (s *Screen) drawDisabled() {
+	// Fill the front buffer with background color.
+	img := s.frontBuffer
+	bg := color.RGBA{ // XXX SDL and Go types don't mingle that well
+		s.BgColor.R, // and it sucks that sdl.Color doesn't implement RGBA()
+		s.BgColor.G,
+		s.BgColor.B,
+		s.BgColor.A,
+	}
+	fg := color.RGBA{
+		s.FgColor.R,
+		s.FgColor.G,
+		s.FgColor.B,
+		s.FgColor.A,
+	}
+	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
+	bar := img.Bounds() // Middle of frame
+	bar.Min.Y = bar.Max.Y / 2
+	bar.Max.Y = bar.Min.Y + 1
+	draw.Draw(img, bar, &image.Uniform{fg}, image.Point{}, draw.Src)
 }
 
 // Frame returns the current front buffer. This allows the UI to grab whatever
@@ -298,7 +335,12 @@ func (s *Screen) Texture() *sdl.Texture {
 // callbacks in the list will be invoked in the order they were given.
 // FIXME: what happens if screen is disabled?
 func (s *Screen) OnVBlank(callback func()) {
-	s.vblankCallbacks = append(s.vblankCallbacks, callback)
+	if s.enabled {
+		s.vblankCallbacks = append(s.vblankCallbacks, callback)
+	} else {
+		// We may not get vblank at all, do the thing now.
+		callback()
+	}
 }
 
 // VBlank is called when the PPU reaches VBlank state. At this point, our SDL

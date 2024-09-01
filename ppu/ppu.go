@@ -160,6 +160,7 @@ func (p *PPU) updateEnabled() {
 	enable := p.LCDC&LCDCDisplayEnable != 0
 	switch {
 	case !p.enabled && enable:
+		p.Display.Enable(true)
 		// Start OAM search on enable.
 		// TODO: https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable says that
 		//       "When re-enabling the LCD, the PPU will immediately start
@@ -170,6 +171,7 @@ func (p *PPU) updateEnabled() {
 		p.RequestLCDInterrupt(interrupts.STATMode2)
 	case p.enabled && !enable:
 		// Disable LCD. Clean up internal state.
+		p.Display.Enable(false)
 		p.LY = 0
 		p.x = 0
 		// [TCAFBD] STAT mode flag is zero when LCD is off.

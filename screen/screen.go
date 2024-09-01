@@ -20,6 +20,12 @@ type ColorIndex uint8
 type Palette [4]color.NRGBA
 
 type Display interface {
+	// Enable or disable the display depending on LCDC.1 bit's value.
+	Enable(bool)
+
+	// Enabled returns the current status of the display.
+	Enabled() bool
+
 	// Write shifts out a pixel (a color index from 0 to 3 into the current
 	// palette) to the display.
 	Write(colorIndex uint8)
