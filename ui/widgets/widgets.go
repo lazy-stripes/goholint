@@ -8,7 +8,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// Package-wide logger.
+// Package-wide logger for widgets.
 var log = logger.New("widgets", "widget-level debug")
 
 // noSizeHint is a safe non-nil zero-size rect to use when creating widgets that
@@ -57,6 +57,11 @@ func texture(size *sdl.Rect) *sdl.Texture {
 }
 
 func Init(r *sdl.Renderer) {
+	// For debugging purposes. Someday it might even be configurable.
+	if log.Enabled() && logger.Level >= logger.Debug {
+		DefaultProperties.BorderColor = sdl.Color{0xff, 0x00, 0x00, 0xff}
+	}
+
 	renderer = r
 }
 
@@ -137,11 +142,11 @@ func (w *widget) clear() {
 func (w *widget) alignX(width int32) (offset int32) {
 	switch w.HorizontalAlign {
 	case align.Left:
-		offset = 0
+		offset = w.Padding
 	case align.Center:
 		offset = (w.width - width) / 2
 	case align.Right:
-		offset = w.width - width
+		offset = w.width - width - w.Padding
 	}
 	return
 }
@@ -151,11 +156,11 @@ func (w *widget) alignX(width int32) (offset int32) {
 func (w *widget) alignY(height int32) (offset int32) {
 	switch w.VerticalAlign {
 	case align.Top:
-		offset = 0
+		offset = w.Padding
 	case align.Middle:
 		offset = (w.height - height) / 2
 	case align.Bottom:
-		offset = w.height - height
+		offset = w.height - height - w.Padding
 	}
 	return
 }
@@ -193,6 +198,21 @@ func (w *widget) Texture() *sdl.Texture {
 	)
 	rect := sdl.Rect{}
 	for i := int32(0); i < w.Border; i++ {
+		rect.X = i
+		rect.Y = i
+		rect.W = width - 2*i
+		rect.H = height - 2*i
+		renderer.DrawRect(&rect)
+	}
+
+	// Render padding in a semi-transparent color based on border.
+	renderer.SetDrawColor(
+		w.BorderColor.R,
+		w.BorderColor.G,
+		w.BorderColor.B,
+		w.BorderColor.A/2,
+	)
+	for i := w.Border; i < w.Padding; i++ {
 		rect.X = i
 		rect.Y = i
 		rect.W = width - 2*i

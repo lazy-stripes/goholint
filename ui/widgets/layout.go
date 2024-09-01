@@ -16,14 +16,8 @@ func NewVerticalLayout(size *sdl.Rect, children []Widget, props ...Properties) *
 	l := &VerticalLayout{
 		Group: NewGroup(size, children, props...),
 	}
-	l.repaint()
 	return l
 }
-
-//func (l *VerticalLayout) Add(child Widget) {
-//	l.Group.Add(child)
-//	l.repaint()
-//}
 
 // Texture bypasses the base Group method to just render aligned children as-is.
 func (l *VerticalLayout) Texture() *sdl.Texture {
@@ -48,9 +42,10 @@ func (l *VerticalLayout) repaint() {
 	}
 
 	// Compute inter-widget space if any.
+	layoutHeight := l.height - (2 * l.Padding)
 	spacing := int32(0)
-	if l.VerticalAlign == align.Justified && l.height > totalHeight {
-		spacing = (l.height - int32(totalHeight)) / int32(len(l.children)+1)
+	if l.VerticalAlign == align.Justified && layoutHeight > totalHeight {
+		spacing = (layoutHeight - int32(totalHeight)) / int32(len(l.children)+1)
 	}
 
 	// Render to our texture, horizontally align each child.

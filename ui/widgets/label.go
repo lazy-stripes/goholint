@@ -28,6 +28,7 @@ func NewLabel(sizeHint *sdl.Rect, text string, p ...Properties) *Label {
 		// Allow Labels to have several lines. We'll have to compute the max
 		// width and total added height for the whole thing.
 		lines := strings.Split(text, "\n")
+		props.Font.SetOutline(props.Zoom)
 		for _, line := range lines {
 			w, h, _ := props.Font.SizeUTF8(line)
 			if int32(w) > sizeHint.W {
@@ -35,6 +36,7 @@ func NewLabel(sizeHint *sdl.Rect, text string, p ...Properties) *Label {
 			}
 			sizeHint.H += int32(h)
 		}
+		props.Font.SetOutline(0)
 
 	}
 	l := &Label{

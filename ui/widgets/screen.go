@@ -71,6 +71,7 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	layoutProps := DefaultProperties
 	layoutProps.VerticalAlign = align.Bottom
 	layoutProps.HorizontalAlign = align.Left
+	layoutProps.Padding = int32(config.ZoomFactor)
 
 	s := Screen{
 		widget:      new(sizeHint),
