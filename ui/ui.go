@@ -287,14 +287,14 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 
 		// TODO: restrict those to when we're not paused. Maybe I could have
 		//       subcontrols for widgets? Might need a bespoke root widget type.
-		"nextpalette":     u.NextPalette,
-		"previouspalette": u.PreviousPalette,
-		"recordgif":       u.StartStopRecord,
-		"screenshot":      u.Screenshot,
-		"togglevoice1":    u.ToggleVoice1,
-		"togglevoice2":    u.ToggleVoice2,
-		"togglevoice3":    u.ToggleVoice3,
-		"togglevoice4":    u.ToggleVoice4,
+		"nextpalette":     u.EmulatorAction(u.NextPalette),
+		"previouspalette": u.EmulatorAction(u.PreviousPalette),
+		"recordgif":       u.EmulatorAction(u.StartStopRecord),
+		"screenshot":      u.EmulatorAction(u.Screenshot),
+		"togglevoice1":    u.EmulatorAction(u.ToggleVoice1),
+		"togglevoice2":    u.EmulatorAction(u.ToggleVoice2),
+		"togglevoice3":    u.EmulatorAction(u.ToggleVoice3),
+		"togglevoice4":    u.EmulatorAction(u.ToggleVoice4),
 
 		// Button presses that could either be handled by GB or UI.
 		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),
@@ -314,6 +314,21 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 	return nil
 }
 
+// EmulatorAction returns a control action function that will handle some
+// high-level events but only if the emulator is currently running (so that we
+// don't change palettes or stuff while the emulator is paused).
+func (u *UI) EmulatorAction(action Action) Action {
+	return func(eventType uint32) {
+		// Don't handle event if emulator is paused.
+		if !u.paused {
+			action(eventType)
+		}
+	}
+}
+
+// ButtonPressAction returns a control action function that will propagate event
+// keys for button presses to the proper object (emulator if it's running, UI if
+// it's paused).
 func (u *UI) ButtonPressAction(e widgets.Event, gbAction gameboy.Action) Action {
 	// Convert keystroke into simpler one-shot widget event. We only care about
 	// given event type to tell if a key was pressed.
