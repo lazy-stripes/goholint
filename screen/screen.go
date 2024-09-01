@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/lazy-stripes/goholint/logger"
+	"github.com/lazy-stripes/goholint/ppu/states"
 )
 
 // Package-wide logger.
@@ -30,9 +31,10 @@ type Display interface {
 	// palette) to the display.
 	Write(colorIndex uint8)
 
-	// VBlank should be called when vertical blanking starts.
-	VBlank()
+	// OnState takes a function that will get called once when the PPU reaches
+	// the given state.
+	OnState(states.State, func())
 
-	// OnVBlank takes a function that will get called once when VBlank starts.
-	OnVBlank(func())
+	// State should be called when the PPU state machines changes state.
+	State(states.State)
 }

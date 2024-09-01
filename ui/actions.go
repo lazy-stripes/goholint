@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ppu/states"
 	"golang.org/x/image/draw"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -32,7 +33,7 @@ func (u *UI) Home(eventType uint32) {
 		u.Hide()
 	} else {
 		// Wait for full frame before pausing emulator.
-		u.screen.OnVBlank(u.Show)
+		u.screen.OnState(states.VBlank, u.Show)
 	}
 }
 

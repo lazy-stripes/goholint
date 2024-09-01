@@ -326,8 +326,8 @@ func (p *PPU) Tick() (vblank bool) {
 			p.setLY(p.LY + 1)
 			if p.LY == 144 {
 				p.frames++
-				p.Display.VBlank()
-				vblank = true // XXX This may not be needed if we can do everything via OnVBlank callbacks?
+				p.Display.State(states.VBlank) // TODO: ppu.NewState(...)
+				vblank = true                  // XXX This may not be needed if we can do everything via OnVBlank callbacks?
 				p.state = states.VBlank
 				p.RequestLCDInterrupt(interrupts.STATMode1)
 

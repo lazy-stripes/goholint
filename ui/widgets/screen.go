@@ -9,6 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ppu/states"
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
 	"github.com/lazy-stripes/goholint/utils"
@@ -38,7 +39,8 @@ type Screen struct {
 	frontBuffer *image.RGBA  // Buffer for the displayed frame.
 	offset      int          // Current pixel offset in frame.
 
-	vblankCallbacks []func() // List of callbacks to invoke at VBlank time.
+	statesCallbacks [4][]func() // Lists of callbacks indexed by PPU state.
+	vblankCallbacks []func()    // List of callbacks to invoke at VBlank time.
 
 	newPalette []color.RGBA // Requested new palette, will be set next VBlank.
 	palette    []color.RGBA // Current palette.
@@ -346,27 +348,40 @@ func (s *Screen) Texture() *sdl.Texture {
 	return s.widget.Texture()
 }
 
-// OnVBlank takes a callback function that will be invoked once when VBlank() is
+func (s *Screen) State(state states.State) {
+	switch state {
+	case states.HBlank:
+	case states.VBlank:
+		// Specifically invoke VBlank code in the UI thread if we want to display
+		// messages and such.
+		sdl.Do(s.vblank)
+	case states.OAMSearch:
+	case states.PixelTransfer:
+	}
+	s.invokeCallbacks(state)
+}
+
+func (s *Screen) invokeCallbacks(state states.State) {
+	// Invoke all stored callbacks and clear slice.
+	for _, cb := range s.statesCallbacks[state] {
+		sdl.Do(cb)
+	}
+	s.statesCallbacks[state] = s.statesCallbacks[state][:0]
+}
+
+// OnState takes a callback function that will be invoked once when VBlank() is
 // called. Use this method to ensure certain operations only happen when a
 // screen frame has been fully drawn.
 //
 // The given callback is stored into an internal list. At the end of VBlank, all
 // callbacks in the list will be invoked in the order they were given.
-func (s *Screen) OnVBlank(callback func()) {
+func (s *Screen) OnState(state states.State, callback func()) {
 	if s.enabled {
-		s.vblankCallbacks = append(s.vblankCallbacks, callback)
+		s.statesCallbacks[state] = append(s.statesCallbacks[state], callback)
 	} else {
-		// We may not get vblank at all, do the thing now.
+		// State won't change so we do the callback now.
 		callback()
 	}
-}
-
-// VBlank is called when the PPU reaches VBlank state. At this point, our SDL
-// buffer should be ready to display.
-func (s *Screen) VBlank() {
-	// Specifically invoke VBlank code in the UI thread if we want to display
-	// messages and such.
-	sdl.Do(s.vblank)
 }
 
 func (s *Screen) vblank() {
@@ -412,12 +427,6 @@ func (s *Screen) vblank() {
 		s.palette = s.newPalette
 		s.newPalette = nil
 	}
-
-	// Invoke all stored callbacks and clear slice.
-	for _, cb := range s.vblankCallbacks {
-		cb()
-	}
-	s.vblankCallbacks = s.vblankCallbacks[:0]
 }
 
 // Dump writes the current pixel buffer to file for debugging purposes.
