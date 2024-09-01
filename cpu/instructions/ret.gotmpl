@@ -14,7 +14,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		}
 	case 1:
 {{- end}}
-		op.cpu.PC = uint16(op.cpu.Memory.Read(op.cpu.SP))
+		op.cpu.temp16 = uint16(op.cpu.Memory.Read(op.cpu.SP))
 		op.cpu.SP++
 		op.step++
 {{- if .Flag}}
@@ -22,7 +22,7 @@ func (op *{{name .}}) Tick() (done bool) {
 {{- else}}
 	case 1:
 {{- end}}
-		op.cpu.PC |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
+		op.cpu.temp16 |= uint16(op.cpu.Memory.Read(op.cpu.SP)) << 8
 		op.cpu.SP++
 		op.step++
 {{- if .Flag}}
@@ -34,6 +34,7 @@ func (op *{{name .}}) Tick() (done bool) {
 		op.cpu.IME = true
 {{- end}}
 		// [GEKKIO] mentions an internal delay.
+		op.cpu.PC = op.cpu.temp16
 		done = true
 	}
 	return
