@@ -168,7 +168,7 @@ func (s *Screen) Message(text string, secs time.Duration) {
 	}
 
 	s.message = NewLabel(noSizeHint, text)
-	s.overlay.Add(s.message)
+	s.overlay.Insert(s.message)
 
 	s.msgTimer = time.AfterFunc(secs*time.Second, utils.WrapSDL(s.clearMessage))
 }

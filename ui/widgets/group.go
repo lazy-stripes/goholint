@@ -37,11 +37,18 @@ func (g *Group) Texture() *sdl.Texture {
 		if c.IsVisible() {
 			t := c.Texture()
 			renderer.SetRenderTarget(g.texture)
+			// TODO: padding? Align? Stretch?
 			renderer.Copy(t, nil, nil)
 			renderer.SetRenderTarget(nil)
 		}
 	}
 	return g.texture
+}
+
+// Insert prepends a child widget to the internal list of children.
+func (g *Group) Insert(child Widget) {
+	newChildren := []Widget{child}
+	g.children = append(newChildren, g.children...)
 }
 
 // Add appends a child widget to the internal list of children.
