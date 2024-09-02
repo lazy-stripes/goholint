@@ -6,7 +6,9 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// TODO: make this a feature of Screen instead.
+// TODO: make this a feature of Screen instead. Either that or we need yet
+//       another interface for UI display (which would embed Widget,
+//       screen.Display and probably ui.Display or some Messager interface).
 type DebugScreen struct {
 	*Screen
 

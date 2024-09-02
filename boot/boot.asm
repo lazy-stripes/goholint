@@ -16,7 +16,7 @@ main:
 	LD A, $77
 	LD [HL], A			; $ff24 = $77 → S02-S01 volume 7
 
-	LD A, $04			; Setup SCX
+	LD A, $04			; Setup SCX to better center our logo
 	LD [$FF00+$43], A
 
 	LD A, $9c			; Setup BG palette

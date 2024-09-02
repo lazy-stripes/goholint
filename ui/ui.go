@@ -287,8 +287,8 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		"home": u.Home,
 		"quit": u.Quit,
 
-		// TODO: restrict those to when we're not paused. Maybe I could have
-		//       subcontrols for widgets? Might need a bespoke root widget type.
+		// TODO: Maybe I could have subcontrols for widgets?
+		//       Might need a bespoke root widget type.
 		"nextpalette":     u.EmulatorAction(u.NextPalette),
 		"previouspalette": u.EmulatorAction(u.PreviousPalette),
 		"recordgif":       u.EmulatorAction(u.StartStopRecord),
@@ -299,14 +299,14 @@ func (u *UI) SetControls(keymap options.Keymap) (err error) {
 		"togglevoice4":    u.EmulatorAction(u.ToggleVoice4),
 
 		// Button presses that could either be handled by GB or UI.
-		"up":     u.ButtonPressAction(widgets.ButtonUp, u.Emulator.JoypadUp),
-		"down":   u.ButtonPressAction(widgets.ButtonDown, u.Emulator.JoypadDown),
-		"left":   u.ButtonPressAction(widgets.ButtonLeft, u.Emulator.JoypadLeft),
-		"right":  u.ButtonPressAction(widgets.ButtonRight, u.Emulator.JoypadRight),
-		"a":      u.ButtonPressAction(widgets.ButtonA, u.Emulator.JoypadA),
-		"b":      u.ButtonPressAction(widgets.ButtonB, u.Emulator.JoypadB),
-		"select": u.ButtonPressAction(widgets.ButtonSelect, u.Emulator.JoypadSelect),
-		"start":  u.ButtonPressAction(widgets.ButtonStart, u.Emulator.JoypadStart),
+		"up":     u.ButtonAction(widgets.ButtonUp, u.Emulator.JoypadUp),
+		"down":   u.ButtonAction(widgets.ButtonDown, u.Emulator.JoypadDown),
+		"left":   u.ButtonAction(widgets.ButtonLeft, u.Emulator.JoypadLeft),
+		"right":  u.ButtonAction(widgets.ButtonRight, u.Emulator.JoypadRight),
+		"a":      u.ButtonAction(widgets.ButtonA, u.Emulator.JoypadA),
+		"b":      u.ButtonAction(widgets.ButtonB, u.Emulator.JoypadB),
+		"select": u.ButtonAction(widgets.ButtonSelect, u.Emulator.JoypadSelect),
+		"start":  u.ButtonAction(widgets.ButtonStart, u.Emulator.JoypadStart),
 	}
 
 	u.Controls = make(map[options.KeyStroke]Action)
@@ -328,10 +328,10 @@ func (u *UI) EmulatorAction(action Action) Action {
 	}
 }
 
-// ButtonPressAction returns a control action function that will propagate event
+// ButtonAction returns a control action function that will propagate event
 // keys for button presses to the proper object (emulator if it's running, UI if
 // it's paused).
-func (u *UI) ButtonPressAction(e widgets.Event, gbAction gameboy.Action) Action {
+func (u *UI) ButtonAction(e widgets.Event, gbAction gameboy.Action) Action {
 	// Convert keystroke into simpler one-shot widget event. We only care about
 	// given event type to tell if a key was pressed.
 	return func(eventType uint32) {

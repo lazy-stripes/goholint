@@ -1,7 +1,6 @@
 package gameboy
 
-// Action type for user interactions. This might move to a ui package someday.
-// FIXME: I want SDL out of Gameboy code, phase this out, use booleans directly.
+// Action type for user interactions with the emulator.
 type Action func(state bool)
 
 // JoypadUp updates the Joypad's registers for the Up direction.

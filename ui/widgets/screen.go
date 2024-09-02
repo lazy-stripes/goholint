@@ -270,7 +270,7 @@ func (s *Screen) Pause() {
 	bounds := s.frontBuffer.Bounds()
 	for x := 0; x < bounds.Dx(); x++ {
 		for y := 0; y < bounds.Dy(); y++ {
-			pixel := s.frontBuffer.At(x, y).(color.RGBA)
+			pixel := s.frontBuffer.RGBAAt(x, y)
 			r, g, b, a := pixel.R, pixel.G, pixel.B, pixel.A
 			lum := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
 			grey := uint8(lum)
@@ -328,7 +328,7 @@ func (s *Screen) Write(colorIndex uint8) {
 
 // Texture will draw the screen and optionally the text overlay on top.
 func (s *Screen) Texture() *sdl.Texture {
-	// If paused, only show the blurred background instead.
+	// If paused, only show the current blurred background instead.
 	if !s.paused {
 		rawPixels := unsafe.Pointer(&s.frontBuffer.Pix[0])
 		s.screen.Update(nil, rawPixels, s.frontBuffer.Stride)
@@ -369,21 +369,27 @@ func (s *Screen) invokeCallbacks(state states.State) {
 	s.statesCallbacks[state] = s.statesCallbacks[state][:0]
 }
 
-// OnState takes a callback function that will be invoked once when VBlank() is
-// called. Use this method to ensure certain operations only happen when a
-// screen frame has been fully drawn.
+// OnState takes a callback function that will be invoked once when the PPU
+// reaches the given state. This is mostly used to ensure some operations are
+// only performed, like, at VBlank time.
 //
-// The given callback is stored into an internal list. At the end of VBlank, all
-// callbacks in the list will be invoked in the order they were given.
+// The given callback is stored into an internal list. When a new state is
+// reached (through a call to State(), all callbacks in the list will be invoked
+// in the order they were added.
+//
+// If the screen is currently disabled, no state change can occur so the given
+// callback will be invoked immediately.
 func (s *Screen) OnState(state states.State, callback func()) {
 	if s.enabled {
 		s.statesCallbacks[state] = append(s.statesCallbacks[state], callback)
 	} else {
 		// State won't change so we do the callback now.
-		callback()
+		callback() // TODO: sdl.Do here?
 	}
 }
 
+// vblank is called when the PPU reaches VBlank and signals it by calling State
+// with the state value associated to VBlank.
 func (s *Screen) vblank() {
 	// Swap buffers.
 	s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
@@ -391,13 +397,12 @@ func (s *Screen) vblank() {
 	// Reset offset for drawing the next frame.
 	s.offset = 0
 
-	// Update GIF frame if recording.
-	// FIXME: timer behavior when pausing the emulator. I most likely need to move something to ui package. Or use the GameBoy timer itself.
+	// Update GIF frame if recording. FIXME: I'd like doing this from the UI, like SaveFrame(screen.Frame).
 	if s.gif.IsOpen() {
 		d := time.Since(s.recordTime)
 		text := fmt.Sprintf("•REC [%02d:%02d]", d/time.Minute, d/time.Second)
 		s.Text(text)
-		s.gif.SaveFrame() // TODO: SaveFrame(frontBuffer) instead of using Write
+		s.gif.SaveFrame()
 	}
 
 	// Create GIF here if requested.
