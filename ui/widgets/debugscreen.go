@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"fmt"
+
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu"
 	"github.com/veandco/go-sdl2/sdl"
@@ -50,6 +52,8 @@ func (s *DebugScreen) Texture() *sdl.Texture {
 		renderer.DrawRect(&spriteRect)
 	}
 	renderer.SetRenderTarget(nil)
+
+	s.Text(fmt.Sprintf("BGP: %08b", s.PPU.BGP))
 
 	return t
 }

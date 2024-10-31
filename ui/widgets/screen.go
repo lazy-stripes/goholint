@@ -95,6 +95,7 @@ func (s *Screen) Enable(enabled bool) {
 	s.enabled = enabled
 	if !enabled {
 		s.drawDisabled()
+		// Request UI to repaint itself since VBlank won't do it anymore.
 		sdl.PushEvent(&sdl.RenderEvent{Type: sdl.RENDER_TARGETS_RESET})
 	}
 }
@@ -118,6 +119,7 @@ func (s *Screen) drawDisabled() {
 		s.FgColor.B,
 		s.FgColor.A,
 	}
+	fg = (color.RGBA)(s.FgColor)
 	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
 	bar := img.Bounds() // Middle of frame
 	bar.Min.Y = bar.Max.Y / 2
@@ -374,7 +376,7 @@ func (s *Screen) invokeCallbacks(state states.State) {
 // only performed, like, at VBlank time.
 //
 // The given callback is stored into an internal list. When a new state is
-// reached (through a call to State(), all callbacks in the list will be invoked
+// reached through a call to State(), all callbacks in the list will be invoked
 // in the order they were added.
 //
 // If the screen is currently disabled, no state change can occur so the given

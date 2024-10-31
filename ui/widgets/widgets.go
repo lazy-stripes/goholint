@@ -183,8 +183,8 @@ func (w *widget) ProcessEvent(e Event) bool {
 	return false
 }
 
-// Texture should be called by subclasses to apply unused properties like border
-// to the widget's internal texture.
+// Texture returns the widget's internal texture after applying properties like
+// border color to it.
 func (w *widget) Texture() *sdl.Texture {
 	// TODO: clear() and return transparent texture if not visible?
 	// Draw border on top of internal texture.

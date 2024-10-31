@@ -42,6 +42,7 @@ func NewMenu(sizeHint *sdl.Rect) *Menu {
 	return &m
 }
 
+// TODO: AddAction(func()) and AddDialog(Dialog)
 func (m *Menu) AddChoice(title string, action func()) {
 	m.Add(&menuChoice{
 		Label:  NewLabel(&m.labelSizeHint, title, m.labelProps),

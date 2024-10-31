@@ -164,6 +164,8 @@ func New(config *options.Options) *UI {
 		Background: background,
 		Zoom:       int(config.ZoomFactor),
 	}
+
+	// XXX: maybe pass props as parameters too?
 	widgets.Init(renderer)
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
@@ -190,6 +192,7 @@ func New(config *options.Options) *UI {
 
 	// The UI should primarily show the emulator's screen, with some menu or
 	// special widget on top whenever emulation is paused.
+	// TODO: Make gb display its own dialog?
 	ui.root.Add(gbScreen)
 	ui.root.Add(ui.dialogs)
 	ui.dialogs.SetVisible(false)
@@ -253,6 +256,7 @@ func (u *UI) buildMenu() {
 	mainMenu.AddChoice("Resume", u.Hide)
 
 	// FIXME: just do this manually, like addChoice("Input", widgets.NewInput)
+	// TODO: maybe ditch u.dialogs and put it all in u.root widget?
 	//for i, d := range u.dialogs {
 	//	// Each choice outside of the defaults (resume or quit) will just
 	//	// show the corresponding widget in the root stack.

@@ -14,6 +14,7 @@ import (
 )
 
 // Action type for user interactions. TODO: see if we can use a single one for gameboy/ui.
+// TODO: see if we can't move that to widgets (see QAction for inspiration)
 type Action func(eventType uint32)
 
 // Quit cleanly quits the program.
