@@ -34,7 +34,7 @@ func (g *Group) ProcessEvent(e Event) bool {
 func (g *Group) Texture() *sdl.Texture {
 	g.clear()
 	for _, c := range g.children {
-		if c.IsVisible() {
+		if c.Visible() {
 			t := c.Texture()
 			renderer.SetRenderTarget(g.texture)
 			// TODO: padding? Align? Stretch?

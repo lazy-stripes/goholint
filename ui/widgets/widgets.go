@@ -71,8 +71,8 @@ type Widget interface {
 	// widget from it.
 	SetVisible(bool)
 
-	// IsVisible returns the current value of the internal visibility flag.
-	IsVisible() bool
+	// Visible returns the current value of the internal visibility flag.
+	Visible() bool
 
 	// ProcessEvent returns true if the widget caught and handled the event,
 	// false if it did not.
@@ -171,8 +171,8 @@ func (w *widget) SetVisible(visible bool) {
 	w.visible = visible
 }
 
-// IsVIsible makes the visibility flag accessible to the interface.
-func (w *widget) IsVisible() bool {
+// Visible makes the visibility flag state accessible to the Widget interface.
+func (w *widget) Visible() bool {
 	return w.visible
 }
 
