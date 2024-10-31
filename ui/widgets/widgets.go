@@ -151,7 +151,7 @@ func (w *widget) alignX(width int32) (offset int32) {
 	return
 }
 
-// alignX returns the vertical offset relative to the widget's top for the
+// alignY returns the vertical offset relative to the widget's top for the
 // given height.
 func (w *widget) alignY(height int32) (offset int32) {
 	switch w.VerticalAlign {

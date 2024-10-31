@@ -37,6 +37,8 @@ func (s *Stack) Add(w Widget) {
 	}
 }
 
+// TODO: adjust or reset currently shown child on Remove.
+
 // Texture updates the internal texture with the currently shown child (if any)
 // then calls the base class.
 func (s *Stack) Texture() *sdl.Texture {
@@ -50,6 +52,7 @@ func (s *Stack) Texture() *sdl.Texture {
 func (s *Stack) Show(index uint) {
 	if index >= uint(len(s.children)) {
 		log.Warningf("Stack.Show(%d) out of bounds (%d)", index, len(s.children))
+		return
 	}
 	s.current = s.children[index]
 }

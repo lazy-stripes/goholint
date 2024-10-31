@@ -2,8 +2,11 @@ package widgets
 
 import "github.com/veandco/go-sdl2/sdl"
 
-// Group adds a list of children to widgets embedding it, as well as an Add()
-// method to append children to the list, and event dispatching.
+// Group adds a list of children to widgets embedding it, as well as Add() and
+// Remove() methods to append children to the list, and event dispatching.
+//
+// A Group's texture contains the superimposed textures of all children widgets,
+// rendered from the bottom up.
 type Group struct {
 	*widget
 
