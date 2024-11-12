@@ -33,17 +33,33 @@ init_tiles:
 	JR NZ, .copy_loop
 
 init_map:
+	LD DE, tilemap_data
 	LD HL, $9800
 .copy_loop:
-	; Select tile to write. TODO: use RLE-encoded map.
-	; X = ADDR / 20, Y = ADDR % 18
-	LD A, $01 ; Horizontal tile only for now
-.write_tile:
-	LD [HLI], A
-	LD A, $9c
-	CP H
-	JR NZ, .copy_loop
+	; Read an entry from the tilemap data and write as many needed IDs
+	CALL write_tiles
 
+	; TODO: jump to next visible line when we reach 20 tiles. Use C for counting?
+
+
+write_tiles:
+	LD A, [DE]	; Read next entry
+	INC DE
+
+	LD B, A 	; Copy A to keep the count bits
+	SRL B		; Extract top five bits (count) by shifting right ×3.
+	SRL B
+	SRL B
+
+	AND A, $07	; Mask count bits to keep tile ID
+
+.copy:
+	LD [HLI], A
+	DEC B
+	JR NZ, .copy
+	RET
+
+init_end:
 	; Turn LCD back on
 	LD A, $93
 	LD [$FF00+$40],A
@@ -86,9 +102,25 @@ tiles_data:
 .end
 
 ; Tilemap (format is 0bRRRRRIII where R is how many times the tile repeats, and
-; I the tile ID).
-; 🭽▔🭾 🭼▁🭿 ▏▕
+; I the tile ID). TODO: count (R) should be 1-based. Add 4 to all values.
+; /=0 \=1 \=2 /=3 -=4 |=5
 tilemap_data:
-	DB $00, $94, $01 		; 🭽▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔🭾
-	DB $05, $84, $01, $05 	; ▏🭽▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔🭾▕
-	DB $05, $84, $01, $05 	; ▏▏🭽▔▔▔▔▔▔▔▔▔▔▔▔▔▔🭾▕▕
+	DB $00, $94, $01 				; +------------------+
+	DB $05, $00, $84, $01, $05 		; |+----------------+|
+	DB $15, $00, $74, $01, $15 		; ||+--------------+||
+	DB $1d, $00, $64, $01, $1d 		; |||+------------+|||
+	DB $25, $00, $54, $01, $25 		; ||||+----------+||||
+	DB $2d, $00, $44, $01, $2d 		; |||||+--------+|||||
+	DB $35, $00, $34, $01, $35 		; ||||||+------+||||||
+	DB $3d, $00, $24, $01, $3d 		; |||||||+----+|||||||
+	DB $45, $00, $14, $01, $45 		; ||||||||+--+||||||||
+	DB $45, $02, $14, $03, $45 		; ||||||||+--+||||||||
+	DB $3d, $02, $24, $03, $3d 		; |||||||+----+|||||||
+	DB $35, $02, $34, $03, $35 		; ||||||+------+||||||
+	DB $2d, $02, $44, $03, $2d 		; |||||+--------+|||||
+	DB $25, $02, $54, $03, $25 		; ||||+----------+||||
+	DB $1d, $02, $64, $03, $1d 		; |||+------------+|||
+	DB $15, $02, $74, $03, $15 		; ||+--------------+||
+	DB $05, $02, $84, $03, $05 		; |+----------------+|
+	DB $02, $94, $03 				; +------------------+
+.end
