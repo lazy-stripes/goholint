@@ -13,9 +13,14 @@ init_tiles:
 	XOR A
 	LD [$FF00+$40],A
 
-	; Default palette: 3210
+	; Default palette: 3 2 1 0
 	LD A, $E4
-	LD [$FF00+$48], A
+	LD [$FF00+$47], A
+
+	; Reset SCX that the Goholint boot ROM set.
+	; FIXME: Goholint shouldn't do that, rework the logo instead.
+	XOR A
+	LD [$FF00+$43], A
 
 	; Copy tile data to VRAM.
 	LD DE, tiles_data
@@ -37,12 +42,11 @@ init_map:
 	LD DE, tilemap_data
 	LD HL, $9800
 .init_loop:
-	LD C, $14	; Init C to 20 (width)
+	LD C, $14	; Init C to 20 (width in tiles)
 .copy_loop:
 	; Read an entry from the tilemap data and write as many needed IDs
 	CALL write_tiles
 
-	; TODO: jump to next visible line when we reach 20 tiles. Use C for counting?
 	; Check if C is zero, if so increment HL offset to next visible line
 	XOR A
 	OR C
