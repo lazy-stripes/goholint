@@ -5,7 +5,7 @@ clean:
 
 palette-cycle.gb: palette-cycle.o
 	rgblink -o palette-cycle.gb palette-cycle.o
-	rgbfix -f hg palette-cycle.gb
+	rgbfix -f hg -p 255 palette-cycle.gb
 
 palette-cycle.o: palette-cycle.asm header.asm palette-cycle.tiles
 	rgbasm -o palette-cycle.o palette-cycle.asm
