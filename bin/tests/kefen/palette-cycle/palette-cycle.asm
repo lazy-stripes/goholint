@@ -1,5 +1,6 @@
-; Dummy ROM that stops right after BootROM is done executing. Used to debug
-; all memory writes occurring during boot process.
+; Display some kind of grid and make it look like it's moving just by changing
+; the Game Boy's palette.
+
 INCLUDE "header.asm"
 INCLUDE "../include/macros.asm"
 
@@ -13,14 +14,13 @@ init_tiles:
 	XOR A
 	LD [$FF00+$40],A
 
-	; Default palette: 3 2 1 0
-	LD A, $E4
-	LD [$FF00+$47], A
-
 	; Reset SCX that the Goholint boot ROM set.
 	; FIXME: Goholint shouldn't do that, rework the logo instead.
-	XOR A
 	LD [$FF00+$43], A
+
+	; Set background palette to a gradient: 3 2 1 0.
+	LD A, $E4
+	LD [$FF00+$47], A
 
 	; Copy tile data to VRAM.
 	LD DE, tiles_data
@@ -31,7 +31,7 @@ init_tiles:
 	LD A, [DE]
 	INC DE
 	LD [HLI], A
-	DEC BC	; Does not set zero flag so we need to check
+	DEC BC	; Does not set zero flag so we need to check.
 	XOR A
 	CP B
 	JR NZ, .copy_loop
@@ -42,24 +42,20 @@ init_map:
 	LD DE, tilemap_data
 	LD HL, $9800
 .init_loop:
-	LD C, $14	; Init C to 20 (width in tiles)
+	LD C, $14	; Init C to 20 (width in tiles).
 .copy_loop:
-	; Read an entry from the tilemap data and write as many needed IDs
+	; Read an entry from the tilemap data and write as many needed IDs.
 	CALL write_tiles
 
-	; Check if C is zero, if so increment HL offset to next visible line
+	; Check if 20 tiles were written, if so increment HL offset to next line.
 	XOR A
 	OR C
 	JR NZ, .copy_loop
 
-
-	; Check if we're done.
+	; Check if we're done by looking at DE's low byte. This works because we
+	; aligned tile data to byte boundary, and it takes less than 255 bytes.
 	LD A, E
-	;OutputA
-
 	CP LOW(tilemap_data.end)
-
-
 	JR Z, init_end
 
 	; We got to tile 20, skip the next 12 bytes.
@@ -68,15 +64,15 @@ init_map:
 	JR .init_loop
 
 write_tiles:
-	LD A, [DE]	; Read next entry
+	LD A, [DE]	; Read next entry.
 	INC DE
 
-	LD B, A 	; Copy A to keep the count bits
-	SRL B		; Extract top five bits (count) by shifting right ×3.
+	LD B, A 	; Store count bits in B.
+	SRL B		; Extract top five bits (count) by shifting right 3 times.
 	SRL B
 	SRL B
 
-	AND A, $07	; Mask count bits to keep tile ID
+	AND A, $07	; Mask count bits to keep tile ID in A.
 
 .copy:
 	LD [HLI], A
@@ -98,21 +94,21 @@ init_end:
 	EI
 
 lock:
+	; Stop execution here, all the work will be done from the vblank interrupt.
 	JR lock
 
 vblank:
 	DEC E
-	LD A, E
-	JR Z, shiftpal
-	RETI
+	JR NZ, .done
 
-shiftpal:
 	; Shift palette bits.
 	LD A, [$FF00+$47] ; BGP
 	RLC A
 	RLC A
 	LD [$FF00+$47], A
 	LD E, CYCLE_DELAY
+
+.done:
 	RETI
 
 ; Unhandled interrupts.
@@ -122,13 +118,13 @@ serial:
 joypad:
 	RETI
 
-; Raw tiles data (3 tiles, 6 bytes)
+; Raw tiles data (8 tiles)
 tiles_data:
 	INCBIN "palette-cycle.tiles"
 .end
 
-; Align tile data to byte so we can just check E to know if we finished reading
-; all tiles.
+; Align tilemap data to byte so we can just check E to know if we finished
+; reading all tile IDs.
 SECTION "tilemap_data", ROM0, ALIGN[8]
 
 ; Tilemap (format is 0bRRRRRIII where R is how many times the tile repeats, and
