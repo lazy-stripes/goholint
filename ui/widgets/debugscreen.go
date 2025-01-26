@@ -1,12 +1,16 @@
 package widgets
 
 import (
-	"fmt"
-
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu"
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+// Initialize sub-logger for unmapped MMU accesses.
+func init() {
+	log.Add("screen", "show sprite boundaries (Debug level only)")
+}
 
 // TODO: make this a feature of Screen instead. Either that or we need yet
 //       another interface for UI display (which would embed Widget,
@@ -22,6 +26,11 @@ func NewDebugScreen(sizeHint *sdl.Rect, config *options.Options) *DebugScreen {
 }
 
 func (s *DebugScreen) Texture() *sdl.Texture {
+	// Only display boundaries if debugging. TODO: integrate that in normal Screen.
+	if !log.Sub("screen").Enabled() || logger.Level < logger.Debug {
+		return s.Screen.Texture()
+	}
+
 	// Draw sprite boudaries to texture.
 	var spriteRect sdl.Rect
 	spriteRect.W = 8 * int32(s.Zoom)
@@ -53,7 +62,7 @@ func (s *DebugScreen) Texture() *sdl.Texture {
 	}
 	renderer.SetRenderTarget(nil)
 
-	s.Text(fmt.Sprintf("BGP: %08b", s.PPU.BGP))
+	//s.Text(fmt.Sprintf("BGP: %08b", s.PPU.BGP))
 
 	return t
 }
