@@ -8,7 +8,9 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
+	"github.com/lazy-stripes/goholint/ppu"
 	"github.com/lazy-stripes/goholint/ppu/states"
 	"github.com/lazy-stripes/goholint/screen"
 	"github.com/lazy-stripes/goholint/ui/widgets/align"
@@ -17,10 +19,17 @@ import (
 	"golang.org/x/image/draw"
 )
 
+// Initialize sub-logger for unmapped MMU accesses.
+func init() {
+	log.Add("screen", "show sprite boundaries (Debug level only)")
+}
+
 // Screen represents the LCD display for a GameBoy. It works by shifting out
 // individual pixels to a single dedicated texture.
 type Screen struct {
 	*widget
+
+	PPU *ppu.PPU // For debugging
 
 	// FIXME: I use this virtually everywhere... do I dare a global options.Runtime instance?
 	config *options.Options
@@ -40,15 +49,11 @@ type Screen struct {
 	offset      int          // Current pixel offset in frame.
 
 	statesCallbacks [4][]func() // Lists of callbacks indexed by PPU state.
-	vblankCallbacks []func()    // List of callbacks to invoke at VBlank time.
 
 	newPalette []color.RGBA // Requested new palette, will be set next VBlank.
 	palette    []color.RGBA // Current palette.
 
 	///Rectangle image.Rectangle
-
-	// Set this to true to save the next frame. Will be reset at VBlank.
-	screenshotRequested bool
 
 	// GIF recorder. TODO: record video with sound too.
 	gif            *screen.GIF
@@ -64,11 +69,6 @@ type Screen struct {
 func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 	// Ignore size hint for main texture, Gameboy's screen is 160×144 pixels.
 	w, h := options.ScreenWidth, options.ScreenHeight
-
-	// XXX For testing
-	//props := DefaultProperties
-	//props.Border = 1
-	//props.BorderColor = sdl.Color{R: 255, A: 255}
 
 	layoutProps := DefaultProperties
 	layoutProps.VerticalAlign = align.Bottom
@@ -107,21 +107,10 @@ func (s *Screen) Enabled() bool {
 func (s *Screen) drawDisabled() {
 	// Fill the front buffer with background color.
 	img := s.frontBuffer
-	bg := color.RGBA{ // XXX SDL and Go types don't mingle that well
-		s.BgColor.R, // and it sucks that sdl.Color doesn't implement RGBA()
-		s.BgColor.G,
-		s.BgColor.B,
-		s.BgColor.A,
-	}
-	fg := color.RGBA{
-		s.FgColor.R,
-		s.FgColor.G,
-		s.FgColor.B,
-		s.FgColor.A,
-	}
-	fg = (color.RGBA)(s.FgColor)
+	bg := (color.RGBA)(s.BgColor)
+	fg := (color.RGBA)(s.FgColor)
 	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
-	bar := img.Bounds() // Middle of frame
+	bar := img.Bounds() // Draw a bar in the middle of the frame
 	bar.Min.Y = bar.Max.Y / 2
 	bar.Max.Y = bar.Min.Y + 1
 	draw.Draw(img, bar, &image.Uniform{fg}, image.Point{}, draw.Src)
@@ -328,28 +317,6 @@ func (s *Screen) Write(colorIndex uint8) {
 	}
 }
 
-// Texture will draw the screen and optionally the text overlay on top.
-func (s *Screen) Texture() *sdl.Texture {
-	// If paused, only show the current blurred background instead.
-	if !s.paused {
-		rawPixels := unsafe.Pointer(&s.frontBuffer.Pix[0])
-		s.screen.Update(nil, rawPixels, s.frontBuffer.Stride)
-		// TODO: maybe having a proper RenderTo(texture) that would take care of
-		// the target might help.
-		renderer.SetRenderTarget(s.texture)
-		renderer.Copy(s.screen, nil, nil)
-
-		// Don't draw overlay if not needed.
-		if s.text != nil || s.message != nil {
-			overlayTexture := s.overlay.Texture()
-			renderer.SetRenderTarget(s.texture)
-			renderer.Copy(overlayTexture, nil, nil)
-			renderer.SetRenderTarget(nil)
-		}
-	}
-	return s.widget.Texture()
-}
-
 func (s *Screen) State(state states.State) {
 	switch state {
 	case states.HBlank:
@@ -373,7 +340,7 @@ func (s *Screen) invokeCallbacks(state states.State) {
 
 // OnState takes a callback function that will be invoked once when the PPU
 // reaches the given state. This is mostly used to ensure some operations are
-// only performed, like, at VBlank time.
+// only performed at specific times, like VBlank.
 //
 // The given callback is stored into an internal list. When a new state is
 // reached through a call to State(), all callbacks in the list will be invoked
@@ -390,11 +357,33 @@ func (s *Screen) OnState(state states.State, callback func()) {
 	}
 }
 
-// vblank is called when the PPU reaches VBlank and signals it by calling State
-// with the state value associated to VBlank.
+// vblank writes the contents of the back buffer to the internal widget texture,
+// updates GIF recording if needed, and applies a new palette if requested.
+//
+// This method is called when the PPU reaches VBlank (by invoking State() with
+// the value associated to VBlank).
 func (s *Screen) vblank() {
-	// Swap buffers.
+	// Swap buffers and update texture (possibly with extra debug stuff).
 	s.frontBuffer, s.backBuffer = s.backBuffer, s.frontBuffer
+
+	rawPixels := unsafe.Pointer(&s.frontBuffer.Pix[0])
+	s.screen.Update(nil, rawPixels, s.frontBuffer.Stride)
+	// TODO: maybe having a proper RenderTo(texture) that would take care of
+	// the target might help.
+	renderer.SetRenderTarget(s.texture)
+	renderer.Copy(s.screen, nil, nil)
+
+	if log.Sub("screen").Enabled() && logger.Level >= logger.Debug {
+		s.drawSpriteBorders()
+	}
+
+	// Don't draw overlay if not needed.
+	if s.text != nil || s.message != nil {
+		overlayTexture := s.overlay.Texture()
+		renderer.SetRenderTarget(s.texture)
+		renderer.Copy(overlayTexture, nil, nil)
+		renderer.SetRenderTarget(nil)
+	}
 
 	// Reset offset for drawing the next frame.
 	s.offset = 0
@@ -436,14 +425,65 @@ func (s *Screen) vblank() {
 	}
 }
 
+// drawSpriteBorders renders sprite boundaries on top of the widget's texture.
+func (s *Screen) drawSpriteBorders() {
+
+	var spriteRect sdl.Rect
+	spriteRect.W = 8 * int32(s.Zoom)
+	if s.PPU.LCDC&ppu.LCDCSpriteSize != 0 {
+		spriteRect.H = 16 * int32(s.Zoom)
+	} else {
+		spriteRect.H = 8 * int32(s.Zoom)
+	}
+
+	renderer.SetRenderTarget(s.texture)
+	oam := s.PPU.OAM.Bytes
+	for i := 0; i < len(oam); i += 4 {
+		y := int32(oam[i+0]) - 16
+		x := int32(oam[i+1]) - 8
+		//tile := oam[i+2]
+		flags := oam[i+3]
+
+		spriteRect.X = x * int32(s.Zoom)
+		spriteRect.Y = y * int32(s.Zoom)
+		renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
+		renderer.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
+		renderer.DrawRect(&spriteRect)
+
+		// Add orientation given flip flags.
+		x = spriteRect.X + 1
+		y = spriteRect.Y + 1
+		w := int32(8)
+
+		opX := int32(+1)
+		opY := int32(+1)
+		if flags&ppu.SpriteFlipX != 0 {
+			x = spriteRect.X + spriteRect.W - 2
+			opX = -1
+		}
+		if flags&ppu.SpriteFlipY != 0 {
+			y = spriteRect.Y + spriteRect.H - 2
+			opY = -1
+		}
+
+		for i := int32(0); i <= w; i++ {
+			renderer.SetDrawColor(0x80, 0x00, 0x00, 0xff/2)
+			renderer.DrawLine(
+				x,
+				y,
+				x,
+				y+(opY*(w-i)),
+			)
+			x += opX
+		}
+
+	}
+	renderer.SetRenderTarget(nil)
+}
+
 // Dump writes the current pixel buffer to file for debugging purposes.
 func (s *Screen) Dump() {
 	ioutil.WriteFile("lcd-buffer-dump.bin", s.frontBuffer.Pix, 0644)
-}
-
-// Screenshot will make the display dump the next frame to file.
-func (s *Screen) Screenshot() {
-	s.screenshotRequested = true
 }
 
 // StartRecord will create a new GIF file and output frames into it until

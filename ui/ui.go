@@ -51,7 +51,7 @@ type UI struct {
 	// Current palette.
 	paletteIndex int
 
-	screen  *widgets.DebugScreen
+	screen  *widgets.Screen
 	dialogs *widgets.Stack
 	root    *widgets.Group
 
@@ -130,18 +130,8 @@ func New(config *options.Options) *UI {
 
 	// TODO: try and move all of this to the widgets package to clean up the ui one.
 	// Colors from config.
-	fg := sdl.Color{
-		R: config.UIForeground.R,
-		G: config.UIForeground.G,
-		B: config.UIForeground.B,
-		A: config.UIForeground.A,
-	}
-	bg := sdl.Color{
-		R: config.UIBackground.R,
-		G: config.UIBackground.G,
-		B: config.UIBackground.B,
-		A: config.UIBackground.A,
-	}
+	fg := sdl.Color(config.UIForeground)
+	bg := sdl.Color(config.UIBackground)
 
 	// By default, use BG color at zero transparency for clearing widgets. It
 	// makes the outline of labels blend better.
@@ -159,7 +149,7 @@ func New(config *options.Options) *UI {
 		HorizontalAlign: align.Center,
 		VerticalAlign:   align.Middle,
 		Border:          1,
-		BorderColor:     sdl.Color{0xff, 0x00, 0x00, 0xff},
+		//BorderColor:     sdl.Color{0xff, 0x00, 0x00, 0xff},
 		//Background:      sdl.Color{0xff, 0xff, 0xff, 0x00},
 		Background: background,
 		Zoom:       int(config.ZoomFactor),
@@ -169,10 +159,9 @@ func New(config *options.Options) *UI {
 	widgets.Init(renderer)
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
-	//gbScreen := widgets.NewScreen(screenRect, config)
-	gbScreen := widgets.NewDebugScreen(screenRect, config)
+	gbScreen := widgets.NewScreen(screenRect, config)
 	emulator := gameboy.New(gbScreen, config)
-	gbScreen.PPU = emulator.PPU // XXX Kind of a catch-22 here
+	gbScreen.PPU = emulator.PPU // Only used for debugging.
 
 	ui := &UI{
 		config:     config,
