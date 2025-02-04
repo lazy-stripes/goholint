@@ -59,7 +59,7 @@ func texture(size *sdl.Rect) *sdl.Texture {
 func Init(r *sdl.Renderer) {
 	// For debugging purposes. Someday it might even be configurable.
 	if log.Enabled() && logger.Level >= logger.Debug {
-		DefaultProperties.BorderColor = sdl.Color{0xff, 0x00, 0x00, 0xff}
+		DefaultProperties.BorderColor = sdl.Color{R: 0xff, A: 0xff}
 	}
 
 	renderer = r

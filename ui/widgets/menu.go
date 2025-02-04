@@ -83,7 +83,7 @@ func (m *Menu) current() *menuChoice {
 	return m.children[m.selected].(*menuChoice)
 }
 
-// XXX: Maybe wrap label in a common type that provides .highlight()
+// XXX: Maybe wrap label in a common type that provides .Select() and .Selected() (Selectable?)
 func (m *Menu) highlightCurrent(v bool) {
 	label := m.current()
 	if v {
@@ -121,5 +121,6 @@ func (m *Menu) Down() {
 }
 
 func (m *Menu) Confirm() {
+	// TODO: if Action, call Action(), if Dialog, call Show(...)
 	m.current().action()
 }
