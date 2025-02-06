@@ -25,6 +25,7 @@ func (i *FileItem) Value() any {
 }
 
 type FileDialog struct {
+	dialog
 	*List
 }
 

@@ -277,7 +277,7 @@ func (s *Screen) Pause() {
 
 	blurred := blur(blur(blur(dst)))
 	rawPixels := unsafe.Pointer(&blurred.Pix[0])
-	s.texture.Update(nil, rawPixels, int(s.width)*4)
+	s.texture.Update(nil, rawPixels, blurred.Stride)
 
 	s.paused = true
 }
@@ -353,7 +353,7 @@ func (s *Screen) OnState(state states.State, callback func()) {
 		s.statesCallbacks[state] = append(s.statesCallbacks[state], callback)
 	} else {
 		// State won't change so we do the callback now.
-		callback() // TODO: sdl.Do here?
+		sdl.Do(callback)
 	}
 }
 

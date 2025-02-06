@@ -1,6 +1,9 @@
 package widgets
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"github.com/lazy-stripes/goholint/ui/widgets/align"
+	"github.com/veandco/go-sdl2/sdl"
+)
 
 type Selectable interface {
 	Widget
@@ -31,18 +34,29 @@ type List struct {
 }
 
 // TODO: items should have methods to get label/value from them. Like, you know, actions.
-func NewList(sizeHint *sdl.Rect, items []ListItem, props ...Properties) *List {
+func NewList(sizeHint *sdl.Rect, items []ListItem, p ...Properties) *List {
+	props := DefaultProperties // TODO: getProps() helper
+	if len(p) > 0 {
+		props = p[0]
+	}
+
+	props.HorizontalAlign = align.Left
+
 	// Figure out how many labels at most we can display. Pre-instantiate those
 	// labels, we'll repaint them as we go.
-	itemsPerPage := int(sizeHint.H) / DefaultProperties.TitleFont.Height()
-	labels := make([]Widget, itemsPerPage)
+	itemsPerPage := int(sizeHint.H) / props.Font.Height()
+	if itemsPerPage > len(items) {
+		itemsPerPage = len(items)
+	}
+
+	labels := make([]Widget, 0, itemsPerPage)
 	hint := *sizeHint
-	hint.H = int32(DefaultProperties.TitleFont.Height())
+	hint.H = int32(props.Font.Height())
 
 	// TODO: reserve width to the right for scrollbar if needed.
 
 	for i := 0; i < itemsPerPage; i++ {
-		labels = append(labels, NewLabel(&hint, ""))
+		labels = append(labels, NewLabel(&hint, items[i].Text(), props))
 	}
 
 	l := List{
@@ -70,4 +84,11 @@ func (l *List) repaint() {
 	}
 
 	l.VerticalLayout.repaint()
+}
+
+func (l *List) Selected() ListItem {
+	if len(l.items) > 0 {
+		return l.items[l.selected]
+	}
+	return nil
 }

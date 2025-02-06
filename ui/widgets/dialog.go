@@ -9,21 +9,16 @@ const (
 
 type DialogCloser func(DialogResult)
 
-type Dialog struct {
-	*widget
+type Dialog interface {
+	Widget
 
-	closer DialogCloser // Callback when closing dialog.
+	OnClose(cb DialogCloser)
 }
 
-func (d *Dialog) Show(closer DialogCloser) {
-	d.closer = closer
-	d.SetVisible(true)
+type dialog struct {
+	closer DialogCloser
 }
 
-func (d *Dialog) Close(result DialogResult) {
-	d.SetVisible(false)
-	if d.closer != nil {
-		d.closer(result)
-		d.closer = nil
-	}
+func (d *dialog) OnClose(cb DialogCloser) {
+	d.closer = cb
 }

@@ -244,16 +244,12 @@ func (u *UI) buildMenu() {
 
 	mainMenu.AddChoice("Resume", u.Hide)
 
-	// FIXME: just do this manually, like addChoice("Input", widgets.NewInput)
-	// TODO: maybe ditch u.dialogs and put it all in u.root widget?
-	//for i, d := range u.dialogs {
-	//	// Each choice outside of the defaults (resume or quit) will just
-	//	// show the corresponding widget in the root stack.
-	//	mainMenu.AddChoice(d.title, u.dialogs.Show(i+1)) // Main menu is entry 0
-	//	u.dialogs.Add(d)
-	//}
+	mainMenu.AddChoice("Open...", u.OpenROM)
 
-	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true })
+	// FIXME: just do this manually, like addChoice("Input", widgets.NewInput)
+
+	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true }) // FIXME u.Quit action
+
 	mainMenu.Select(0) // highlight first entry
 }
 
