@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"regexp"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -35,6 +36,13 @@ func NewFileDialog(sizeHint *sdl.Rect, dir string, p ...Properties) *FileDialog 
 
 	var items []ListItem
 	for _, e := range entries {
+		// Filter by extensions.
+		// TODO: make it configurable obv.
+		pattern := regexp.MustCompile(`\.(gb|zip)$`)
+		if !pattern.MatchString(e.Name()) {
+			continue
+		}
+
 		item := &FileItem{
 			DirEntry: e,
 			baseDir:  dir,

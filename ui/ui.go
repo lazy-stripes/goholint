@@ -244,9 +244,8 @@ func (u *UI) buildMenu() {
 
 	mainMenu.AddChoice("Resume", u.Hide)
 
-	mainMenu.AddChoice("Open...", u.OpenROM)
-
-	// FIXME: just do this manually, like addChoice("Input", widgets.NewInput)
+	mainMenu.AddChoice("Open", u.OpenROM)
+	// TODO: other features.
 
 	mainMenu.AddChoice("Quit", func() { u.QuitChan <- true }) // FIXME u.Quit action
 
