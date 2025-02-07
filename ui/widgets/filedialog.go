@@ -57,3 +57,21 @@ func NewFileDialog(sizeHint *sdl.Rect, dir string, p ...Properties) *FileDialog 
 
 	return fd
 }
+
+func (d *FileDialog) ProcessEvent(e Event) bool {
+	switch e {
+	case ButtonA:
+		d.Confirm()
+	case ButtonB:
+		d.Cancel()
+	case ButtonSelect:
+		d.Confirm()
+	case ButtonStart:
+		d.Cancel()
+	default:
+		// Navigate list with other button inputs.
+		return d.List.ProcessEvent(e)
+	}
+
+	return true
+}

@@ -189,7 +189,7 @@ func (u *UI) ToggleVoice4(eventType uint32) {
 
 // Actions available in Paused state.
 func (u *UI) OpenROM() {
-	openROMDialog := widgets.NewFileDialog(u.screenRect, "./roms/")
+	openROMDialog := widgets.NewFileDialog(u.screenRect, "./bin/roms/")
 	u.ShowDialog(openROMDialog, func(res widgets.DialogResult) {
 		if res == widgets.DialogOK {
 			path := openROMDialog.Selected().Value().(string)
