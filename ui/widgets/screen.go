@@ -382,8 +382,10 @@ func (s *Screen) vblank() {
 		overlayTexture := s.overlay.Texture()
 		renderer.SetRenderTarget(s.texture)
 		renderer.Copy(overlayTexture, nil, nil)
-		renderer.SetRenderTarget(nil)
 	}
+
+	// Without this, blurring no longer works, and I do not understand why. x_x
+	renderer.SetRenderTarget(nil)
 
 	// Reset offset for drawing the next frame.
 	s.offset = 0
