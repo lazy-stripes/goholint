@@ -38,6 +38,8 @@ type TickResult struct {
 type GameBoy struct {
 	config *options.Options
 
+	display screen.Display
+
 	ticks  uint64
 	APU    *apu.APU
 	CPU    *cpu.CPU
@@ -52,26 +54,35 @@ type GameBoy struct {
 }
 
 // New just instantiates most of the emulator. No biggie.
-// TODO: try cleaning this mess up a little.
 func New(display screen.Display, config *options.Options) *GameBoy {
 	g := GameBoy{
-		config: config,
+		config:  config,
+		display: display,
 	}
 
+	g.Reset()
+
+	return &g
+}
+
+// Reset bootstraps the emulator given its currently stored config. Should be
+// called when the emulator is paused (TODO or I must implement display.Reset()).
+// TODO: try cleaning this mess up a little harder.
+func (g *GameBoy) Reset() {
 	// Create CPU and interrupts first so other components can access them too.
 	g.CPU = cpu.New(nil)
 	ints := interrupts.New(&g.CPU.IF, &g.CPU.IE)
 
-	g.APU = apu.New(config.Mono)
+	g.APU = apu.New(g.config.Mono)
 
 	// TODO: move GIF handling to UI.
-	if config.GIFPath != "" {
+	if g.config.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)
-		fmt.Printf("Saving GIF to %s\n", config.GIFPath)
+		fmt.Printf("Saving GIF to %s\n", g.config.GIFPath)
 	}
 
 	// TODO: shouldn't we just pass Interrupts to New() functions?
-	g.PPU = ppu.New(display)
+	g.PPU = ppu.New(g.display)
 	g.PPU.Interrupts = ints
 
 	g.Serial = serial.New()
@@ -81,7 +92,7 @@ func New(display screen.Display, config *options.Options) *GameBoy {
 	g.Timer.Interrupts = ints
 
 	var boot memory.Addressable
-	if config.FastBoot {
+	if g.config.FastBoot {
 		// TODO: just implement save states, at this point.
 
 		// XXX: What the BootROM does RAM-wise:
@@ -113,8 +124,8 @@ func New(display screen.Display, config *options.Options) *GameBoy {
 			// TODO: set RAM/VRAM
 		}
 	} else {
-		if config.BootROM != "" {
-			boot = memory.NewBootFromFile(config.BootROM)
+		if g.config.BootROM != "" {
+			boot = memory.NewBootFromFile(g.config.BootROM)
 		} else {
 			boot = memory.NewBoot(assets.BootROM)
 		}
@@ -143,20 +154,24 @@ func New(display screen.Display, config *options.Options) *GameBoy {
 	mmu.Add(g.DMA)
 	g.CPU.Memory = mem
 
-	if config.ROMPath != "" {
+	if g.config.ROMPath != "" {
 		// Build save path in case the cartridge uses one. Or use one
 		// specified by the user.
-		savePath := config.SavePath
+		savePath := g.config.SavePath
 		if savePath == "" {
-			prefix := filepath.Dir(config.ROMPath)
-			suffix := filepath.Base(config.ROMPath)
+			prefix := filepath.Dir(g.config.ROMPath)
+			suffix := filepath.Base(g.config.ROMPath)
 			savePath = prefix + "/" + suffix + ".sav"
 		}
 		// TODO: save-related error management.
-		mmu.Add(memory.NewCartridge(config.ROMPath, savePath))
+		mmu.Add(memory.NewCartridge(g.config.ROMPath, savePath))
 	}
+}
 
-	return &g
+func (g *GameBoy) Load(path string) {
+	// TODO: error handling, will need more work on UI side.
+	g.config.ROMPath = path
+	g.Reset()
 }
 
 // Tick advances the whole emulator one step at a theoretical 4MHz. Since we're

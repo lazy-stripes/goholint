@@ -6,7 +6,6 @@ import (
 	"image/png"
 	"strings"
 
-	"github.com/lazy-stripes/goholint/gameboy"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu/states"
 	"github.com/lazy-stripes/goholint/ui/widgets"
@@ -193,22 +192,22 @@ func (u *UI) OpenROM() {
 	openROMDialog := widgets.NewFileDialog(u.screenRect, "./roms/")
 	u.ShowDialog(openROMDialog, func(res widgets.DialogResult) {
 		if res == widgets.DialogOK {
-			path := openROMDialog.Selected().Text()
+			path := openROMDialog.Selected().Value().(string)
+			fmt.Printf("Opening ROM %s\n", path)
 
-			// TODO: ... gameboy.Run(rom), the following is brute-forcing it.
-			// FIXME: GIF
-			u.Emulator.Stop()
-			u.config.ROMPath = path
-			u.Emulator = gameboy.New(u.screen, u.config)
+			// FIXME(?): GIF
+			u.Emulator.Load(path)
+
 		}
 	})
 }
 
 // TODO: ... another dialogs.go, I guess.
-func (u *UI) ShowDialog(dialog widgets.Dialog, cb widgets.DialogCloser) {
+func (u *UI) ShowDialog(dialog widgets.DialogWidget, cb widgets.DialogCloser) {
 	dialog.OnClose(func(r widgets.DialogResult) {
 		cb(r)
 		u.dialogs.Pop() // XXX NavigateBack()?
+		u.Hide()        // TODO: rename to Unpause()
 	})
 	u.dialogs.Push(dialog) // FIXME: make stack behave like an actual stack (widget on top is visible, gets events)
 

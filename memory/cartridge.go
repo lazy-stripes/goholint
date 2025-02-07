@@ -21,6 +21,8 @@ func NewCartridge(romPath, savePath string) (cart Addressable) {
 
 	rom := NewROMFromFile(romPath)
 
+	// TODO: validate
+
 	// Check what kind of chip is in the ROM, return the proper struct.
 	cartType := rom.Read(0x0147)
 	romSize := rom.Read(0x0148)
