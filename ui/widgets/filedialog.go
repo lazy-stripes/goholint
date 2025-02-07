@@ -25,7 +25,7 @@ func (i *FileItem) Value() any {
 }
 
 type FileDialog struct {
-	dialog
+	*Dialog
 	*List
 }
 
@@ -43,7 +43,8 @@ func NewFileDialog(sizeHint *sdl.Rect, dir string, p ...Properties) *FileDialog 
 	}
 
 	fd := &FileDialog{
-		List: NewList(sizeHint, items, p...),
+		Dialog: &Dialog{},
+		List:   NewList(sizeHint, items, p...),
 	}
 
 	return fd

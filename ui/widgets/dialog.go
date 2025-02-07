@@ -7,18 +7,38 @@ const (
 	DialogCancel
 )
 
-type DialogCloser func(DialogResult)
-
-type Dialog interface {
+type DialogWidget interface {
 	Widget
 
-	OnClose(cb DialogCloser)
+	OnClose(callback DialogCloser)
+	Confirm()
+	Cancel()
 }
 
-type dialog struct {
+type DialogCloser func(DialogResult)
+
+type Dialog struct {
 	closer DialogCloser
 }
 
-func (d *dialog) OnClose(cb DialogCloser) {
+func NewDialog(cb DialogCloser) *Dialog {
+	return &Dialog{closer: cb}
+}
+
+func (d *Dialog) OnClose(cb DialogCloser) {
 	d.closer = cb
+}
+
+func (d *Dialog) Close(res DialogResult) {
+	if d.closer != nil {
+		d.closer(res)
+	}
+}
+
+func (d *Dialog) Confirm() {
+	d.Close(DialogOK)
+}
+
+func (d *Dialog) Cancel() {
+	d.Close(DialogCancel)
 }
