@@ -7,6 +7,8 @@ const (
 	DialogCancel
 )
 
+type DialogCloser func(DialogResult)
+
 type DialogWidget interface {
 	Widget
 
@@ -14,8 +16,6 @@ type DialogWidget interface {
 	Confirm()
 	Cancel()
 }
-
-type DialogCloser func(DialogResult)
 
 type Dialog struct {
 	closer DialogCloser
@@ -41,4 +41,24 @@ func (d *Dialog) Confirm() {
 
 func (d *Dialog) Cancel() {
 	d.Close(DialogCancel)
+}
+
+// ProcessEvent handles button presses and will call either Confirm() on A or
+// Start press, or Cancel() on B or Select.
+func (d *Dialog) ProcessEvent(e Event) bool {
+	switch e {
+	case ButtonA:
+		d.Confirm()
+	case ButtonB:
+		d.Cancel()
+	case ButtonSelect:
+		d.Cancel()
+	case ButtonStart:
+		d.Confirm()
+	default:
+		// Let caller handle this event.
+		return false
+	}
+
+	return true
 }

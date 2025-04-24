@@ -209,6 +209,6 @@ func (u *UI) ShowDialog(dialog widgets.DialogWidget, cb widgets.DialogCloser) {
 		u.dialogs.Pop() // XXX NavigateBack()?
 		u.Hide()        // TODO: rename to Unpause()
 	})
-	u.dialogs.Push(dialog) // FIXME: make stack behave like an actual stack (widget on top is visible, gets events)
+	u.dialogs.Push(dialog)
 
 }
