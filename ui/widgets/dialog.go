@@ -13,6 +13,7 @@ type DialogWidget interface {
 	Widget
 
 	OnClose(callback DialogCloser)
+	Close(DialogResult)
 	Confirm()
 	Cancel()
 }
