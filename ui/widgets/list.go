@@ -110,6 +110,53 @@ func (l *List) repaint() {
 	l.VerticalLayout.repaint()
 }
 
+func (l *List) Texture() *sdl.Texture {
+	t := l.VerticalLayout.Texture()
+
+	// Draw scrollbar.
+	if l.Pages() < 2 {
+		// No scrollbar for contents with a single page.
+		return t
+	}
+
+	// Draw scrollbar on top of child widget.
+	props := l.Props()
+	w := (4 + props.Border*2) * int32(props.Zoom)
+	h := l.Size().H
+
+	renderer.SetRenderTarget(t)
+	renderer.SetDrawColor(
+		props.BgColor.R,
+		props.BgColor.G,
+		props.BgColor.B,
+		props.BgColor.A,
+	)
+
+	// Draw actual bar. I currently think it looks better without a border.
+	rect := sdl.Rect{
+		X: l.Size().W - w,
+		Y: (h / int32(l.Pages())) * int32(l.Page()),
+		W: w,
+		H: h / int32(l.Pages()),
+	}
+
+	renderer.SetRenderTarget(t)
+	renderer.FillRect(&rect)
+	renderer.SetRenderTarget(nil)
+
+	return t
+}
+
+// Page returns the current page in the list. Used for scrollbars.
+func (l *List) Page() int {
+	return l.page
+}
+
+// Pages returns the total number of pages in the list. Used for scrollbars.
+func (l *List) Pages() int {
+	return l.pages
+}
+
 func (l *List) Selected() ListItem {
 	if len(l.items) > 0 {
 		idx := (l.page * l.itemsPerPage) + l.selected

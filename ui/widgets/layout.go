@@ -42,7 +42,7 @@ func (l *VerticalLayout) repaint() {
 	}
 
 	// Compute inter-widget space if any.
-	layoutHeight := l.height - (2 * l.Padding)
+	layoutHeight := l.size.H - (2 * l.Padding)
 	spacing := int32(0)
 	if l.VerticalAlign == align.Justified && layoutHeight > totalHeight {
 		spacing = (layoutHeight - int32(totalHeight)) / int32(len(l.children)+1)
@@ -122,8 +122,8 @@ func (l *HorizontalLayout) repaint() {
 
 	// Compute inter-widget space if any.
 	spacing := int32(0)
-	if l.HorizontalAlign == align.Justified && l.width > totalWidth {
-		spacing = (l.width - int32(totalWidth)) / int32(len(l.children)+1)
+	if l.HorizontalAlign == align.Justified && l.size.W > totalWidth {
+		spacing = (l.size.W - int32(totalWidth)) / int32(len(l.children)+1)
 	}
 
 	// Render to our texture, vertically center each child.

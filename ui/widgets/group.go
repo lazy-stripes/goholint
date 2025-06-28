@@ -88,7 +88,7 @@ func (g *Group) Clear() {
 	g.children = nil
 }
 
-// Size returns the number of children in the group.
-func (g *Group) Size() int {
+// Length returns the number of children in the group.
+func (g *Group) Length() int {
 	return len(g.children)
 }

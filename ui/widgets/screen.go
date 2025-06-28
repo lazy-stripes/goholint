@@ -271,7 +271,7 @@ func (s *Screen) Pause() {
 
 	// Resize to texture size before blurring.
 	src := s.frontBuffer
-	dstRect := image.Rect(0, 0, int(s.width), int(s.height))
+	dstRect := image.Rect(0, 0, int(s.size.W), int(s.size.H))
 	dst := image.NewRGBA(dstRect)
 	draw.NearestNeighbor.Scale(dst, dstRect, src, src.Bounds(), draw.Over, nil)
 
