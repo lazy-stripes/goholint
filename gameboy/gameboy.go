@@ -196,6 +196,11 @@ func (g *GameBoy) Tick() (res TickResult) {
 		g.CPU.Tick()
 	}
 
+	// Serial ticks happen at 8KHz.
+	if g.ticks%serial.BitOutRate == 0 {
+		g.Serial.Tick()
+	}
+
 	// APU ticks occur only when we need to generate the next sample.
 	// Note that the Gameboy machine frequency is not an exact multiple of the
 	// sound output frequency, so this is in fact an approximation. So long as

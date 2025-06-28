@@ -61,6 +61,7 @@ var VolumeFactors = [7]float32{
 }
 
 // GameBoyRate is the main CPU frequence to be used in so many divisions.
+// FIXME: that should probably live somewhere else, other modules could use it.
 const GameBoyRate = 4 * 1024 * 1024 // 4194304Hz or 4MiHz
 
 // SoundOutRate represents CPU cycles to wait before producing one sample frame.
