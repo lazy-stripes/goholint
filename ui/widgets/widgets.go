@@ -59,7 +59,7 @@ func texture(size *sdl.Rect) *sdl.Texture {
 func Init(r *sdl.Renderer) {
 	// For debugging purposes. Someday it might even be configurable.
 	if log.Enabled() && logger.Level >= logger.Debug {
-		DefaultProperties.BorderColor = sdl.Color{0xff, 0x00, 0x00, 0xff}
+		DefaultProperties.BorderColor = sdl.Color{R: 0xff, A: 0xff}
 	}
 
 	renderer = r
@@ -86,16 +86,23 @@ type Widget interface {
 	// Destroy releases all resources dynamically allocated by the widget, like
 	// its internal texture.
 	Destroy()
+
+	// Size returns the widget's actual size (which might be different from its
+	// texture size).
+	Size() *sdl.Rect
+
+	// Props returns the current's widget's properties.
+	Props() *Properties
 }
 
 // Base widget type.
 type widget struct {
 	Properties
 
+	size    *sdl.Rect
 	texture *sdl.Texture
 
-	width, height int32 // Widget's actual size (may not be the same as texture)
-	visible       bool  // If false, widget may not show up in groups/layouts
+	visible bool // If false, widget may not show up in groups/layouts
 }
 
 // new instantiates a widget, stores the renderer and its drawing size, and
@@ -115,8 +122,7 @@ func new(sizeHint *sdl.Rect, props ...Properties) *widget {
 	widget := &widget{
 		Properties: p,
 		texture:    texture(&size),
-		width:      size.W,
-		height:     size.H,
+		size:       &size,
 		visible:    true,
 	}
 	widget.clear()
@@ -144,9 +150,9 @@ func (w *widget) alignX(width int32) (offset int32) {
 	case align.Left:
 		offset = w.Padding
 	case align.Center:
-		offset = (w.width - width) / 2
+		offset = (w.size.W - width) / 2
 	case align.Right:
-		offset = w.width - width - w.Padding
+		offset = w.size.W - width - w.Padding
 	}
 	return
 }
@@ -158,9 +164,9 @@ func (w *widget) alignY(height int32) (offset int32) {
 	case align.Top:
 		offset = w.Padding
 	case align.Middle:
-		offset = (w.height - height) / 2
+		offset = (w.size.H - height) / 2
 	case align.Bottom:
-		offset = w.height - height - w.Padding
+		offset = w.size.H - height - w.Padding
 	}
 	return
 }
@@ -181,6 +187,16 @@ func (w *widget) Visible() bool {
 // handled.
 func (w *widget) ProcessEvent(e Event) bool {
 	return false
+}
+
+// Size returns the widget's actual size in pixels.
+func (w *widget) Size() *sdl.Rect {
+	return w.size
+}
+
+// Properties returns the current's widget's properties.
+func (w *widget) Props() *Properties {
+	return &w.Properties
 }
 
 // Texture returns the widget's internal texture after applying properties like

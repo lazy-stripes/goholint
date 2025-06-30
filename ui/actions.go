@@ -8,6 +8,7 @@ import (
 
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu/states"
+	"github.com/lazy-stripes/goholint/ui/widgets"
 	"golang.org/x/image/draw"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -185,3 +186,29 @@ func (u *UI) ToggleVoice4(eventType uint32) {
 }
 
 // TODO: so many things! Save states, toggle features...
+
+// Actions available in Paused state.
+func (u *UI) OpenROM() {
+	openROMDialog := widgets.NewFileDialog(u.screenRect, "./bin/roms/")
+	u.ShowDialog(openROMDialog, func(res widgets.DialogResult) {
+		if res == widgets.DialogOK {
+			path := openROMDialog.Selected().Value().(string)
+			fmt.Printf("Opening ROM %s\n", path)
+
+			// FIXME(?): GIF
+			u.Emulator.Load(path)
+
+		}
+	})
+}
+
+// TODO: ... another dialogs.go, I guess.
+func (u *UI) ShowDialog(dialog widgets.DialogWidget, cb widgets.DialogCloser) {
+	dialog.OnClose(func(r widgets.DialogResult) {
+		cb(r)
+		u.dialogs.Pop() // XXX NavigateBack()?
+		u.Hide()        // TODO: rename to Unpause()
+	})
+	u.dialogs.Push(dialog)
+
+}

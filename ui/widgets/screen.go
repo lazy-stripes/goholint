@@ -271,13 +271,13 @@ func (s *Screen) Pause() {
 
 	// Resize to texture size before blurring.
 	src := s.frontBuffer
-	dstRect := image.Rect(0, 0, int(s.width), int(s.height))
+	dstRect := image.Rect(0, 0, int(s.size.W), int(s.size.H))
 	dst := image.NewRGBA(dstRect)
 	draw.NearestNeighbor.Scale(dst, dstRect, src, src.Bounds(), draw.Over, nil)
 
 	blurred := blur(blur(blur(dst)))
 	rawPixels := unsafe.Pointer(&blurred.Pix[0])
-	s.texture.Update(nil, rawPixels, int(s.width)*4)
+	s.texture.Update(nil, rawPixels, blurred.Stride)
 
 	s.paused = true
 }
@@ -353,7 +353,7 @@ func (s *Screen) OnState(state states.State, callback func()) {
 		s.statesCallbacks[state] = append(s.statesCallbacks[state], callback)
 	} else {
 		// State won't change so we do the callback now.
-		callback() // TODO: sdl.Do here?
+		sdl.Do(callback)
 	}
 }
 
@@ -382,8 +382,10 @@ func (s *Screen) vblank() {
 		overlayTexture := s.overlay.Texture()
 		renderer.SetRenderTarget(s.texture)
 		renderer.Copy(overlayTexture, nil, nil)
-		renderer.SetRenderTarget(nil)
 	}
+
+	// Without this, blurring no longer works, and I do not understand why. x_x
+	renderer.SetRenderTarget(nil)
 
 	// Reset offset for drawing the next frame.
 	s.offset = 0

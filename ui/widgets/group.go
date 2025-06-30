@@ -30,6 +30,7 @@ func (g *Group) ProcessEvent(e Event) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -85,4 +86,9 @@ func (g *Group) Clear() {
 		c.Destroy()
 	}
 	g.children = nil
+}
+
+// Length returns the number of children in the group.
+func (g *Group) Length() int {
+	return len(g.children)
 }

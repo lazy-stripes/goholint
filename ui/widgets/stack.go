@@ -4,66 +4,46 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// Group of widgets where only one is visible. Inspired from QStackedWidget.
-
+// Stack of widgets only showing and forwarding events to the top one.
 type Stack struct {
 	*Group
-
-	current Widget // Currently displayed child widget
 }
 
 func NewStack(sizeHint *sdl.Rect, children []Widget, props ...Properties) *Stack {
-	s := Stack{Group: NewGroup(sizeHint, children, props...)}
-	if len(children) > 0 {
-		s.Show(0)
-	}
-	return &s
+	return &Stack{Group: NewGroup(sizeHint, children, props...)}
 }
 
 // ProcessEvent calls ProcessEvent for the currently displayed widget if any.
 func (s *Stack) ProcessEvent(e Event) bool {
-	if s.current != nil {
-		return s.current.ProcessEvent(e)
+	if len(s.children) > 0 {
+		return s.children[len(s.children)-1].ProcessEvent(e)
 	}
 	return false
 }
 
-// Add appends the given widget to the stack's internal children, and shows it
-// if it's the very first child to be added.
-func (s *Stack) Add(w Widget) {
+// Push appends the given widget to the internal list, effectively pushing the
+// widget to the top of the stack.
+func (s *Stack) Push(w Widget) {
 	s.Group.Add(w)
-	if len(s.children) == 1 {
-		s.Show(0)
-	}
 }
 
-// TODO: adjust or reset currently shown child on Remove.
+// Pop returns the last widget in the internal list and removes it, effectively
+// popping it off the top of the stack.
+func (s *Stack) Pop() (w Widget) {
+	if len(s.children) > 0 {
+		last := len(s.children) - 1
+		w = s.children[last]
+		s.children = s.children[:last]
+	}
+	return w
+}
 
 // Texture updates the internal texture with the currently shown child (if any)
 // then calls the base class.
 func (s *Stack) Texture() *sdl.Texture {
-	if s.current != nil {
-		s.texture = s.current.Texture()
+	if len(s.children) > 0 {
+		last := len(s.children) - 1
+		s.texture = s.children[last].Texture()
 	}
 	return s.widget.Texture()
-}
-
-// Show sets the current index of the widget to be drawn and repaints the stack.
-func (s *Stack) Show(index uint) {
-	if index >= uint(len(s.children)) {
-		log.Warningf("Stack.Show(%d) out of bounds (%d)", index, len(s.children))
-		return
-	}
-	s.current = s.children[index]
-}
-
-// ShowWidget sets the index of the given widget to be drawn and repaints the
-// stack, if the given widget is a child of the Stack.
-func (s *Stack) ShowWidget(w Widget) {
-	for _, child := range s.children {
-		if child == w {
-			s.current = child
-			return
-		}
-	}
 }
