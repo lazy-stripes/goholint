@@ -36,10 +36,15 @@ type Timer struct {
 	TIMA uint8
 	TMA  uint8
 	TAC  uint8
-	prevEdge bool // Falling edge detector of sorts
-	ticks    int  // Only counted to measure overflow delay
 
-	reloadDelay uint8 // Delay countdown for TIMA interrupt and TMA load
+	divApu uint8 // DIV-APU value, will loop from 0 to 7.
+
+	freqBit uint8 // Saved frequency bit updated when TAC is written to.
+
+	lastAudioEdge bool // Falling edge detector of sorts.
+	lastTimerEdge bool // Falling edge detector of sorts.
+
+	reloadDelay uint8 // Delay countdown for TIMA interrupt and TMA load.
 }
 
 // New Timer instance.
@@ -47,6 +52,7 @@ func New(ints *interrupts.Interrupts, apu *apu.APU) *Timer {
 	return &Timer{
 		Interrupts: ints,
 		APU:        apu,
+		freqBit:    FrequencyBits[0],
 	}
 }
 
@@ -79,33 +85,67 @@ func (t *Timer) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrDIV:
 		t.DIV = 0
+		t.checkForTimerEvent()
+		t.checkForAudioEvent()
 	case AddrTIMA:
 		t.TIMA = value
 	case AddrTMA:
 		t.TMA = value
 	case AddrTAC:
 		t.TAC = value
+		t.freqBit = FrequencyBits[value&3]
+		t.checkForTimerEvent()
 	default:
 		panic("Broken MMU")
 	}
 }
 
-// Tick advances the timer state one step.
-func (t *Timer) Tick() {
-	t.DIV++
-
-	// [TIMER2] Detect falling edge in (TAC.Freq AND TAC.Enable)
-	bit := FrequencyBits[t.TAC&3]
-	edge := (t.DIV&(1<<bit) != 0) && (t.TAC&4 != 0)
-	if !edge && t.prevEdge {
+// Check whether falling-edge occurred, and do stuff if it did.
+func (t *Timer) checkForTimerEvent() {
+	// Detect TAC-related edge falling.
+	edge := (t.DIV&(1<<t.freqBit) != 0) && (t.TAC&4 != 0)
+	if !edge && t.lastTimerEdge {
+		// Timer tick event.
 		t.TIMA++
 		if t.TIMA == 0 {
 			// [TIMER2] TMA loading and interrupt are delayed 1 M-cycle.
 			t.reloadDelay = 1
 		}
 	}
-	t.prevEdge = edge
+	t.lastTimerEdge = edge
+}
 
+// Check whether falling-edge occurred, and do stuff if it did.
+func (t *Timer) checkForAudioEvent() {
+	// [DIV-APU] Counter is increased every time DIV’s bit 4 goes from 1 to 0.
+	edge := t.DIV&(1<<10) != 0
+	if !edge && t.lastAudioEdge {
+		// Audio event.
+		t.divApu = (t.divApu + 1) % 8
+		if t.divApu&1 == 0 { // Sound Length clocked every 2 DIV-APU ticks.
+			//t.APU.TickLength() TODO
+		}
+
+		if t.divApu&3 == 0 { // Frequency Sweep clocked every 4 DIV-APU ticks.
+			//t.APU.TickSweep() TODO
+		}
+
+		if t.divApu&7 == 0 { // Volume Envelope clocked every 8 DIV-APU ticks.
+			//t.APU.TickEnvelope() TODO
+		}
+	}
+	t.lastAudioEdge = edge
+}
+
+// Tick advances the timer state one step. This should be called every M-cycle
+// and since the exposed part of DIV starts at bit 6, this will look like DIV
+// increases at 16KihZ (4MiHz/4/2^6).
+func (t *Timer) Tick() {
+	// [TIMER2] shows DIV as being 14-bit wide, so we wrap around beyond that.
+	t.DIV = (t.DIV + 1) & ((1 << 14) - 1)
+
+	// If a timer event occurred, TMA copy and interrupt will happen, but after
+	// one M-cycle delay.
 	if t.reloadDelay > 0 {
 		t.reloadDelay--
 		if t.reloadDelay == 0 {
@@ -113,4 +153,10 @@ func (t *Timer) Tick() {
 			t.Interrupts.Request(interrupts.Timer)
 		}
 	}
+
+	// Detect falling edge in (TAC.Freq AND TAC.Enable).
+	t.checkForTimerEvent()
+
+	// Detect falling edge in DIV-APU (DIV&(1<<4))
+	t.checkForAudioEvent()
 }
