@@ -29,11 +29,11 @@ var FrequencyBits = [4]uint8{7, 1, 3, 5}
 // Timer address space handling timers and related interrupts.
 type Timer struct {
 	Interrupts *interrupts.Interrupts
-	DIV        uint16
-	TIMA       uint8
-	TMA        uint8
-	TAC        uint8
 
+	DIV  uint16 // Actually 14-bit wide, only bits 7-14 are visible.
+	TIMA uint8
+	TMA  uint8
+	TAC  uint8
 	prevEdge bool // Falling edge detector of sorts
 	ticks    int  // Only counted to measure overflow delay
 
@@ -54,7 +54,7 @@ func (t *Timer) Contains(addr uint16) bool {
 func (t *Timer) Read(addr uint16) (value uint8) {
 	switch addr {
 	case AddrDIV:
-		value = uint8(t.DIV >> 8)
+		value = uint8(t.DIV >> 6)
 	case AddrTIMA:
 		value = t.TIMA
 	case AddrTMA:
