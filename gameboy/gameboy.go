@@ -88,7 +88,7 @@ func (g *GameBoy) Reset() {
 	g.Serial = serial.New()
 	g.Serial.Interrupts = ints
 
-	g.Timer = timer.New()
+	g.Timer = timer.New(ints, g.APU)
 	g.Timer.Interrupts = ints
 
 	var boot memory.Addressable

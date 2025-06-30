@@ -8,6 +8,7 @@
 package timer
 
 import (
+	"github.com/lazy-stripes/goholint/apu"
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/logger"
 )
@@ -29,6 +30,7 @@ var FrequencyBits = [4]uint8{7, 1, 3, 5}
 // Timer address space handling timers and related interrupts.
 type Timer struct {
 	Interrupts *interrupts.Interrupts
+	APU        *apu.APU
 
 	DIV  uint16 // Actually 14-bit wide, only bits 7-14 are visible.
 	TIMA uint8
@@ -41,8 +43,11 @@ type Timer struct {
 }
 
 // New Timer instance.
-func New() *Timer {
-	return &Timer{MMU: memory.NewEmptyMMU()}
+func New(ints *interrupts.Interrupts, apu *apu.APU) *Timer {
+	return &Timer{
+		Interrupts: ints,
+		APU:        apu,
+	}
 }
 
 // Contains returns true is requested address is a timer register.
