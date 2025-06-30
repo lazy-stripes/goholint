@@ -5,9 +5,8 @@
 INCLUDE "header.asm"
 
 ; Constants.
-WORK_OAM_ADDR EQU $C000
-
-FADE_DELAY EQU $20
+DEF WORK_OAM_ADDR EQU $C000
+DEF FADE_DELAY EQU $20
 
 ; Utility routine to emulate CALL HL. The idea is to use RST $00 with HL
 ; containing the address to call. This transparently handles pushing the
@@ -145,7 +144,7 @@ state_fade_logo:
 .end
 	RET
 
-LEAN_IN_DELAY EQU $04	; Sprite scroll speed
+DEF LEAN_IN_DELAY EQU $04	; Sprite scroll speed
 state_update_sprites:
 	; Decrease X for each sprite until all is visible.
 	LD H, HIGH(WORK_OAM_ADDR)
