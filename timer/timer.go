@@ -1,12 +1,15 @@
 // Package timer implements the DMG Timer as described in:
-// [TIMER1] http://gbdev.gg8.se/wiki/articles/Timer_and_Divider_Registers
-// [TIMER2] http://gbdev.gg8.se/wiki/articles/Timer_Obscure_Behaviour
+// [TIMER1] https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
+// [TIMER2] https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
+//
+// And also in:
+// [DIV-APU] https://gbdev.io/pandocs/Audio_details.html
+// Because, of course, sound is complicated.
 package timer
 
 import (
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/logger"
-	"github.com/lazy-stripes/goholint/memory"
 )
 
 // Package-wide logger.
@@ -25,8 +28,6 @@ var FrequencyBits = [4]uint{9, 3, 5, 7}
 
 // Timer address space handling timers and related interrupts.
 type Timer struct {
-	*memory.MMU
-
 	Interrupts *interrupts.Interrupts
 	DIV        uint16
 	TIMA       uint8
