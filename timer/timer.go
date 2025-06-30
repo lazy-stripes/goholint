@@ -24,7 +24,7 @@ const (
 )
 
 // FrequencyBits map TAC frequency select value to related bits in DIV.
-var FrequencyBits = [4]uint{9, 3, 5, 7}
+var FrequencyBits = [4]uint8{7, 1, 3, 5}
 
 // Timer address space handling timers and related interrupts.
 type Timer struct {
@@ -95,8 +95,8 @@ func (t *Timer) Tick() {
 	if !edge && t.prevEdge {
 		t.TIMA++
 		if t.TIMA == 0 {
-			// [TIMER2] TMA loading and interrupt are delayed 4 clocks.
-			t.reloadDelay = 4
+			// [TIMER2] TMA loading and interrupt are delayed 1 M-cycle.
+			t.reloadDelay = 1
 		}
 	}
 	t.prevEdge = edge

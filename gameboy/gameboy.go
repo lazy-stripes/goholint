@@ -183,8 +183,10 @@ func (g *GameBoy) Tick() (res TickResult) {
 	// PPU ticks occur every machine tick.
 	res.VBlank = g.PPU.Tick()
 
-	// Timer tick occur every machine tick.
-	g.Timer.Tick()
+	// Timer tick occur every M-cycle (4 ticks).
+	if g.ticks%4 == 0 {
+		g.Timer.Tick()
+	}
 
 	// DMA ticks occur every 4 machine ticks.
 	if g.ticks%4 == 0 {
