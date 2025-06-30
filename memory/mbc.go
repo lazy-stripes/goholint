@@ -90,7 +90,9 @@ func (m *MBC1) Contains(addr uint16) bool {
 func (m *MBC1) Read(addr uint16) uint8 {
 	switch {
 	case /*  addr >= 0x0000 && */ addr <= 0x7fff:
-		return m.ROM.Read(addr)
+		value := m.ROM.Read(addr)
+		log.Sub("mbc/read").Desperatef("ROM[%04x]: 0x%02x", addr, value)
+		return value
 
 	case addr >= 0xa000 && addr <= 0xbfff:
 		if m.RAMEnabled && (m.ramBanks > 0) {

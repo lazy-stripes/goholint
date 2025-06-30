@@ -91,15 +91,15 @@ func (i *Interrupts) Write(addr uint16, value uint8) {
 	switch addr {
 	case AddrIF:
 		*i.regIF = value & 0x1f
-		log.Debugf(" !!! IF=%#x", value)
+		log.Debugf(" !!! IF=%#02x", value)
 	case AddrIE:
 		*i.regIE = value
-		log.Debugf(" !!! IE=%#x", value)
+		log.Debugf(" !!! IE=%#02x", value)
 	}
 }
 
 // Request sets the bit corresponding to the requested interrupt type.
 func (i *Interrupts) Request(interrupt uint8) {
 	*i.regIF |= interrupt
-	log.Desperatef("requested interrupt %s (IF=%#x)", Names[interrupt], *i.regIF)
+	log.Desperatef("requested interrupt %s (IF=%#02x)", Names[interrupt], *i.regIF)
 }
