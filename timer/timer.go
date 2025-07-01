@@ -118,10 +118,11 @@ func (t *Timer) checkForTimerEvent() {
 // Check whether falling-edge occurred, and do stuff if it did.
 func (t *Timer) checkForAudioEvent() {
 	// [DIV-APU] Counter is increased every time DIV’s bit 4 goes from 1 to 0.
+	// Keep in mind that the visible part of DIV starts at bit 6.
 	edge := t.DIV&(1<<10) != 0
 	if !edge && t.lastAudioEdge {
-		// Audio event.
-		t.divApu = (t.divApu + 1) % 8
+		// Audio event, increment DIV-APU (modulo 8).
+		t.divApu = (t.divApu + 1) & ((1 << 8) - 1)
 		if t.divApu&1 == 0 { // Sound Length clocked every 2 DIV-APU ticks.
 			//t.APU.TickLength() TODO
 		}

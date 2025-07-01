@@ -131,8 +131,7 @@ func (n *Noise) SetNRx4(value uint8) {
 }
 
 // Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
+// in the signal generator's registers.
 func (n *Noise) Tick() (sample int8) {
 	if !n.Enabled {
 		return
