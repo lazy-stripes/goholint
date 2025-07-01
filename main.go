@@ -26,30 +26,10 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 
 	"github.com/lazy-stripes/goholint/apu"
-	"github.com/lazy-stripes/goholint/gameboy"
 	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ui"
 )
-
-// TODO: minimal (like, REALLY minimal) GUI. And clean all of this up.
-
-var quit chan bool // Used by the callback to tell the main function to quit.
-
-func init() {
-	quit = make(chan bool)
-}
-
-// I have given up on trying to pass this as userdata to SDL.
-// TODO: try runtime.Pinner whenever we upgrade to go 1.21
-
-// TODO: maybe move all that main code to a goholint package?
-
-var goholint struct {
-	gb    *gameboy.GameBoy
-	ui    *ui.UI
-	ticks uint64
-}
 
 var mainUI *ui.UI
 
