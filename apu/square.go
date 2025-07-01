@@ -1,5 +1,7 @@
 package apu
 
+// [AUDIODETAILS] https://gbdev.io/pandocs/Audio_details.html
+
 // DutyCycles represents available duty patterns. For any given frequency,
 // we'll internally split one period of that frequency in 8, and for each
 // of those slices, this will specify whether the signal should be on or off.
@@ -138,7 +140,7 @@ func (s *SquareWave) Tick() (sample int8) {
 		return
 	}
 
-	updated, newFreq, overflow := s.sweep.Tick()
+	updated, newFreq, overflow := s.sweep.Tick() // TODO: sweep.LastState()
 	if updated {
 		if !overflow {
 			s.SetRawFrequency(newFreq)
@@ -148,13 +150,13 @@ func (s *SquareWave) Tick() (sample int8) {
 		}
 	}
 
-	disabled := s.length.Tick()
+	disabled := s.length.Tick() // TODO: length.LastState()
 	if disabled {
 		s.Enabled = false
 		return
 	}
 
-	s.envelope.Tick()
+	s.envelope.Tick() // TODO: remomve, DIV-APU will step envelope.
 
 	// Advance duty step every 1/(8f) where f is the sound's real frequency.
 	stepRate := GameBoyRate / (s.freq * 8)
@@ -163,6 +165,9 @@ func (s *SquareWave) Tick() (sample int8) {
 
 	s.dutyStep = (s.dutyStep + steps) % 8
 
+	// FIXME: The digital value produced by the generator, which ranges between
+	// $0 and $F (0 and 15), is linearly translated by the DAC into an analog
+	// value between -1 and 1 (the unit is arbitrary). [AUDIODETAILS]
 	if DutyCycles[s.NRx1>>6][s.dutyStep] {
 		sample = s.envelope.Volume()
 	} else {
