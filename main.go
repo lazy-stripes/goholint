@@ -8,8 +8,8 @@ package main
 // The point is that the C-like comments below will make the Uint8 SDL type
 // and our callback function usable as if they were part of a "C" package.
 
-// typedef signed char Int8;
-// void mainLoopCallback(void *userdata, Int8 *stream, int len);
+// typedef signed char Uint8;
+// void mainLoopCallback(void *userdata, Uint8 *stream, int len);
 import "C"
 
 import (
@@ -31,13 +31,14 @@ import (
 	"github.com/lazy-stripes/goholint/ui"
 )
 
+var midPoint uint16
 var mainUI *ui.UI
 
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
 //
 //export mainLoopCallback
-func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
+func mainLoopCallback(data unsafe.Pointer, ptr *C.Uint8, len C.int) {
 	// We've reached the limits of the Go bindings. I might try and see if it's
 	// any cleaner when using a push approach rather than a callback.
 	n := int(len)
@@ -50,8 +51,12 @@ func mainLoopCallback(data unsafe.Pointer, buf *C.Int8, len C.int) {
 		res := mainUI.Tick()
 
 		if res.Play {
-			buffer[i] = C.Int8(res.Left)
-			buffer[i+1] = C.Int8(res.Right)
+			// XXX Tinkering with signedness for now.
+			l := uint8(int16(midPoint) + int16(res.Left))
+			r := uint8(int16(midPoint) + int16(res.Right))
+
+			buffer[i+0] = C.Uint8(l)
+			buffer[i+1] = C.Uint8(r)
 			i += 2
 		}
 
@@ -123,18 +128,29 @@ func run() {
 		// An AudioSpec structure containing our parameters. After calling
 		// OpenAudio, it will also contain some values initialized by SDL itself,
 		// such as the audio buffer size.
+		// FIXME: with the latest Ubuntu update with pipewire and stuff, AUDIO_S8
+		//        causes horrible, yet very consistent cracking that I believe are
+		//        due to some quirk inside SDL when it converts samples, since
+		//        OpenAudio returns _U8 as the preferred format. Reverting to U8
+		//        seems to not have the crackling but my samples are no longer
+		//        centered around zero.
 		spec := sdl.AudioSpec{
 			Freq:     apu.SamplingRate,
-			Format:   sdl.AUDIO_S8,
+			Format:   sdl.AUDIO_U8,
 			Channels: 2,
 			Samples:  apu.FramesPerBuffer,
 			Callback: sdl.AudioCallback(C.mainLoopCallback),
 		}
 
+		var obtained sdl.AudioSpec
+
 		// We're asking SDL to honor our parameters exactly, or fail.
-		if err := sdl.OpenAudio(&spec, nil); err != nil {
+		if err := sdl.OpenAudio(&spec, &obtained); err != nil {
 			panic(err)
 		}
+
+
+		midPoint = uint16(obtained.Silence)
 
 		// Start playing sound. Not sure why we un-pause it instead of starting it.
 		sdl.PauseAudio(false)
