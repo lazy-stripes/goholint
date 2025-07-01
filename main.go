@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
+	"runtime"
 	"runtime/pprof"
 	"strings"
 	"unsafe"
@@ -32,23 +32,23 @@ import (
 )
 
 var midPoint uint16
-var mainUI *ui.UI
 
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
 //
 //export mainLoopCallback
 func mainLoopCallback(data unsafe.Pointer, ptr *C.Uint8, len C.int) {
-	// We've reached the limits of the Go bindings. I might try and see if it's
-	// any cleaner when using a push approach rather than a callback.
+	// Newer Go lets us cast a C-array pointer to a slice a bit more gracefully.
 	n := int(len)
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(buf)), Len: n, Cap: n}
-	buffer := *(*[]C.Int8)(unsafe.Pointer(&hdr))
+	buffer := unsafe.Slice(ptr, n)
+
+	// And this lets us pass the UI instance around.
+	ui := *(**ui.UI)(data)
 
 	// FIXME: move loop below to mainUI.FillAudioBuffer(buffer)
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
-		res := mainUI.Tick()
+		res := ui.Tick()
 
 		if res.Play {
 			// XXX Tinkering with signedness for now.
@@ -61,7 +61,7 @@ func mainLoopCallback(data unsafe.Pointer, ptr *C.Uint8, len C.int) {
 		}
 
 		if res.VBlank {
-			sdl.Do(mainUI.Repaint)
+			sdl.Do(ui.Repaint)
 		}
 	}
 }
@@ -106,6 +106,14 @@ func run() {
 		log.Println("CPU profiling written to: ", args.CPUProfile)
 	}
 
+	// Define main UI variable here. To be able to pass a pointer to it as a
+	// parameter to the audio callback, we must "pin" it so Go knows not to
+	// garbage-collect it while it's used by C code.
+	var mainUI *ui.UI
+	var mainUIPtr = &mainUI
+	var pinner runtime.Pinner
+	pinner.Pin(mainUIPtr)
+
 	// Execute all SDL operations in the main thread.
 	sdl.Do(func() {
 		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
@@ -140,6 +148,7 @@ func run() {
 			Channels: 2,
 			Samples:  apu.FramesPerBuffer,
 			Callback: sdl.AudioCallback(C.mainLoopCallback),
+			UserData: unsafe.Pointer(mainUIPtr),
 		}
 
 		var obtained sdl.AudioSpec
@@ -160,7 +169,11 @@ func run() {
 
 	<-mainUI.QuitChan // Wait for the callback or an action to signal us.
 
+	// Stop invoking our callback.
 	sdl.CloseAudio()
+
+	// Release main UI pointer.
+	pinner.Unpin()
 }
 
 func main() {
