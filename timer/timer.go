@@ -1,9 +1,12 @@
 // Package timer implements the DMG Timer as described in:
-// [TIMER1] https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
-// [TIMER2] https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
+//
+//   - [TIMER1] https://gbdev.io/pandocs/Timer_and_Divider_Registers.html
+//   - [TIMER2] https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
 //
 // And also in:
-// [DIV-APU] https://gbdev.io/pandocs/Audio_details.html
+//
+//   - [DIV-APU] https://gbdev.io/pandocs/Audio_details.html
+//
 // Because, of course, sound is complicated.
 package timer
 
@@ -36,8 +39,6 @@ type Timer struct {
 	TIMA uint8
 	TMA  uint8
 	TAC  uint8
-
-	divApu uint8 // DIV-APU value, will loop from 0 to 7.
 
 	freqBit uint8 // Saved frequency bit updated when TAC is written to.
 
@@ -121,19 +122,7 @@ func (t *Timer) checkForAudioEvent() {
 	// Keep in mind that the visible part of DIV starts at bit 6.
 	edge := t.DIV&(1<<10) != 0
 	if !edge && t.lastAudioEdge {
-		// Audio event, increment DIV-APU (modulo 8).
-		t.divApu = (t.divApu + 1) & ((1 << 8) - 1)
-		if t.divApu&1 == 0 { // Sound Length clocked every 2 DIV-APU ticks.
-			//t.APU.TickLength() TODO
-		}
-
-		if t.divApu&3 == 0 { // Frequency Sweep clocked every 4 DIV-APU ticks.
-			//t.APU.TickSweep() TODO
-		}
-
-		if t.divApu&7 == 0 { // Volume Envelope clocked every 8 DIV-APU ticks.
-			//t.APU.TickEnvelope() TODO
-		}
+		t.APU.Tick()
 	}
 	t.lastAudioEdge = edge
 }

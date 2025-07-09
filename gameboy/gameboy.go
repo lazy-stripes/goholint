@@ -203,12 +203,12 @@ func (g *GameBoy) Tick() (res TickResult) {
 		g.Serial.Tick()
 	}
 
-	// APU ticks occur only when we need to generate the next sample.
+	// Retrieve the next sample from the APU when we need to generate one.
 	// Note that the Gameboy machine frequency is not an exact multiple of the
 	// sound output frequency, so this is in fact an approximation. So long as
 	// no one can hear the difference, let's call it good enough.
 	if g.ticks%apu.SoundOutRate == 0 {
-		res.Left, res.Right = g.APU.Tick()
+		res.Left, res.Right = g.APU.Sample()
 		res.Play = true
 	}
 
