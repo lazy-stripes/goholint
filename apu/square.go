@@ -125,11 +125,11 @@ func (s *SquareWave) SetNRx4(value uint8) {
 
 		// Enable sweep, see if a frequency change was already computed.
 		updated, newFreq, overflow := s.sweep.Reset(s.RawFrequency())
-		if updated {
-			if !overflow {
+		if overflow {
+			s.Enabled = false
+		} else {
+			if updated {
 				s.SetRawFrequency(newFreq)
-			} else {
-				s.Enabled = false
 			}
 		}
 	}
@@ -156,12 +156,12 @@ func (s *SquareWave) Tick() {
 	if s.sweepEnabled {
 		updated, newFreq, overflow := s.sweep.Tick()
 		if updated {
-			if !overflow {
-				s.SetRawFrequency(newFreq)
-			} else {
-				s.Enabled = false
-				return
-			}
+			s.SetRawFrequency(newFreq)
+		}
+
+		if overflow {
+			s.Enabled = false
+			return
 		}
 	}
 

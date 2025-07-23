@@ -54,8 +54,7 @@ func (s *Sweep) Reset(freq uint) (updated bool, newFreq uint, overflow bool) {
 	s.ReloadTimer()
 
 	if s.Step > 0 {
-		updated = true
-		newFreq, overflow = s.UpdatedFrequency()
+		_, overflow = s.UpdatedFrequency()
 		return
 	}
 
