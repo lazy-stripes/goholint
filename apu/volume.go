@@ -14,10 +14,19 @@ type VolumeEnvelope struct {
 
 	enabled bool
 
-	volume     int8  // Current calculated volume.
-	ticks      uint  // Clock ticks counter.
-	sweepSteps uint8 // Sweep pace counter.
+	volume    int8  // Current calculated volume.
+	ticks     uint  // Clock ticks counter.
+	sweepPace uint8 // Sweep pace counter.
 
+}
+
+func (s *VolumeEnvelope) ReloadPace() {
+	s.sweepPace = s.Pace
+	if s.sweepPace == 0 {
+		// The volume envelope and sweep timers treat a period of 0 as 8.
+		// [OBSCURE]
+		s.sweepPace = 8
+	}
 }
 
 // Reset is called whenever the corresponding channel is triggered.
@@ -25,7 +34,7 @@ func (v *VolumeEnvelope) Reset() {
 	v.volume = int8(v.Initial)
 	v.enabled = true
 	v.ticks = 0
-	v.sweepSteps = 0
+	v.sweepPace = 0
 }
 
 // The envelope ticks at 64 Hz (i.e. every 8 DIV-APU ticks), and the channel’s
@@ -56,13 +65,13 @@ func (v *VolumeEnvelope) Tick() {
 	}
 
 	// Step up until we reach our Pace value.
-	v.sweepSteps += 1
-	if v.sweepSteps < v.Pace {
+	v.sweepPace += 1
+	if v.sweepPace < v.Pace {
 		return
 	}
 
 	v.volume += v.Direction
-	v.sweepSteps = 0
+	v.sweepPace = 0
 }
 
 // Volume returns the latest computed volume if the envelope Pace is not zero,

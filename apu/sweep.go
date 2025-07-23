@@ -2,22 +2,32 @@ package apu
 
 // Sources:
 //
+// [OBSCURE] https://gbdev.io/pandocs/Audio_details.html#obscure-behavior
 // [SWEEP] https://gbdev.io/pandocs/Audio_details.html#pulse-channel-with-sweep-ch1
 
 // Sweep structure that will act as a state machine managing the frequency sweep
 // for the first Square channel.
 type Sweep struct {
 	// The properties below can be set by the APU itself.
-	Pace     uint8 // NRx0 bits 6-4
-	Increase bool  // NRx0 bit 3
-	Step     uint8 // NRx0 bits 2-0
+	Pace     uint8 // NR10 bits 6-4
+	Increase bool  // NR10 bit 3
+	Step     uint8 // NR10 bits 2-0
 
 	shadow uint // Copy of Square 1's frequency
 
 	enabled bool
 
 	ticks      uint  // Clock ticks counter.
-	sweepSteps uint8 // Sweep pace counter.
+	sweepTimer uint8 // Sweep iteration counter.
+}
+
+func (s *Sweep) ReloadTimer() {
+	s.sweepTimer = s.Pace
+	if s.sweepTimer == 0 {
+		// The volume envelope and sweep timers treat a period of 0 as 8.
+		// [OBSCURE]
+		s.sweepTimer = 8
+	}
 }
 
 // Reset is called whenever the corresponding channel is triggered. If a new
@@ -41,7 +51,7 @@ func (s *Sweep) Reset(freq uint) (updated bool, newFreq uint, overflow bool) {
 	s.shadow = freq
 	s.enabled = s.Pace > 0 || s.Step > 0
 	s.ticks = 0
-	s.sweepSteps = 0
+	s.ReloadTimer()
 
 	if s.Step > 0 {
 		updated = true
@@ -63,9 +73,6 @@ func (s *Sweep) UpdatedFrequency() (newFreq uint, overflow bool) {
 	if s.Increase {
 		newFreq = s.shadow + step
 	} else {
-		if step > s.shadow {
-			step = s.shadow // Don't underflow our unsigned new frequency.
-		}
 		newFreq = s.shadow - step
 	}
 	return newFreq, newFreq > 2047
@@ -88,8 +95,8 @@ func (s *Sweep) Tick() (updated bool, newFreq uint, overflow bool) {
 		return
 	}
 
-	s.sweepSteps += 1
-	if s.sweepSteps >= s.Pace {
+	s.sweepTimer--
+	if s.sweepTimer <= 0 {
 		newFreq, overflow = s.UpdatedFrequency()
 		if !overflow && s.Step > 0 {
 			updated = true
@@ -100,7 +107,7 @@ func (s *Sweep) Tick() (updated bool, newFreq uint, overflow bool) {
 			// frequency is not written back. [SWEEP]
 			_, overflow = s.UpdatedFrequency()
 		}
-		s.sweepSteps = 0
+		s.ReloadTimer()
 	}
 
 	return
