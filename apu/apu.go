@@ -182,6 +182,9 @@ func (a *APU) SetNR52(value uint8) {
 // Read overrides our internal Addressables to catch reads from NR52.
 func (a *APU) Read(addr uint16) (value uint8) {
 	if addr == AddrNR52 {
+		if a.enabled {
+			value |= 0x80
+		}
 		if a.Square1.Enabled {
 			value |= 0x01
 		}
