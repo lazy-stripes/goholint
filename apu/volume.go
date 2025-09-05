@@ -34,7 +34,7 @@ func (v *VolumeEnvelope) Reset() {
 	v.volume = int8(v.Initial)
 	v.enabled = true
 	v.ticks = 0
-	v.sweepPace = 0
+	v.ReloadPace()
 }
 
 // The envelope ticks at 64 Hz (i.e. every 8 DIV-APU ticks), and the channel’s
@@ -65,13 +65,11 @@ func (v *VolumeEnvelope) Tick() {
 	}
 
 	// Step up until we reach our Pace value.
-	v.sweepPace += 1
-	if v.sweepPace < v.Pace {
-		return
+	v.sweepPace--
+	if v.sweepPace <= 0 {
+		v.volume += v.Direction
+		v.ReloadPace()
 	}
-
-	v.volume += v.Direction
-	v.sweepPace = 0
 }
 
 // Volume returns the latest computed volume if the envelope Pace is not zero,
