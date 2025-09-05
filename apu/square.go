@@ -119,7 +119,10 @@ func (s *SquareWave) SetNRx4(value uint8) {
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
 		s.ticks = 0
 
-		s.length.Reset(64)
+		// FIXME: wouldn't it be more robust if that was set directly inside Length?
+		if s.lengthEnabled {
+			s.length.Reset(64)
+		}
 
 		s.envelope.Reset()
 

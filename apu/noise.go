@@ -125,7 +125,10 @@ func (n *Noise) SetNRx4(value uint8) {
 
 		n.ticks = 0
 
-		n.length.Reset(64)
+		// FIXME: wouldn't it be more robust if that was set directly inside Length?
+		if n.lengthEnabled {
+			n.length.Reset(64)
+		}
 
 		n.envelope.Reset()
 	}

@@ -101,7 +101,9 @@ func (w *WaveTable) SetNRx4(value uint8) {
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
 		w.ticks = 0
 
-		w.length.Reset(256)
+		if w.lengthEnabled {
+			w.length.Reset(256)
+		}
 	}
 
 	w.RecomputeFrequency()

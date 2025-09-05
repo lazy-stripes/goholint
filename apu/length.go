@@ -17,6 +17,9 @@ func (l *Length) Reset(max uint16) {
 	l.ticks = 0
 	if l.timer == 0 {
 		l.timer = max - uint16(l.Initial)
+		log.Debugf("Length timer reset to %d", l.timer)
+	} else {
+		log.Debugf("Length timer not expired yet (%d)", l.timer)
 	}
 }
 
