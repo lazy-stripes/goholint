@@ -1,5 +1,6 @@
 package apu
 
+// [AUDIOREG] https://gbdev.io/pandocs/Audio_Registers.html
 // [AUDIODETAILS] https://gbdev.io/pandocs/Audio_details.html
 
 // DutyCycles represents available duty patterns. For any given frequency,
@@ -91,6 +92,13 @@ func (s *SquareWave) SetNRx2(value uint8) {
 		s.envelope.Direction = 1
 	} else {
 		s.envelope.Direction = -1
+	}
+
+	// "Setting bits 3-7 of this register all to 0 (initial volume = 0,
+	// envelope = decreasing) turns the DAC off (and thus, the channel as well)"
+	// [AUDIOREG]
+	if value&0xf8 == 0 {
+		s.Enabled = false
 	}
 }
 
