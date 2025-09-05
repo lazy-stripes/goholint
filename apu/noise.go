@@ -102,8 +102,9 @@ func (n *Noise) SetNRx2(value uint8) {
 // SetNRx3 is called whenever the NRx3 register's value is written, so that it
 // can update the internal generator's frequency.
 func (n *Noise) SetNRx3(value uint8) {
+	// FIXME: store shift and divider here?
 	n.RecomputeFrequency()
-	n.LFSR.ShortMode = value&0x04 != 0 // Bit 3 - LFSR width (15 or 7 bits)
+	n.LFSR.ShortMode = value&NR43Width7 != 0 // Bit 3 - LFSR width (15 or 7 bits)
 }
 
 // SetNRx4 is called whenever the NRx4 register's value is written, so that it
