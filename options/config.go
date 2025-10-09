@@ -180,7 +180,7 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	// Ignoring flags that are not really interesting as a config, such as
 	// -cyles, -gif or -rom...
 
-	// Set keymap here. Build on top of default. TODO: validate.
+	// Set keymap here. Build on top of default. TODO: validate, and helper function.
 	keySection := cfg.Section("keymap")
 	for key := range o.Keymap {
 		// Key() will return the empty string if it doesn't exist, it's fine.
@@ -209,6 +209,8 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, key)
 		}
 	}
+
+	// TODO: joymap
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")

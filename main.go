@@ -108,8 +108,13 @@ func run() {
 
 	// Execute all SDL operations in the main thread.
 	sdl.Do(func() {
-		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
+		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS | sdl.INIT_GAMECONTROLLER | sdl.INIT_JOYSTICK)
 		ttf.Init()
+
+		// List currently connected controllers. TODO: detect new ones.
+		for i := range sdl.NumJoysticks() {
+			sdl.GameControllerOpen(i)
+		}
 
 		// Instantiate main UI. Someday I might add extra windows for debugging.
 		mainUI = ui.New(args)

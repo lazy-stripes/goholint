@@ -20,8 +20,11 @@ type KeyStroke struct {
 	Mod  sdl.Keymod
 }
 
-// Keymap associating an action name (joypad input, UI command...) to an input.
+// Keymap associates an action name (joypad input, UI command...) to an input.
 type Keymap map[string]KeyStroke
+
+// Joymap associates an action name (same as keymap) to a controller input.
+type Joymap map[string]sdl.GameControllerButton
 
 // Options structure grouping command line flags and config file values.
 type Options struct {
@@ -33,6 +36,7 @@ type Options struct {
 	FastBoot     bool           // -fastboot
 	GIFPath      string         // -gif <path>
 	Keymap       Keymap         // From config.
+	Joymap       Joymap         // From config.
 	Mono         bool           // -mono
 	Palettes     [][]color.RGBA // From config.
 	PaletteNames []string       // From config, same order.
@@ -138,6 +142,7 @@ func Parse() *Options {
 	// Other defaults used if there is no config file.
 
 	options.Keymap = DefaultKeymap
+	options.Joymap = DefaultJoymap
 
 	// Always include the default palette as palette 0.
 	options.Palettes = append(options.Palettes, DefaultPalette)

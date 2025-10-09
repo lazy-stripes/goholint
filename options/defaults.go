@@ -91,6 +91,21 @@ togglevoice4 = 4
 quit = CTRL+q
 
 # TODO: reset, snapshot...
+
+[controller]
+# Those work with an XBox-like controller. Adjust as needed.
+up = dpup
+down = dpdown
+left = dpleft
+right = spright
+a = a
+b = x
+select = back
+start = start
+
+# Cycle through custom palettes.
+nexpalette      = rightshoulder
+previouspalette = leftshoulder
 `
 )
 
@@ -114,6 +129,21 @@ var DefaultKeymap = Keymap{
 	"togglevoice4":    KeyStroke{Code: sdl.K_4},
 	"quit":            KeyStroke{Code: sdl.K_q, Mod: sdl.KMOD_LCTRL},
 	"home":            KeyStroke{Code: sdl.K_ESCAPE},
+}
+
+// DefaultJoymap is a reasonable default mapping for your usual controller.
+var DefaultJoymap = Joymap{
+	"up":              sdl.CONTROLLER_BUTTON_DPAD_UP,
+	"down":            sdl.CONTROLLER_BUTTON_DPAD_DOWN,
+	"left":            sdl.CONTROLLER_BUTTON_DPAD_LEFT,
+	"right":           sdl.CONTROLLER_BUTTON_DPAD_RIGHT,
+	"a":               sdl.CONTROLLER_BUTTON_A,
+	"b":               sdl.CONTROLLER_BUTTON_X,
+	"select":          sdl.CONTROLLER_BUTTON_BACK,
+	"start":           sdl.CONTROLLER_BUTTON_START,
+	"nextpalette":     sdl.CONTROLLER_BUTTON_RIGHTSHOULDER,
+	"previouspalette": sdl.CONTROLLER_BUTTON_LEFTSHOULDER,
+	"home":            sdl.CONTROLLER_BUTTON_Y,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL
