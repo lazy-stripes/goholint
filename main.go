@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"runtime/pprof"
 	"strings"
 	"unsafe"
@@ -31,24 +30,25 @@ import (
 	"github.com/lazy-stripes/goholint/ui"
 )
 
+// Using module variable instead of pinned pointer passed as userdata to the
+// audio callback on account I like it better that way. Apologies to my beloved
+// university CS teachers.
+var mainUI *ui.UI
 var midPoint uint16
 
 // Audio callback function that SDL will call at a regular interval that
 // should be roughly <sampling rate> / (<audio buffer size> / <channels>).
 //
 //export mainLoopCallback
-func mainLoopCallback(data unsafe.Pointer, ptr *C.Uint8, len C.int) {
+func mainLoopCallback(_ unsafe.Pointer, ptr *C.Uint8, len C.int) {
 	// Newer Go lets us cast a C-array pointer to a slice a bit more gracefully.
 	n := int(len)
 	buffer := unsafe.Slice(ptr, n)
 
-	// And this lets us pass the UI instance around.
-	ui := *(**ui.UI)(data)
-
 	// FIXME: move loop below to mainUI.FillAudioBuffer(buffer)
 	// Tick the emulator as many times as needed to fill the audio buffer.
 	for i := 0; i < n; {
-		res := ui.Tick()
+		res := mainUI.Tick()
 
 		if res.Play {
 			// XXX Tinkering with signedness for now.
@@ -61,7 +61,7 @@ func mainLoopCallback(data unsafe.Pointer, ptr *C.Uint8, len C.int) {
 		}
 
 		if res.VBlank {
-			sdl.Do(ui.Repaint)
+			sdl.Do(mainUI.Repaint)
 		}
 	}
 }
@@ -106,14 +106,6 @@ func run() {
 		log.Println("CPU profiling written to: ", args.CPUProfile)
 	}
 
-	// Define main UI variable here. To be able to pass a pointer to it as a
-	// parameter to the audio callback, we must "pin" it so Go knows not to
-	// garbage-collect it while it's used by C code.
-	var mainUI *ui.UI
-	var mainUIPtr = &mainUI
-	var pinner runtime.Pinner
-	pinner.Pin(mainUIPtr)
-
 	// Execute all SDL operations in the main thread.
 	sdl.Do(func() {
 		sdl.Init(sdl.INIT_VIDEO | sdl.INIT_AUDIO | sdl.INIT_EVENTS)
@@ -148,7 +140,6 @@ func run() {
 			Channels: 2,
 			Samples:  apu.FramesPerBuffer,
 			Callback: sdl.AudioCallback(C.mainLoopCallback),
-			UserData: unsafe.Pointer(mainUIPtr),
 		}
 
 		var obtained sdl.AudioSpec
@@ -171,9 +162,6 @@ func run() {
 
 	// Stop invoking our callback.
 	sdl.CloseAudio()
-
-	// Release main UI pointer.
-	pinner.Unpin()
 }
 
 func main() {
