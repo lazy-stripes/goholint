@@ -49,7 +49,7 @@ const (
 
 const (
 	SamplingRate    = 44100 // How many sample frames to send per second.
-	FramesPerBuffer = 1024  // Number of sample frames fitting the audio buffer.
+	FramesPerBuffer = 256   // Number of sample frames fitting the audio buffer.
 )
 
 // Values to multiply with the final volume if not maximum (7) or zero.
