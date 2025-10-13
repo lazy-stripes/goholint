@@ -108,6 +108,98 @@ func (o *Options) addPalette(name, value string) {
 	o.PaletteNames = append(o.PaletteNames, name)
 }
 
+// Quick mapping of key modifiers as found in the config to their SDL
+// counterpart.
+var keyModNames = map[string]sdl.Keymod{
+	"CTRL":   sdl.KMOD_LCTRL, // Alias for LCTRL
+	"LCTRL":  sdl.KMOD_LCTRL,
+	"RCTRL":  sdl.KMOD_RCTRL,
+	"SHIFT":  sdl.KMOD_LSHIFT, // Alias for LSHIFT
+	"LSHIFT": sdl.KMOD_LSHIFT,
+	"RSHIFT": sdl.KMOD_RSHIFT,
+}
+
+var buttonNames = map[string]sdl.GameControllerButton{
+	"A":             sdl.CONTROLLER_BUTTON_A,
+	"B":             sdl.CONTROLLER_BUTTON_B,
+	"X":             sdl.CONTROLLER_BUTTON_X,
+	"Y":             sdl.CONTROLLER_BUTTON_Y,
+	"BACK":          sdl.CONTROLLER_BUTTON_BACK,
+	"GUIDE":         sdl.CONTROLLER_BUTTON_GUIDE,
+	"START":         sdl.CONTROLLER_BUTTON_START,
+	"LEFTSTICK":     sdl.CONTROLLER_BUTTON_LEFTSTICK,
+	"RIGHTSTICK":    sdl.CONTROLLER_BUTTON_RIGHTSTICK,
+	"LEFTSHOULDER":  sdl.CONTROLLER_BUTTON_LEFTSHOULDER,
+	"RIGHTSHOULDER": sdl.CONTROLLER_BUTTON_RIGHTSHOULDER,
+	"DPAD_UP":       sdl.CONTROLLER_BUTTON_DPAD_UP,
+	"DPAD_DOWN":     sdl.CONTROLLER_BUTTON_DPAD_DOWN,
+	"DPAD_LEFT":     sdl.CONTROLLER_BUTTON_DPAD_LEFT,
+	"DPAD_RIGHT":    sdl.CONTROLLER_BUTTON_DPAD_RIGHT,
+	//"MISC1":         sdl.CONTROLLER_BUTTON_MISC1,    /* Xbox Series X share button, PS5 microphone button, Nintendo Switch Pro capture button, Amazon Luna microphone button */
+	//"PADDLE1":       sdl.CONTROLLER_BUTTON_PADDLE1,  /* Xbox Elite paddle P1 (upper left, facing the back) */
+	//"PADDLE2":       sdl.CONTROLLER_BUTTON_PADDLE2,  /* Xbox Elite paddle P3 (upper right, facing the back) */
+	//"PADDLE3":       sdl.CONTROLLER_BUTTON_PADDLE3,  /* Xbox Elite paddle P2 (lower left, facing the back) */
+	//"PADDLE4":       sdl.CONTROLLER_BUTTON_PADDLE4,  /* Xbox Elite paddle P4 (lower right, facing the back) */
+	//"TOUCHPAD":      sdl.CONTROLLER_BUTTON_TOUCHPAD, /* PS4/PS5 touchpad button */
+}
+
+// Apply a keyboard mapping from the config file to the keymap variable whose
+// address is given, if that parameter was present in the file. If a keymap item
+// contains errors, it's silently ignored.
+//
+// This requires that the destination keymap be set to a default value that
+// contains all available actions.
+func applyKeymap(keymapSection *ini.Section, dst *Keymap) {
+	// Set keymap here. Build on top of default. TODO: validate, and helper function.
+	for actionName := range *dst {
+		// Key() will return the empty string if it doesn't exist, it's fine.
+		keyName := keymapSection.Key(actionName).String()
+		if keyName == "" {
+			continue
+		}
+
+		// Separate modifiers and key along the lines of [<mod>+]key, with an
+		// arbitrary number of modifiers.
+		var modifiers sdl.Keymod
+		strokes := strings.Split(keyName, "+")
+		for i := 0; i < len(strokes)-1; i++ {
+			if mod, ok := keyModNames[strokes[i]]; ok {
+				modifiers |= mod
+			} else {
+				fmt.Printf("Unknown key modifier '%s' for action '%s'.\n",
+					strokes[i], actionName)
+			}
+		}
+		keySym := sdl.GetKeyFromName(strokes[len(strokes)-1])
+
+		if keySym != sdl.K_UNKNOWN {
+			(*dst)[actionName] = KeyStroke{Code: keySym, Mod: modifiers}
+		} else {
+			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, actionName)
+		}
+	}
+}
+
+func applyJoymap(joymapSection *ini.Section, dst *Joymap) {
+	for actionName := range *dst {
+		// Key() will return the empty string if it doesn't exist, it's fine.
+		btnName := joymapSection.Key(actionName).String()
+		if btnName == "" {
+			continue
+		}
+
+		// Get button from name. We use our own mapping rather than the built-in
+		// GameControllerGetButtonFromString() that we're not supposed to call
+		// and which expects names not fitting the keymap's case and style.
+		button, ok := buttonNames[btnName]
+		if ok {
+			(*dst)[actionName] = button
+		} else {
+			fmt.Printf("Unknown button name '%s' for action '%s'.\n", btnName, actionName)
+		}
+	}
+}
+
 // Attempt to create home config folder and put our default config there, if
 // it doesn't already exist.
 func createDefaultConfig() {
@@ -140,17 +232,6 @@ func createDefaultConfig() {
 	}
 }
 
-// Quick mapping of key modifiers as found in the config to their SDL
-// counterpart.
-var keyModNames = map[string]sdl.Keymod{
-	"CTRL":   sdl.KMOD_LCTRL, // Alias for LCTRL
-	"LCTRL":  sdl.KMOD_LCTRL,
-	"RCTRL":  sdl.KMOD_RCTRL,
-	"SHIFT":  sdl.KMOD_LSHIFT, // Alias for LSHIFT
-	"LSHIFT": sdl.KMOD_LSHIFT,
-	"RSHIFT": sdl.KMOD_RSHIFT,
-}
-
 // Update reads all parameters from a given configuration file and updates the
 // Options instance with those values, skipping all options that may already
 // have been set on the command-line.
@@ -180,37 +261,9 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	// Ignoring flags that are not really interesting as a config, such as
 	// -cyles, -gif or -rom...
 
-	// Set keymap here. Build on top of default. TODO: validate, and helper function.
-	keySection := cfg.Section("keymap")
-	for key := range o.Keymap {
-		// Key() will return the empty string if it doesn't exist, it's fine.
-		keyName := keySection.Key(key).String()
-		if keyName == "" {
-			continue
-		}
-
-		// Separate modifiers and key along the lines of [<mod>+]key, with an
-		// arbitrary number of modifiers.
-		var modifiers sdl.Keymod
-		strokes := strings.Split(keyName, "+")
-		for i := 0; i < len(strokes)-1; i++ {
-			if mod, ok := keyModNames[strokes[i]]; ok {
-				modifiers |= mod
-			} else {
-				fmt.Printf("Unknown key modifier '%s' for action '%s'.\n",
-					strokes[i], key)
-			}
-		}
-		keySym := sdl.GetKeyFromName(strokes[len(strokes)-1])
-
-		if keySym != sdl.K_UNKNOWN {
-			o.Keymap[key] = KeyStroke{Code: keySym, Mod: modifiers}
-		} else {
-			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, key)
-		}
-	}
-
-	// TODO: joymap
+	// Keyboard and controller mappings.
+	applyKeymap(cfg.Section("keymap"), &o.Keymap)
+	applyJoymap(cfg.Section("joymap"), &o.Joymap)
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")

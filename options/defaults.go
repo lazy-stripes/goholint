@@ -93,19 +93,27 @@ quit = CTRL+q
 # TODO: reset, snapshot...
 
 [controller]
-# Those work with an XBox-like controller. Adjust as needed.
-up = dpup
-down = dpdown
-left = dpleft
-right = spright
-a = a
-b = x
-select = back
-start = start
+# Define your gamepad mapping below with <action>=<button>. Button names should
+# be the ones from the SDL2 documentation (https://wiki.libsdl.org/SDL2/SDL_GameControllerButton)
+# without the SDL_CONTROLLER_BUTTON_ prefix. Refer to [keymap] above to see all
+# supported actions.
+#
+# The following defaults work with an XBox-like controller. Adjust as needed.
+up     = DPAD_UP
+down   = DPAD_DOWN
+left   = DPAD_LEFT
+right  = DPAD_RIGHT
+a      = A
+b      = X
+select = BACK
+start  = START
 
 # Cycle through custom palettes.
-nexpalette      = rightshoulder
-previouspalette = leftshoulder
+nexpalette      = RIGHTSHOULDER
+previouspalette = LEFTSHOULDER
+
+# Home button.
+home = Y
 `
 )
 
@@ -143,7 +151,7 @@ var DefaultJoymap = Joymap{
 	"start":           sdl.CONTROLLER_BUTTON_START,
 	"nextpalette":     sdl.CONTROLLER_BUTTON_RIGHTSHOULDER,
 	"previouspalette": sdl.CONTROLLER_BUTTON_LEFTSHOULDER,
-	"home":            sdl.CONTROLLER_BUTTON_Y,
+	"home":            sdl.CONTROLLER_BUTTON_GUIDE,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL
