@@ -15,7 +15,6 @@ type VolumeEnvelope struct {
 	enabled bool
 
 	volume    int8  // Current calculated volume.
-	ticks     uint  // Clock ticks counter.
 	sweepPace uint8 // Sweep pace counter.
 
 }
@@ -33,7 +32,6 @@ func (s *VolumeEnvelope) ReloadPace() {
 func (v *VolumeEnvelope) Reset() {
 	v.volume = int8(v.Initial)
 	v.enabled = true
-	v.ticks = 0
 	v.ReloadPace()
 }
 
@@ -46,12 +44,6 @@ func (v *VolumeEnvelope) Tick() {
 	if !v.enabled {
 		return
 	}
-
-	v.ticks++
-	if v.ticks < 8 {
-		return
-	}
-	v.ticks = 0
 
 	// When the timer generates a clock and the envelope period is not zero, a
 	// new volume is calculated by adding or subtracting (as set by NRx2) one

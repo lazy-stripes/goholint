@@ -7,14 +7,12 @@ type Length struct {
 	Initial uint8 // NRx1 bits 5-0 (or 8-0 for Wave generator)
 
 	timer uint16 // Current internal timer value.
-	ticks uint   // DIV-APU ticks counter.
 }
 
 // Reset is called whenever the corresponding channel is triggered. It takes the
 // maximum timer value (256 for Wave generator, 64 for the others) as parameter
 // and will set the internal timer to (max-Initial) if it's currently zero.
 func (l *Length) Reset(max uint16) {
-	l.ticks = 0
 	if l.timer == 0 {
 		l.timer = max - uint16(l.Initial)
 		log.Debugf("Length timer reset to %d", l.timer)
@@ -29,20 +27,14 @@ func (l *Length) Reset(max uint16) {
 //
 // Tick won't be called if the generator itself is not enabled.
 func (l *Length) Tick() (disable bool) {
-	l.ticks++
-	if l.ticks < 2 {
-		return
-	}
-	l.ticks = 0
-
 	// Decrement internal timer until zero.
 	if l.timer > 0 {
 		l.timer--
+	}
 
-		// If the timer has expired, generator must be turned off.
-		if l.timer == 0 {
-			disable = true
-		}
+	// If the timer has expired, generator must be turned off.
+	if l.timer == 0 {
+		disable = true
 	}
 
 	return

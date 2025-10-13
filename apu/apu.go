@@ -120,6 +120,8 @@ type APU struct {
 
 	enabled bool
 
+	ticks uint // APU-DIV ticks
+
 	Square1 SquareWave
 	Square2 SquareWave
 	Wave    WaveTable
@@ -205,10 +207,21 @@ func (a *APU) Read(addr uint16) (value uint8) {
 // Tick updates the state machine of all signal generators whenever the DIV-APU
 // timer increases.
 func (a *APU) Tick() {
-	a.Square1.Tick()
-	a.Square2.Tick()
-	a.Wave.Tick()
-	a.Noise.Tick()
+	a.ticks = (a.ticks + 1) % 8
+	if a.ticks&1 == 0 { // Sound Length clocked every 2 DIV-APU ticks (256Hz).
+		a.Square1.TickLength()
+		a.Square2.TickLength()
+		a.Wave.TickLength()
+		a.Noise.TickLength()
+	}
+	if a.ticks&3 == 0 { // Frequency Sweep clocked every 4 DIV-APU ticks (128Hz).
+		a.Square1.TickSweep()
+	}
+	if a.ticks&7 == 0 { // Volume Envelope clocked every 8 DIV-APU ticks (64Hz).
+		a.Square1.envelope.Tick()
+		a.Square2.envelope.Tick()
+		a.Noise.envelope.Tick()
+	}
 }
 
 // Sample produces a sample of the signal to generate based on the current state

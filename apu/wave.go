@@ -109,9 +109,9 @@ func (w *WaveTable) SetNRx4(value uint8) {
 	w.RecomputeFrequency()
 }
 
-// Tick is called whenever DIV-APU increases. It will tick the wave generator's
-// length.
-func (w *WaveTable) Tick() {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (w *WaveTable) TickLength() {
 	if !w.Enabled {
 		return
 	}

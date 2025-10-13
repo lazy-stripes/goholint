@@ -147,14 +147,13 @@ func (s *SquareWave) SetNRx4(value uint8) {
 
 }
 
-// Tick is called whenever DIV-APU increases. It will tick the signal generator's
-// length, sweep and envelope.
-func (s *SquareWave) Tick() {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (s *SquareWave) TickLength() {
 	if !s.Enabled {
 		return
 	}
 
-	// Tick length. It will be updated at 256Hz (or every 2 DIV-APU ticks).
 	if s.lengthEnabled {
 		disabled := s.length.Tick()
 		if disabled {
@@ -162,8 +161,15 @@ func (s *SquareWave) Tick() {
 			return
 		}
 	}
+}
 
-	// Tick sweep. It will be updated at 128Hz (or every 4 DIV-APU ticks).
+// TickSweep is called every 4 DIV-APU ticks (128Hz) and updates the internal
+// frequency sweep state. If an overflow occurs, the channel is disabled.
+func (s *SquareWave) TickSweep() {
+	if !s.Enabled {
+		return
+	}
+
 	if s.sweepEnabled {
 		updated, newFreq, overflow := s.sweep.Tick()
 		if updated {
@@ -175,9 +181,6 @@ func (s *SquareWave) Tick() {
 			return
 		}
 	}
-
-	// Tick envelope. It will be updated at 64Hz (or every 8 DIV-APU ticks).
-	s.envelope.Tick()
 }
 
 // Sample produces a sample of the signal to generate based on the current value

@@ -134,14 +134,13 @@ func (n *Noise) SetNRx4(value uint8) {
 	}
 }
 
-// Tick is called whenever DIV-APU increases. It will tick the noise generator's
-// length and envelope.
-func (n *Noise) Tick() {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (n *Noise) TickLength() {
 	if !n.Enabled {
 		return
 	}
 
-	// Tick length. It will be updated at 256Hz (or every 2 DIV-APU ticks).
 	if n.lengthEnabled {
 		disabled := n.length.Tick()
 		if disabled {
@@ -149,9 +148,6 @@ func (n *Noise) Tick() {
 			return
 		}
 	}
-
-	// Tick envelope. It will be updated at 64Hz (or every 8 DIV-APU ticks).
-	n.envelope.Tick()
 }
 
 // Sample produces a sample of the signal to generate based on the current value

@@ -17,7 +17,6 @@ type Sweep struct {
 
 	enabled bool
 
-	ticks      uint  // Clock ticks counter.
 	sweepTimer uint8 // Sweep iteration counter.
 }
 
@@ -45,12 +44,12 @@ func (s *Sweep) Reset(freq uint) (updated bool, newFreq uint, overflow bool) {
 	//   are non-zero, cleared otherwise.
 	//
 	// * If the sweep shift is non-zero, frequency calculation and the overflow
-	//   check are performed immediately.
+	//   check are performed immediately [the frequency itself is *not* stored
+	//   back to NR13/NR14].
 	//
 	// Source: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 	s.shadow = freq
 	s.enabled = s.Pace > 0 || s.Step > 0
-	s.ticks = 0
 	s.ReloadTimer()
 
 	if s.Step > 0 {
@@ -84,12 +83,6 @@ func (s *Sweep) UpdatedFrequency() (newFreq uint, overflow bool) {
 //
 // Tick won't be called if the generator itself is not enabled.
 func (s *Sweep) Tick() (updated bool, newFreq uint, overflow bool) {
-	s.ticks++
-	if s.ticks < 4 {
-		return
-	}
-	s.ticks = 0
-
 	if !s.enabled || s.Pace == 0 {
 		return
 	}
