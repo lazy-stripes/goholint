@@ -66,6 +66,8 @@ type Noise struct {
 
 	ticks uint // Clock ticks counter for advancing duty step.
 
+	lengthEnabled bool
+
 	length   Length
 	envelope VolumeEnvelope
 }
@@ -81,7 +83,7 @@ func (n *Noise) RecomputeFrequency() {
 // can update the length timer.
 // TODO: make this method common with SquareWave.
 func (n *Noise) SetNRx1(value uint8) {
-	n.length.Counter = value & 0x3f
+	n.length.Initial = value & 0x3f
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -89,7 +91,7 @@ func (n *Noise) SetNRx1(value uint8) {
 // TODO: make this method common with SquareWave.
 func (n *Noise) SetNRx2(value uint8) {
 	n.envelope.Initial = value >> 4
-	n.envelope.Sweep = value & 7
+	n.envelope.Pace = value & 7
 	if value&NRx2EnvelopeDirection != 0 {
 		n.envelope.Direction = 1
 	} else {
@@ -100,13 +102,17 @@ func (n *Noise) SetNRx2(value uint8) {
 // SetNRx3 is called whenever the NRx3 register's value is written, so that it
 // can update the internal generator's frequency.
 func (n *Noise) SetNRx3(value uint8) {
+	// FIXME: store shift and divider here?
 	n.RecomputeFrequency()
-	n.LFSR.ShortMode = value&0x04 != 0 // Bit 3 - LFSR width (15 or 7 bits)
+	n.LFSR.ShortMode = value&NR43Width7 != 0 // Bit 3 - LFSR width (15 or 7 bits)
 }
 
 // SetNRx4 is called whenever the NRx4 register's value is written, so that it
 // can trigger the channel or enable the length counter.
 func (n *Noise) SetNRx4(value uint8) {
+
+	n.lengthEnabled = (value&NRx4EnableLength != 0)
+
 	// Enable that signal if requested. NR14 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
 	if value&NRx4RestartSound != 0 {
@@ -119,32 +125,37 @@ func (n *Noise) SetNRx4(value uint8) {
 
 		n.ticks = 0
 
-		n.envelope.Enable()
-	}
+		// FIXME: wouldn't it be more robust if that was set directly inside Length?
+		if n.lengthEnabled {
+			n.length.Reset(64)
+		}
 
-	if value&NRx4EnableLength != 0 {
-		n.length.Enable()
-	} else {
-		n.length.Disable()
+		n.envelope.Reset()
 	}
-
 }
 
-// Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
-func (n *Noise) Tick() (sample int8) {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (n *Noise) TickLength() {
 	if !n.Enabled {
 		return
 	}
 
-	disabled := n.length.Tick()
-	if disabled {
-		n.Enabled = false
+	if n.lengthEnabled {
+		disabled := n.length.Tick()
+		if disabled {
+			n.Enabled = false
+			return
+		}
+	}
+}
+
+// Sample produces a sample of the signal to generate based on the current value
+// in the signal generator's registers.
+func (n *Noise) Sample() (sample int8) {
+	if !n.Enabled {
 		return
 	}
-
-	n.envelope.Tick()
 
 	// Advance LFSR at the frequency requested by NR43.
 	stepRate := GameBoyRate / n.freq
@@ -155,6 +166,9 @@ func (n *Noise) Tick() (sample int8) {
 		n.LFSR.Tick()
 	}
 
+	// FIXME: The digital value produced by the generator, which ranges between
+	// $0 and $F (0 and 15), is linearly translated by the DAC into an analog
+	// value between -1 and 1 (the unit is arbitrary). [AUDIODETAILS]
 	if n.LFSR.Value&1 != 0 {
 		sample = n.envelope.Volume()
 	} else {

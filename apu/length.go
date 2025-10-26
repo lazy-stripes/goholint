@@ -4,50 +4,37 @@ package apu
 // current length counter a Square or Noise signal generator.
 type Length struct {
 	// The properties below can be set by the APU itself.
-	Counter uint8 // NRx1 bits 5-0
+	Initial uint8 // NRx1 bits 5-0 (or 8-0 for Wave generator)
 
-	enabled bool
-
-	ticks uint // Clock ticks counter.
+	timer uint16 // Current internal timer value.
 }
 
-// Enable is called whenever the corresponding channel is triggered.
-func (l *Length) Enable() {
-	l.enabled = true
-	l.ticks = 0
-}
-
-// Disable is called whenever the corresponding channel is triggered without the
-// length bit.
-func (l *Length) Disable() {
-	l.enabled = false
+// Reset is called whenever the corresponding channel is triggered. It takes the
+// maximum timer value (256 for Wave generator, 64 for the others) as parameter
+// and will set the internal timer to (max-Initial) if it's currently zero.
+func (l *Length) Reset(max uint16) {
+	if l.timer == 0 {
+		l.timer = max - uint16(l.Initial)
+		log.Debugf("Length timer reset to %d", l.timer)
+	} else {
+		log.Debugf("Length timer not expired yet (%d)", l.timer)
+	}
 }
 
 // Tick advances the length one step. It will adjust the internal length value
-// every 1/256 seconds (i.e. <cpuFreq>/256 ticks). Returns whether the signal
+// every 1/256 seconds (i.e. every 2 DIV-APU ticks). Returns whether the signal
 // generator should be disabled.
-// Source: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
+//
+// Tick won't be called if the generator itself is not enabled.
 func (l *Length) Tick() (disable bool) {
-	if !l.enabled {
-		return
+	// Decrement internal timer until zero.
+	if l.timer > 0 {
+		l.timer--
 	}
 
-	// If the Counter hasn't maxed out yet, advance it.
-	// TODO: follow old GB wiki logic and load Counter with max value, then
-	//       decrement, so we can use the same struct for Wave too.
-	if l.Counter < 64 {
-		// Advance length counter every <cpufreq>/256 (256Hz).
-		stepRate := uint(GameBoyRate / 256)
-		steps := (l.ticks + SoundOutRate) / stepRate
-		l.ticks = (l.ticks + SoundOutRate) % stepRate
-
-		l.Counter += uint8(steps)
-	}
-
-	// If the Counter has maxed out, tell the channel it should turn off.
-	if l.Counter >= 64 {
+	// If the timer has expired, generator must be turned off.
+	if l.timer == 0 {
 		disable = true
-		l.enabled = false
 	}
 
 	return

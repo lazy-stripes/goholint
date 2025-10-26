@@ -1,5 +1,8 @@
 package apu
 
+// [AUDIOREG] https://gbdev.io/pandocs/Audio_Registers.html
+// [AUDIODETAILS] https://gbdev.io/pandocs/Audio_details.html
+
 // DutyCycles represents available duty patterns. For any given frequency,
 // we'll internally split one period of that frequency in 8, and for each
 // of those slices, this will specify whether the signal should be on or off.
@@ -26,6 +29,9 @@ type SquareWave struct {
 	// Duty-related variables.
 	dutyStep uint // Sub-index into DutyCycles to set the signal high or low.
 	ticks    uint // Clock ticks counter for advancing duty step.
+
+	lengthEnabled bool
+	sweepEnabled  bool
 
 	length   Length
 	envelope VolumeEnvelope
@@ -64,26 +70,35 @@ func (s *SquareWave) RecomputeFrequency() {
 // SetNRx0 is called whenever the NRx0 register's value was changed, so that it
 // can update the sweep parameters.
 func (s *SquareWave) SetNRx0(value uint8) {
-	s.sweep.Sweep = (value & 0x70) >> 4
+	s.sweep.Pace = (value & 0x70) >> 4
 	s.sweep.Increase = value&0x08 == 0
-	s.sweep.Shift = value & 0x07
+	s.sweep.Step = value & 0x07
+
+	s.sweepEnabled = (s.sweep.Pace != 0)
 }
 
 // SetNRx1 is called whenever the NRx1 register's value was changed, so that it
 // can update the length timer.
 func (s *SquareWave) SetNRx1(value uint8) {
-	s.length.Counter = value & 0x3f
+	s.length.Initial = value & 0x3f
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
 // can update the volume envelope state machine.
 func (s *SquareWave) SetNRx2(value uint8) {
 	s.envelope.Initial = value >> 4
-	s.envelope.Sweep = value & 7
+	s.envelope.Pace = value & 7
 	if value&NRx2EnvelopeDirection != 0 {
 		s.envelope.Direction = 1
 	} else {
 		s.envelope.Direction = -1
+	}
+
+	// "Setting bits 3-7 of this register all to 0 (initial volume = 0,
+	// envelope = decreasing) turns the DAC off (and thus, the channel as well)"
+	// [AUDIOREG]
+	if value&0xf8 == 0 {
+		s.Enabled = false
 	}
 }
 
@@ -99,6 +114,8 @@ func (s *SquareWave) SetNRx4(value uint8) {
 	// Recompute frequency in case bits 0-3 changed.
 	s.RecomputeFrequency()
 
+	s.lengthEnabled = (value&NRx4EnableLength != 0)
+
 	// Enable that signal if requested. NR14 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
 	if value&NRx4RestartSound != 0 {
@@ -110,51 +127,69 @@ func (s *SquareWave) SetNRx4(value uint8) {
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
 		s.ticks = 0
 
-		s.envelope.Enable()
+		// FIXME: wouldn't it be more robust if that was set directly inside Length?
+		if s.lengthEnabled {
+			s.length.Reset(64)
+		}
+
+		s.envelope.Reset()
 
 		// Enable sweep, see if a frequency change was already computed.
-		updated, newFreq, overflow := s.sweep.Enable(s.RawFrequency())
-		if updated {
-			if !overflow {
+		updated, newFreq, overflow := s.sweep.Reset(s.RawFrequency())
+		if overflow {
+			s.Enabled = false
+		} else {
+			if updated {
 				s.SetRawFrequency(newFreq)
-			} else {
-				s.Enabled = false
 			}
 		}
 	}
 
-	if value&NRx4EnableLength != 0 {
-		s.length.Enable()
-	} else {
-		s.length.Disable()
-	}
 }
 
-// Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
-func (s *SquareWave) Tick() (sample int8) {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (s *SquareWave) TickLength() {
 	if !s.Enabled {
 		return
 	}
 
-	updated, newFreq, overflow := s.sweep.Tick()
-	if updated {
-		if !overflow {
-			s.SetRawFrequency(newFreq)
-		} else {
+	if s.lengthEnabled {
+		disabled := s.length.Tick()
+		if disabled {
 			s.Enabled = false
 			return
 		}
 	}
+}
 
-	disabled := s.length.Tick()
-	if disabled {
-		s.Enabled = false
+// TickSweep is called every 4 DIV-APU ticks (128Hz) and updates the internal
+// frequency sweep state. If an overflow occurs, the channel is disabled.
+func (s *SquareWave) TickSweep() {
+	if !s.Enabled {
 		return
 	}
 
-	s.envelope.Tick()
+	if s.sweepEnabled {
+		updated, newFreq, overflow := s.sweep.Tick()
+		if updated {
+			s.SetRawFrequency(newFreq)
+		}
+
+		if overflow {
+			s.Enabled = false
+			return
+		}
+	}
+}
+
+// Sample produces a sample of the signal to generate based on the current value
+// in the signal generator's registers. We use a named return value, which is
+// conveniently set to zero (silence) by default.
+func (s *SquareWave) Sample() (sample int8) {
+	if !s.Enabled {
+		return
+	}
 
 	// Advance duty step every 1/(8f) where f is the sound's real frequency.
 	stepRate := GameBoyRate / (s.freq * 8)
@@ -163,6 +198,9 @@ func (s *SquareWave) Tick() (sample int8) {
 
 	s.dutyStep = (s.dutyStep + steps) % 8
 
+	// FIXME: The digital value produced by the generator, which ranges between
+	// $0 and $F (0 and 15), is linearly translated by the DAC into an analog
+	// value between -1 and 1 (the unit is arbitrary). [AUDIODETAILS]
 	if DutyCycles[s.NRx1>>6][s.dutyStep] {
 		sample = s.envelope.Volume()
 	} else {

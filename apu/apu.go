@@ -1,7 +1,10 @@
+// Package apu implements the Game Boy's sound generators as described in:
+//
+//   - [AUDIO1] https://gbdev.io/pandocs/Audio.html
+//   - [AUDIO2] https://gbdev.io/pandocs/Audio_Registers.html
+//   - [AUDIO3] https://gbdev.io/pandocs/Audio_details.html
+//   - [AUDIOHW] https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 package apu
-
-// Source: [SOUND1] https://gbdev.gg8.se/wiki/articles/Sound_Controller
-//         [SOUND2] https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware
 
 import (
 	"github.com/lazy-stripes/goholint/logger"
@@ -45,8 +48,8 @@ const (
 // Audio settings for SDL.
 
 const (
-	SamplingRate    = 22050 // How many sample frames to send per second.
-	FramesPerBuffer = 1024  // Number of sample frames fitting the audio buffer.
+	SamplingRate    = 44100 // How many sample frames to send per second.
+	FramesPerBuffer = 256   // Number of sample frames fitting the audio buffer.
 )
 
 // Values to multiply with the final volume if not maximum (7) or zero.
@@ -117,6 +120,8 @@ type APU struct {
 
 	enabled bool
 
+	ticks uint // APU-DIV ticks
+
 	Square1 SquareWave
 	Square2 SquareWave
 	Wave    WaveTable
@@ -150,7 +155,7 @@ func New(mono bool) *APU {
 		AddrNR24: {Ptr: &a.Square2.NRx4, Mask: 0xbf, OnWrite: a.Square2.SetNRx4},
 		AddrNR30: {Ptr: &a.Wave.NRx0, Mask: 0x7f},
 		AddrNR31: {Ptr: &a.Wave.NRx1, Mask: 0xff},
-		AddrNR32: {Ptr: &a.Wave.NRx2, Mask: 0x9f},
+		AddrNR32: {Ptr: &a.Wave.NRx2, Mask: 0x9f, OnWrite: a.Wave.SetNRx2},
 		AddrNR33: {Ptr: &a.Wave.NRx3, Mask: 0xff, OnWrite: a.Wave.SetNRx3},
 		AddrNR34: {Ptr: &a.Wave.NRx4, Mask: 0xbf, OnWrite: a.Wave.SetNRx4},
 		AddrNR41: {Ptr: &a.Noise.NRx1, Mask: 0xff, OnWrite: a.Noise.SetNRx1},
@@ -179,6 +184,9 @@ func (a *APU) SetNR52(value uint8) {
 // Read overrides our internal Addressables to catch reads from NR52.
 func (a *APU) Read(addr uint16) (value uint8) {
 	if addr == AddrNR52 {
+		if a.enabled {
+			value |= 0x80
+		}
 		if a.Square1.Enabled {
 			value |= 0x01
 		}
@@ -196,18 +204,38 @@ func (a *APU) Read(addr uint16) (value uint8) {
 	return a.MMU.Read(addr)
 }
 
-// Tick advances the state machine of all signal generators to produce a single
-// stereo sample for the sound card. Note that the number of internal cycles
-// happening on each signal generator depends on the output frequency.
-func (a *APU) Tick() (left, right int8) {
+// Tick updates the state machine of all signal generators whenever the DIV-APU
+// timer increases.
+func (a *APU) Tick() {
+	a.ticks = (a.ticks + 1) % 8
+	if a.ticks&1 == 0 { // Sound Length clocked every 2 DIV-APU ticks (256Hz).
+		a.Square1.TickLength()
+		a.Square2.TickLength()
+		a.Wave.TickLength()
+		a.Noise.TickLength()
+	}
+	if a.ticks&3 == 0 { // Frequency Sweep clocked every 4 DIV-APU ticks (128Hz).
+		a.Square1.TickSweep()
+	}
+	if a.ticks&7 == 0 { // Volume Envelope clocked every 8 DIV-APU ticks (64Hz).
+		a.Square1.envelope.Tick()
+		a.Square2.envelope.Tick()
+		a.Noise.envelope.Tick()
+	}
+}
+
+// Sample produces a sample of the signal to generate based on the current state
+// of all the APU's generators. This method should be called at the configured
+// audio sample rate (i.e. CPU Frequency / Sample Rate).
+func (a *APU) Sample() (left, right int8) {
 	if !a.enabled {
 		return
 	}
 
-	square1 := a.Square1.Tick()
-	square2 := a.Square2.Tick()
-	wave := a.Wave.Tick()
-	noise := a.Noise.Tick()
+	square1 := a.Square1.Sample()
+	square2 := a.Square2.Sample()
+	wave := a.Wave.Sample()
+	noise := a.Noise.Sample()
 
 	// Suppress output for channels the user manually muted.
 	if a.Muted[0] {

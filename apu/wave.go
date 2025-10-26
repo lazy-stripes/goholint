@@ -24,14 +24,18 @@ type WaveTable struct {
 
 	Pattern *memory.RAM // Wave table pattern (32 4-bit samples)
 
-	length Length
+	Enabled bool // Only output silence if this is false
 
 	freq uint // Computed from NRx3 and NRx4
 
-	Enabled bool // Only output silence if this is false
-
 	sampleOffset uint // Sub-index of the current sample into the wave table
 	ticks        uint // Clock ticks counter for advancing sample index
+
+	outputLevel uint8
+
+	lengthEnabled bool
+
+	length Length
 }
 
 // NewWave returns a WaveTable instance and is also kinda funny as a function
@@ -57,15 +61,29 @@ func (w *WaveTable) RecomputeFrequency() {
 	w.freq = 65536 / (2048 - rawFreq)
 }
 
+// SetNRx2 is called whenever the NRx2 register's value was changed, so that it
+// can update the volume output level from bits (5-6).
+func (w *WaveTable) SetNRx2(value uint8) {
+	w.outputLevel = (w.NRx2 & 0x60) >> 5
+}
+
 // SetNRx3 is called whenever the NRx3 register's value is written, so that it
 // can update the internal generator's frequency.
 func (w *WaveTable) SetNRx3(value uint8) {
 	w.RecomputeFrequency()
 }
 
+// SetNRx1 is called whenever the NRx1 register's value was changed, so that it
+// can update the length timer.
+func (w *WaveTable) SetNRx1(value uint8) {
+	w.length.Initial = value
+}
+
 // SetNRx4 is called whenever the NRx4 register's value is written, so that it
 // can trigger the channel or update the internal generator's frequency.
 func (w *WaveTable) SetNRx4(value uint8) {
+	w.lengthEnabled = (value&NRx4EnableLength != 0)
+
 	// Enable that signal if requested. NR34 being write-only, we can reset it
 	// each time it goes to 1 without worrying.
 	if w.NRx4&NRx4RestartSound != 0 {
@@ -82,26 +100,44 @@ func (w *WaveTable) SetNRx4(value uint8) {
 		// $FF30) is played last."
 		// Source: https://gbdev.gg8.se/wiki/articles/Sound_Controller#PitFalls
 		w.ticks = 0
-	}
 
-	// TODO: bit 6 (length)
+		if w.lengthEnabled {
+			w.length.Reset(256)
+		}
+	}
 
 	w.RecomputeFrequency()
 }
 
-// Tick produces a sample of the signal to generate based on the current value
-// in the signal generator's registers. We use a named return value, which is
-// conveniently set to zero (silence) by default.
-func (w *WaveTable) Tick() (sample int8) {
+// TickLength is called every 2 DIV-APU ticks (256Hz) and updates the internal
+// length counter. If the counter reached zero, the channel is disabled.
+func (w *WaveTable) TickLength() {
 	if !w.Enabled {
 		return
 	}
 
-	if w.NRx0&NR30SoundOn == 0 {
+	// Tick length. It will be updated at 256Hz (or every 2 DIV-APU ticks).
+	if w.lengthEnabled {
+		disabled := w.length.Tick()
+		if disabled {
+			w.Enabled = false
+			return
+		}
+	}
+}
+
+// Sample produces a sample of the signal to generate based on the current value
+// in the signal generator's registers. We use a named return value, which is
+// conveniently set to zero (silence) by default.
+func (w *WaveTable) Sample() (sample int8) {
+	if !w.Enabled {
 		return
 	}
 
-	w.length.Tick()
+	// TODO: ... at this point, I might as well implement DACs.
+	if w.NRx0&NR30SoundOn == 0 {
+		return
+	}
 
 	// Advance sample index every 1/(32f) where f is the sound's real frequency.
 	stepRate := GameBoyRate / (w.freq * 32)
@@ -117,7 +153,7 @@ func (w *WaveTable) Tick() (sample int8) {
 	sample = int8((w.Pattern.Bytes[sampleByte] >> sampleShift) & 0xf)
 
 	// Adjust for volume.
-	sample >>= OutputShift[(w.NRx2&0x60)>>5]
+	sample >>= OutputShift[w.outputLevel]
 
 	return sample
 }
