@@ -91,6 +91,29 @@ togglevoice4 = 4
 quit = CTRL+q
 
 # TODO: reset, snapshot...
+
+[controller]
+# Define your gamepad mapping below with <action>=<button>. Button names should
+# be the ones from the SDL2 documentation (https://wiki.libsdl.org/SDL2/SDL_GameControllerButton)
+# without the SDL_CONTROLLER_BUTTON_ prefix. Refer to [keymap] above to see all
+# supported actions.
+#
+# The following defaults work with an XBox-like controller. Adjust as needed.
+up     = DPAD_UP
+down   = DPAD_DOWN
+left   = DPAD_LEFT
+right  = DPAD_RIGHT
+a      = A
+b      = X
+select = BACK
+start  = START
+
+# Cycle through custom palettes.
+nexpalette      = RIGHTSHOULDER
+previouspalette = LEFTSHOULDER
+
+# Home button.
+home = Y
 `
 )
 
@@ -114,6 +137,21 @@ var DefaultKeymap = Keymap{
 	"togglevoice4":    KeyStroke{Code: sdl.K_4},
 	"quit":            KeyStroke{Code: sdl.K_q, Mod: sdl.KMOD_LCTRL},
 	"home":            KeyStroke{Code: sdl.K_ESCAPE},
+}
+
+// DefaultJoymap is a reasonable default mapping for your usual controller.
+var DefaultJoymap = Joymap{
+	"up":              sdl.CONTROLLER_BUTTON_DPAD_UP,
+	"down":            sdl.CONTROLLER_BUTTON_DPAD_DOWN,
+	"left":            sdl.CONTROLLER_BUTTON_DPAD_LEFT,
+	"right":           sdl.CONTROLLER_BUTTON_DPAD_RIGHT,
+	"a":               sdl.CONTROLLER_BUTTON_A,
+	"b":               sdl.CONTROLLER_BUTTON_X,
+	"select":          sdl.CONTROLLER_BUTTON_BACK,
+	"start":           sdl.CONTROLLER_BUTTON_START,
+	"nextpalette":     sdl.CONTROLLER_BUTTON_RIGHTSHOULDER,
+	"previouspalette": sdl.CONTROLLER_BUTTON_LEFTSHOULDER,
+	"home":            sdl.CONTROLLER_BUTTON_GUIDE,
 }
 
 // Default palette colors with separate RGB components for easier use with SDL

@@ -16,19 +16,19 @@ import (
 
 // Action type for user interactions. TODO: see if we can use a single one for gameboy/ui.
 // TODO: see if we can't move that to widgets (see QAction for inspiration)
-type Action func(eventType uint32)
+type Action func(state uint8)
 
 // Quit cleanly quits the program.
-func (u *UI) Quit(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) Quit(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	u.QuitChan <- true
 }
 
 // Home hides the UI and resumes emulation.
-func (u *UI) Home(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) Home(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	if u.paused {
@@ -41,8 +41,8 @@ func (u *UI) Home(eventType uint32) {
 
 // NextPalette switches colors to the next defined palette, wrapping around.
 // There should always be at least a default palette in the config object.
-func (u *UI) NextPalette(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) NextPalette(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 
@@ -54,8 +54,8 @@ func (u *UI) NextPalette(eventType uint32) {
 // PreviousPalette switches colors to the previous defined palette, wrapping
 // around. There should always be at least a default palette in the config
 // object.
-func (u *UI) PreviousPalette(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) PreviousPalette(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 
@@ -70,8 +70,8 @@ func (u *UI) PreviousPalette(eventType uint32) {
 
 // Screenshot saves the current frame to disk as a PNG file.
 // TODO: configurable folder, obviously.
-func (u *UI) Screenshot(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) Screenshot(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 
@@ -107,8 +107,8 @@ func (u *UI) Screenshot(eventType uint32) {
 // when done. Defined as a single action to toggle between the two and avoid
 // opening several GIFs at once.
 // TODO: move to ui
-func (u *UI) StartStopRecord(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) StartStopRecord(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 
@@ -150,8 +150,8 @@ func (u *UI) voiceStatusMsg(voice int) string {
 }
 
 // ToggleVoice1 mutes or unmutes the first audio generator (Square 1).
-func (u *UI) ToggleVoice1(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) ToggleVoice1(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	u.Emulator.ToggleVoice1()
@@ -159,8 +159,8 @@ func (u *UI) ToggleVoice1(eventType uint32) {
 }
 
 // ToggleVoice2 mutes or unmutes the second audio generator (Square 2).
-func (u *UI) ToggleVoice2(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) ToggleVoice2(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	u.Emulator.ToggleVoice2()
@@ -168,8 +168,8 @@ func (u *UI) ToggleVoice2(eventType uint32) {
 }
 
 // ToggleVoice3 mutes or unmutes the third audio generator (Wave).
-func (u *UI) ToggleVoice3(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) ToggleVoice3(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	u.Emulator.ToggleVoice3()
@@ -177,8 +177,8 @@ func (u *UI) ToggleVoice3(eventType uint32) {
 }
 
 // ToggleVoice4 mutes or unmutes the fourth audio generator (Noise).
-func (u *UI) ToggleVoice4(eventType uint32) {
-	if eventType != sdl.KEYDOWN {
+func (u *UI) ToggleVoice4(state uint8) {
+	if state != sdl.PRESSED {
 		return
 	}
 	u.Emulator.ToggleVoice4()
