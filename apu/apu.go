@@ -122,6 +122,12 @@ type APU struct {
 
 	ticks uint // APU-DIV ticks
 
+	// Using full objects here instead of pointers in the vague hope that it may
+	// somehow improve performance by having those contiguous in memory. Actually
+	// benchmarking that might even make for a nice blog article.
+	//
+	// TODO: replace those with the usual pointers. See that it changes nothing.
+
 	Square1 SquareWave
 	Square2 SquareWave
 	Wave    WaveTable
@@ -154,7 +160,7 @@ func New(mono bool) *APU {
 		AddrNR23: {Ptr: &a.Square2.NRx3, Mask: 0xff, OnWrite: a.Square2.SetNRx3},
 		AddrNR24: {Ptr: &a.Square2.NRx4, Mask: 0xbf, OnWrite: a.Square2.SetNRx4},
 		AddrNR30: {Ptr: &a.Wave.NRx0, Mask: 0x7f},
-		AddrNR31: {Ptr: &a.Wave.NRx1, Mask: 0xff},
+		AddrNR31: {Ptr: &a.Wave.NRx1, Mask: 0xff, OnWrite: a.Wave.SetNRx1},
 		AddrNR32: {Ptr: &a.Wave.NRx2, Mask: 0x9f, OnWrite: a.Wave.SetNRx2},
 		AddrNR33: {Ptr: &a.Wave.NRx3, Mask: 0xff, OnWrite: a.Wave.SetNRx3},
 		AddrNR34: {Ptr: &a.Wave.NRx4, Mask: 0xbf, OnWrite: a.Wave.SetNRx4},
@@ -167,6 +173,12 @@ func New(mono bool) *APU {
 		AddrNR52: {Ptr: &a.NR52, OnWrite: a.SetNR52},
 	})
 	a.Add(a.Wave.Pattern)
+
+	// Set length timer max threshold (256 for wave, 64 for the others).
+	a.Square1.length.Max = 64
+	a.Square2.length.Max = 64
+	a.Wave.length.Max = 256
+	a.Noise.length.Max = 64
 
 	// Pre-compute default frequencies.
 	a.Square1.RecomputeFrequency()

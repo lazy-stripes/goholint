@@ -4,17 +4,27 @@ package apu
 // current length counter a Square or Noise signal generator.
 type Length struct {
 	// The properties below can be set by the APU itself.
-	Initial uint8 // NRx1 bits 5-0 (or 8-0 for Wave generator)
+	Initial uint8  // NRx1 bits 5-0 (or 8-0 for Wave generator)
+	Max     uint16 // 64 for SquareWave, 256 for WaveTable.
 
 	timer uint16 // Current internal timer value.
+}
+
+// Set stores the given value as Initial timer length and restarts the internal
+// timer to that value.
+func (l *Length) Set(init uint8) {
+	l.Initial = init
+	l.timer = l.Max - uint16(l.Initial)
+	log.Debugf("Length timer set to %d", l.timer)
 }
 
 // Reset is called whenever the corresponding channel is triggered. It takes the
 // maximum timer value (256 for Wave generator, 64 for the others) as parameter
 // and will set the internal timer to (max-Initial) if it's currently zero.
-func (l *Length) Reset(max uint16) {
+func (l *Length) Reset() {
+	// [AUDIO2] [On trigger] If the length timer expired it is reset.
 	if l.timer == 0 {
-		l.timer = max - uint16(l.Initial)
+		l.timer = l.Max - uint16(l.Initial)
 		log.Debugf("Length timer reset to %d", l.timer)
 	} else {
 		log.Debugf("Length timer not expired yet (%d)", l.timer)

@@ -80,7 +80,7 @@ func (s *SquareWave) SetNRx0(value uint8) {
 // SetNRx1 is called whenever the NRx1 register's value was changed, so that it
 // can update the length timer.
 func (s *SquareWave) SetNRx1(value uint8) {
-	s.length.Initial = value & 0x3f
+	s.length.Set(value & 0x3f)
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -129,7 +129,7 @@ func (s *SquareWave) SetNRx4(value uint8) {
 
 		// FIXME: wouldn't it be more robust if that was set directly inside Length?
 		if s.lengthEnabled {
-			s.length.Reset(64)
+			s.length.Reset()
 		}
 
 		s.envelope.Reset()

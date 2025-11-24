@@ -61,6 +61,12 @@ func (w *WaveTable) RecomputeFrequency() {
 	w.freq = 65536 / (2048 - rawFreq)
 }
 
+// SetNRx1 is called whenever the NRx1 register's value was changed, so that it
+// can update the length timer.
+func (w *WaveTable) SetNRx1(value uint8) {
+	w.length.Set(value)
+}
+
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
 // can update the volume output level from bits (5-6).
 func (w *WaveTable) SetNRx2(value uint8) {
@@ -71,12 +77,6 @@ func (w *WaveTable) SetNRx2(value uint8) {
 // can update the internal generator's frequency.
 func (w *WaveTable) SetNRx3(value uint8) {
 	w.RecomputeFrequency()
-}
-
-// SetNRx1 is called whenever the NRx1 register's value was changed, so that it
-// can update the length timer.
-func (w *WaveTable) SetNRx1(value uint8) {
-	w.length.Initial = value
 }
 
 // SetNRx4 is called whenever the NRx4 register's value is written, so that it
@@ -102,7 +102,7 @@ func (w *WaveTable) SetNRx4(value uint8) {
 		w.ticks = 0
 
 		if w.lengthEnabled {
-			w.length.Reset(256)
+			w.length.Reset()
 		}
 	}
 

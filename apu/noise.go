@@ -83,7 +83,7 @@ func (n *Noise) RecomputeFrequency() {
 // can update the length timer.
 // TODO: make this method common with SquareWave.
 func (n *Noise) SetNRx1(value uint8) {
-	n.length.Initial = value & 0x3f
+	n.length.Set(value & 0x3f)
 }
 
 // SetNRx2 is called whenever the NRx2 register's value was changed, so that it
@@ -127,7 +127,7 @@ func (n *Noise) SetNRx4(value uint8) {
 
 		// FIXME: wouldn't it be more robust if that was set directly inside Length?
 		if n.lengthEnabled {
-			n.length.Reset(64)
+			n.length.Reset()
 		}
 
 		n.envelope.Reset()
