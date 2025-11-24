@@ -12,7 +12,6 @@ import (
 	"github.com/lazy-stripes/goholint/cpu"
 	"github.com/lazy-stripes/goholint/interrupts"
 	"github.com/lazy-stripes/goholint/joypad"
-	"github.com/lazy-stripes/goholint/logger"
 	"github.com/lazy-stripes/goholint/memory"
 	"github.com/lazy-stripes/goholint/options"
 	"github.com/lazy-stripes/goholint/ppu"
@@ -20,9 +19,6 @@ import (
 	"github.com/lazy-stripes/goholint/serial"
 	"github.com/lazy-stripes/goholint/timer"
 )
-
-// Package-wide logger.
-var log = logger.New("gameboy", "interface-related logs")
 
 // VBlankRate represents ticks to wait before refreshing the Home screen.
 const VBlankRate = apu.GameBoyRate / 60
@@ -36,8 +32,6 @@ type TickResult struct {
 
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
-	config *options.Options
-
 	display screen.Display
 
 	ticks  uint64
@@ -48,15 +42,11 @@ type GameBoy struct {
 	Serial *serial.Serial
 	Timer  *timer.Timer
 	JPad   *joypad.Joypad
-
-	// For GIF record toggle.
-	recording bool
 }
 
 // New just instantiates most of the emulator. No biggie.
-func New(display screen.Display, config *options.Options) *GameBoy {
+func New(display screen.Display) *GameBoy {
 	g := GameBoy{
-		config:  config,
 		display: display,
 	}
 
@@ -73,12 +63,12 @@ func (g *GameBoy) Reset() {
 	g.CPU = cpu.New(nil)
 	ints := interrupts.New(&g.CPU.IF, &g.CPU.IE)
 
-	g.APU = apu.New(g.config.Mono)
+	g.APU = apu.New(options.Run.Mono)
 
 	// TODO: move GIF handling to UI.
-	if g.config.GIFPath != "" {
+	if options.Run.GIFPath != "" {
 		//g.Display.Record(args.GIFPath)
-		fmt.Printf("Saving GIF to %s\n", g.config.GIFPath)
+		fmt.Printf("Saving GIF to %s\n", options.Run.GIFPath)
 	}
 
 	// TODO: shouldn't we just pass Interrupts to New() functions?
@@ -92,7 +82,7 @@ func (g *GameBoy) Reset() {
 	g.Timer.Interrupts = ints
 
 	var boot memory.Addressable
-	if g.config.FastBoot {
+	if options.Run.FastBoot {
 		// TODO: just implement save states, at this point.
 
 		// XXX: What the BootROM does RAM-wise:
@@ -124,8 +114,8 @@ func (g *GameBoy) Reset() {
 			// TODO: set RAM/VRAM
 		}
 	} else {
-		if g.config.BootROM != "" {
-			boot = memory.NewBootFromFile(g.config.BootROM)
+		if options.Run.BootROM != "" {
+			boot = memory.NewBootFromFile(options.Run.BootROM)
 		} else {
 			boot = memory.NewBoot(assets.BootROM)
 		}
@@ -154,23 +144,23 @@ func (g *GameBoy) Reset() {
 	mmu.Add(g.DMA)
 	g.CPU.Memory = mem
 
-	if g.config.ROMPath != "" {
+	if options.Run.ROMPath != "" {
 		// Build save path in case the cartridge uses one. Or use one
 		// specified by the user.
-		savePath := g.config.SavePath
+		savePath := options.Run.SavePath
 		if savePath == "" {
-			prefix := filepath.Dir(g.config.ROMPath)
-			suffix := filepath.Base(g.config.ROMPath)
+			prefix := filepath.Dir(options.Run.ROMPath)
+			suffix := filepath.Base(options.Run.ROMPath)
 			savePath = prefix + "/" + suffix + ".sav"
 		}
 		// TODO: save-related error management.
-		mmu.Add(memory.NewCartridge(g.config.ROMPath, savePath))
+		mmu.Add(memory.NewCartridge(options.Run.ROMPath, savePath))
 	}
 }
 
 func (g *GameBoy) Load(path string) {
 	// TODO: error handling, will need more work on UI side.
-	g.config.ROMPath = path
+	options.Run.ROMPath = path
 	g.Reset()
 }
 
@@ -222,7 +212,7 @@ func (g *GameBoy) Stop() {
 	// g.Display.Close()
 
 	// If debugging at all, dump debug info.
-	if g.config.DebugModules != nil {
+	if options.Run.DebugModules != nil {
 		fmt.Println(g.CPU)
 		fmt.Println(g.PPU)
 

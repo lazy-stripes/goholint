@@ -30,8 +30,6 @@ var FrameBounds = image.Rectangle{
 type GIF struct {
 	gif.GIF
 
-	config *options.Options
-
 	palette color.Palette // Pre-instanciated Palette from our RGBA array.
 
 	Filename string
@@ -47,11 +45,9 @@ type GIF struct {
 
 // NewGIF instantiates a GIF recorder that will buffer frames and then output a
 // GIF file when required.
-func NewGIF(config *options.Options) *GIF {
+func NewGIF() *GIF {
 	// TODO: save path in config
-	return &GIF{
-		config: config,
-	}
+	return &GIF{}
 }
 
 // Write adds a new pixel to the current GIF frame.

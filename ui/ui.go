@@ -45,8 +45,6 @@ type UI struct {
 	// Send true to this channel to quit the program.
 	QuitChan chan bool
 
-	config *options.Options
-
 	paused bool
 
 	// Current palette.
@@ -71,11 +69,11 @@ type UI struct {
 }
 
 // Return a UI instance given a renderer to create the overlay texture.
-func New(config *options.Options) *UI {
+func New() *UI {
 	window, err := sdl.CreateWindow("Goholint",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		options.ScreenWidth*int32(config.ZoomFactor),
-		options.ScreenHeight*int32(config.ZoomFactor),
+		options.ScreenWidth*int32(options.Run.ZoomFactor),
+		options.ScreenHeight*int32(options.Run.ZoomFactor),
 		sdl.WINDOW_SHOWN)
 	if err != nil {
 		panic(err)
@@ -92,7 +90,7 @@ func New(config *options.Options) *UI {
 		panic(err)
 	}
 
-	if config.VSync {
+	if options.Run.VSync {
 		if err = sdl.GLSetSwapInterval(-1); err != nil {
 			log.Infof("Can't set adaptive vsync: %s", sdl.GetError())
 			// Try 'just' syncing to vblank then.
@@ -112,11 +110,11 @@ func New(config *options.Options) *UI {
 	}
 
 	// TODO: ui.Font(size) -> *ttf.Font (cached by size).
-	font, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(8*config.ZoomFactor))
+	font, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(8*options.Run.ZoomFactor))
 	if err != nil {
 		panic(err)
 	}
-	titleFont, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(12*config.ZoomFactor))
+	titleFont, err := ttf.OpenFontRW(assets.UIFontRW(), 1, int(12*options.Run.ZoomFactor))
 	if err != nil {
 		panic(err)
 	}
@@ -125,14 +123,14 @@ func New(config *options.Options) *UI {
 	screenRect := &sdl.Rect{
 		X: 0,
 		Y: 0,
-		W: options.ScreenWidth * int32(config.ZoomFactor),
-		H: options.ScreenHeight * int32(config.ZoomFactor),
+		W: options.ScreenWidth * int32(options.Run.ZoomFactor),
+		H: options.ScreenHeight * int32(options.Run.ZoomFactor),
 	}
 
 	// TODO: try and move all of this to the widgets package to clean up the ui one.
-	// Colors from config.
-	fg := sdl.Color(config.UIForeground)
-	bg := sdl.Color(config.UIBackground)
+	// Colors from options.Run.
+	fg := sdl.Color(options.Run.UIForeground)
+	bg := sdl.Color(options.Run.UIBackground)
 
 	// By default, use BG color at zero transparency for clearing widgets. It
 	// makes the outline of labels blend better.
@@ -153,26 +151,25 @@ func New(config *options.Options) *UI {
 		//BorderColor:     sdl.Color{0xff, 0x00, 0x00, 0xff},
 		//Background:      sdl.Color{0xff, 0xff, 0xff, 0x00},
 		Background: background,
-		Zoom:       int(config.ZoomFactor),
+		Zoom:       int(options.Run.ZoomFactor),
 	}
 
 	// XXX: maybe pass props as parameters too?
 	widgets.Init(renderer)
 
 	// Screen widget the emulator will write into via the PixelWriter interface.
-	gbScreen := widgets.NewScreen(screenRect, config)
-	emulator := gameboy.New(gbScreen, config)
+	gbScreen := widgets.NewScreen(screenRect)
+	emulator := gameboy.New(gbScreen)
 	gbScreen.PPU = emulator.PPU // Only used for debugging.
 
 	ui := &UI{
-		config:     config,
 		QuitChan:   make(chan bool),
 		SigINTChan: make(chan os.Signal, 1),
 		Emulator:   emulator,
 		renderer:   renderer,
 		screenRect: screenRect,
 		font:       font,
-		zoomFactor: int(config.ZoomFactor),
+		zoomFactor: int(options.Run.ZoomFactor),
 		fgColor:    fg,
 		bgColor:    bg,
 		dialogs:    widgets.NewStack(screenRect, nil),
@@ -191,7 +188,7 @@ func New(config *options.Options) *UI {
 	// emulator is paused.
 	ui.buildMenu()
 
-	ui.SetControls(config.Keymap, config.Joymap)
+	ui.SetControls(options.Run.Keymap, options.Run.Joymap)
 
 	go ui.handleSIGINT()
 
@@ -396,10 +393,10 @@ func (u *UI) Repaint() {
 	var gridSize int32 = 8
 	if log.Enabled() && logger.Level >= logger.Debug {
 		u.renderer.SetDrawColor(0xff, 0x00, 0x00, 0xff)
-		for x := int32(0); x < u.screenRect.W; x += gridSize * int32(u.config.ZoomFactor) {
+		for x := int32(0); x < u.screenRect.W; x += gridSize * int32(options.Run.ZoomFactor) {
 			u.renderer.DrawLine(x, 0, x, u.screenRect.H)
 		}
-		for y := int32(0); y < u.screenRect.H; y += gridSize * int32(u.config.ZoomFactor) {
+		for y := int32(0); y < u.screenRect.H; y += gridSize * int32(options.Run.ZoomFactor) {
 			u.renderer.DrawLine(0, y, u.screenRect.W, y)
 		}
 	}

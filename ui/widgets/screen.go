@@ -31,9 +31,6 @@ type Screen struct {
 
 	PPU *ppu.PPU // For debugging
 
-	// FIXME: I use this virtually everywhere... do I dare a global options.Runtime instance?
-	config *options.Options
-
 	paused bool
 
 	// Overlay messages.
@@ -66,14 +63,14 @@ type Screen struct {
 // NewScreen returns a widget suitable for use as a Gameboy display (conforming
 // to the screen.Display interface) and supporting screenshots, palette changes,
 // GIF recording and overlay messages.
-func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
+func NewScreen(sizeHint *sdl.Rect) *Screen {
 	// Ignore size hint for main texture, Gameboy's screen is 160×144 pixels.
 	w, h := options.ScreenWidth, options.ScreenHeight
 
 	layoutProps := DefaultProperties
 	layoutProps.VerticalAlign = align.Bottom
 	layoutProps.HorizontalAlign = align.Left
-	layoutProps.Padding = int32(config.ZoomFactor)
+	layoutProps.Padding = int32(options.Run.ZoomFactor)
 
 	s := Screen{
 		widget:      new(sizeHint),
@@ -81,9 +78,8 @@ func NewScreen(sizeHint *sdl.Rect, config *options.Options) *Screen {
 		screen:      texture(&sdl.Rect{W: int32(w), H: int32(h)}),
 		backBuffer:  image.NewRGBA(image.Rect(0, 0, w, h)),
 		frontBuffer: image.NewRGBA(image.Rect(0, 0, w, h)),
-		palette:     config.Palettes[0],
-		gif:         screen.NewGIF(config),
-		config:      config,
+		palette:     options.Run.Palettes[0],
+		gif:         screen.NewGIF(),
 	}
 
 	s.drawDisabled()

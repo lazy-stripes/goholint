@@ -1,6 +1,7 @@
 package options
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"image/color"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+// Runtime copy of the options, to be accessed from wherever. Not particularly
+// worse than passing that exact same pointer around anyway.
+var Run *Options
 
 // ModMask only keeps the keyboard modifiers we allow in keymaps.
 const ModMask = sdl.KMOD_CTRL | sdl.KMOD_SHIFT
@@ -48,6 +53,10 @@ type Options struct {
 	WaitKey      bool           // -waitkey
 	ZoomFactor   uint           // -zoom <factor>
 }
+
+// ErrUninitializedRuntimeOptions is returned if any function that needs to
+// access options.Run is called before it's set to a proper Options instance.
+var ErrUninitializedRuntimeOptions = errors.New("options.Run is not initialized")
 
 // CreateFileIn creates a new file with the requested suffix (which can be only
 // an extension, a timestamp + an extension, etc) in the requested subfolder.
@@ -110,7 +119,9 @@ func init() {
 }
 
 // Parse commend-line arguments and return their value in a struct the caller
-// can easily pass around.
+// can easily pass around. For added convenience, and since this is a one-man
+// side-project anyway, it also initializes options.Run which can then be used
+// globally.
 func Parse() *Options {
 	// I like having config files that you can override with command-line
 	// parameters.
@@ -119,7 +130,7 @@ func Parse() *Options {
 	// Parse will populate all our variables with either the given or default
 	// value, and then we load parameters from the config but avoid overwriting
 	// any variable that's been explicitly set by a flag.
-	options := Options{
+	Run = &Options{
 		BootROM:      *bootROM,
 		CPUProfile:   *cpuprofile,
 		Duration:     *duration,
@@ -140,16 +151,16 @@ func Parse() *Options {
 	})
 
 	// Other defaults used if there is no config file.
-
-	options.Keymap = DefaultKeymap
-	options.Joymap = DefaultJoymap
+	Run.Folders = DefaultFolders
+	Run.Keymap = DefaultKeymap
+	Run.Joymap = DefaultJoymap
 
 	// Always include the default palette as palette 0.
-	options.Palettes = append(options.Palettes, DefaultPalette)
-	options.PaletteNames = append(options.PaletteNames, "default")
+	Run.Palettes = append(Run.Palettes, DefaultPalette)
+	Run.PaletteNames = append(Run.PaletteNames, "default")
 
-	options.UIBackground = DefaultUIBackground
-	options.UIForeground = DefaultUIForeground
+	Run.UIBackground = DefaultUIBackground
+	Run.UIForeground = DefaultUIForeground
 
 	// Use default config if no -config flag was used.
 	fullConfigPath := *configPath
@@ -161,7 +172,7 @@ func Parse() *Options {
 
 	// Load everything else from config, and don't touch values that were set on
 	// the command-line.
-	options.Update(fullConfigPath, flagsSet)
+	Run.Update(fullConfigPath, flagsSet)
 
-	return &options
+	return Run
 }

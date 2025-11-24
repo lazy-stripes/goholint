@@ -46,9 +46,10 @@ func (u *UI) NextPalette(state uint8) {
 		return
 	}
 
-	u.paletteIndex = (u.paletteIndex + 1) % len(u.config.Palettes)
-	u.screen.Palette(u.config.Palettes[u.paletteIndex])
-	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
+	// TODO: options.GetPalette(index) -> Palette (make new type)
+	u.paletteIndex = (u.paletteIndex + 1) % len(options.Run.Palettes)
+	u.screen.Palette(options.Run.Palettes[u.paletteIndex])
+	u.screen.Message(options.Run.PaletteNames[u.paletteIndex], 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping
@@ -62,10 +63,10 @@ func (u *UI) PreviousPalette(state uint8) {
 	u.paletteIndex -= 1
 	if u.paletteIndex < 0 {
 		// Wrap around (can't use % with negative values).
-		u.paletteIndex = len(u.config.Palettes) - 1
+		u.paletteIndex = len(options.Run.Palettes) - 1
 	}
-	u.screen.Palette(u.config.Palettes[u.paletteIndex])
-	u.screen.Message(u.config.PaletteNames[u.paletteIndex], 2)
+	u.screen.Palette(options.Run.Palettes[u.paletteIndex])
+	u.screen.Message(options.Run.PaletteNames[u.paletteIndex], 2)
 }
 
 // Screenshot saves the current frame to disk as a PNG file.

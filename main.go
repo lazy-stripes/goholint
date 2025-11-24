@@ -117,7 +117,7 @@ func run() {
 		}
 
 		// Instantiate main UI. Someday I might add extra windows for debugging.
-		mainUI = ui.New(args)
+		mainUI = ui.New()
 
 		// Wait for keypress if requested, so obs has time to capture window.
 		// Less useful now that we have -gif flag.
