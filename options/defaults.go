@@ -38,6 +38,15 @@ const (
 #waitkey = 1
 #zoom = 1
 
+# Define custom subfolders for roms, gifs, screenshots, etc. Paths that are not
+# absolute will be assumed relative to the configuration dir (~/.goholint by
+# default, or whatever folder contains the file given with -config).
+[folders]
+# debug = debug
+# gifs = gifs
+# screenshots = screenshots
+# roms = roms
+
 # Customize the default GB palette and UI colors here. Use hex RGB format.
 [colors]
 gb-0  = e0f0e7 # Lightest
@@ -116,6 +125,15 @@ previouspalette = LEFTSHOULDER
 home = Y
 `
 )
+
+// DefaultFolders is a trivial mapping of folder names to their path relative
+// to the config folder.
+var DefaultFolders = map[string]string{
+	"debug":       "debug",
+	"gifs":        "gifs",
+	"screenshots": "screenshots",
+	"roms":        "roms",
+}
 
 // DefaultKeymap is a reasonable default mapping for QWERTY/AZERTY layouts.
 var DefaultKeymap = Keymap{

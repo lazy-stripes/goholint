@@ -33,40 +33,69 @@ type Joymap map[string]sdl.GameControllerButton
 
 // Options structure grouping command line flags and config file values.
 type Options struct {
-	BootROM      string         // -boot <path>
-	CPUProfile   string         // -cpuprofile <path>
-	DebugLevel   string         // -level <debug level>
-	DebugModules module         // -debug <module>
-	Duration     uint           // -cycles <amount>
-	FastBoot     bool           // -fastboot
-	GIFPath      string         // -gif <path>
-	Keymap       Keymap         // From config.
-	Joymap       Joymap         // From config.
-	Mono         bool           // -mono
-	Palettes     [][]color.RGBA // From config.
-	PaletteNames []string       // From config, same order.
-	ROMPath      string         // -rom <path>
-	SavePath     string         // -save <full path>
-	UIBackground color.RGBA     // From config.
-	UIForeground color.RGBA     // From config.
-	VSync        bool           // -vsync
-	WaitKey      bool           // -waitkey
-	ZoomFactor   uint           // -zoom <factor>
+	configDir string // Path to config folder. May be altered via -config.
+
+	BootROM      string            // -boot <path>
+	CPUProfile   string            // -cpuprofile <path>
+	DebugLevel   string            // -level <debug level>
+	DebugModules module            // -debug <module>
+	Duration     uint              // -cycles <amount>
+	FastBoot     bool              // -fastboot
+	Folders      map[string]string // From config.
+	GIFPath      string            // -gif <path>
+	Keymap       Keymap            // From config.
+	Joymap       Joymap            // From config.
+	Mono         bool              // -mono
+	Palettes     [][]color.RGBA    // From config.
+	PaletteNames []string          // From config, same order.
+	ROMPath      string            // -rom <path>
+	SavePath     string            // -save <full path>
+	UIBackground color.RGBA        // From config.
+	UIForeground color.RGBA        // From config.
+	VSync        bool              // -vsync
+	WaitKey      bool              // -waitkey
+	ZoomFactor   uint              // -zoom <factor>
 }
 
 // ErrUninitializedRuntimeOptions is returned if any function that needs to
 // access options.Run is called before it's set to a proper Options instance.
 var ErrUninitializedRuntimeOptions = errors.New("options.Run is not initialized")
 
-// CreateFileIn creates a new file with the requested suffix (which can be only
-// an extension, a timestamp + an extension, etc) in the requested subfolder.
+// ErrEmptySubfolder is returned if CreateFileIn is called with an empty string
+// for the subfolder.
+var ErrEmptySubfolder = errors.New("won't create file in undefined subfolder")
+
+// CreateFileIn creates a new file with the requested suffix (which can be just
+// an extension, a timestamp + an extension, etc) in the requested subfolder,
+// which should be a known one (gifs, screenshots...) as configured in the
+// [folders] section of the config file.
+//
 // The folder will be created under the configuration path if it doesn't already
 // exist.
 //
 // Returns an open file or an error.
-func CreateFileIn(subfolder, suffix string) (*os.File, error) {
+func (o *Options) CreateFileIn(subfolder, suffix string) (*os.File, error) {
+	if subfolder == "" {
+		return nil, ErrEmptySubfolder
+	}
+
+	// Be lenient with unknown subfolders.
+	subPath := o.Folders[subfolder]
+	if subPath == "" {
+		fmt.Printf("Warning: unknown subfolder type '%s'\n", subfolder)
+		subPath = subfolder
+	}
+
+	// Allow absolute folder paths. Like, if I want to store screenshots in a
+	// separate partition or some other contrived reason.
+	var folder string
+	if subPath[0] == '/' {
+		folder = subPath
+	} else {
+		folder = filepath.Join(o.configDir, subfolder)
+	}
+
 	// TODO: could be nice to add metadata to file name, like cartridge name.
-	folder := filepath.Join(expandHome(DefaultConfigDir), subfolder)
 	filename := fmt.Sprintf("goholint-%s%s", time.Now().Format(DateFormat), suffix)
 	path := filepath.Join(folder, filename)
 
@@ -79,6 +108,19 @@ func CreateFileIn(subfolder, suffix string) (*os.File, error) {
 		}
 	}
 	return os.Create(path)
+}
+
+// Package-wide function for backward compatibility. Functionally equivalent to
+// calling:
+//
+//	options.Run.CreateFileIn(subfolder, suffix)
+//
+// Except it will complain if options.Run is not initialized yet.
+func CreateFileIn(subfolder, suffix string) (*os.File, error) {
+	if Run == nil {
+		return nil, ErrUninitializedRuntimeOptions
+	}
+	return Run.CreateFileIn(subfolder, suffix)
 }
 
 // User-defined type to parse a list of module names for which debug output must be enabled.
@@ -118,7 +160,7 @@ func init() {
 	flag.Var(&debugModules, "debug", "Turn on debug mode for the given module (-debug help for the full list)")
 }
 
-// Parse commend-line arguments and return their value in a struct the caller
+// Parse command-line arguments and return their value in a struct the caller
 // can easily pass around. For added convenience, and since this is a one-man
 // side-project anyway, it also initializes options.Run which can then be used
 // globally.
@@ -131,6 +173,8 @@ func Parse() *Options {
 	// value, and then we load parameters from the config but avoid overwriting
 	// any variable that's been explicitly set by a flag.
 	Run = &Options{
+		configDir: DefaultConfigDir,
+
 		BootROM:      *bootROM,
 		CPUProfile:   *cpuprofile,
 		Duration:     *duration,

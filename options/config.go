@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -106,6 +107,20 @@ func (o *Options) addPalette(name, value string) {
 	}
 	o.Palettes = append(o.Palettes, palette)
 	o.PaletteNames = append(o.PaletteNames, name)
+}
+
+// Apply subfolder paths from config.
+func applyFolders(foldersSection *ini.Section, dst map[string]string) {
+	for folder := range dst {
+		// Key() will return the empty string if it doesn't exist, it's fine.
+		path := foldersSection.Key(folder).String()
+		if path == "" {
+			continue
+		}
+
+		// Just store path, it will be auto-created when needed.
+		dst[folder] = path
+	}
 }
 
 // Quick mapping of key modifiers as found in the config to their SDL
@@ -247,6 +262,9 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 		return
 	}
 
+	// Store folder where config is stored, to compute subfolder paths.
+	o.configDir = path.Dir(configPath)
+
 	// Using quick and dirty helpers because mixed types and lazy.
 	apply(cfg, flags, "boot", &o.BootROM)
 	apply(cfg, flags, "cpuprofile", &o.CPUProfile)
@@ -260,6 +278,9 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	// Ignoring flags that are not really interesting as a config, such as
 	// -cyles, -gif or -rom...
+
+	// Subfolders.
+	applyFolders(cfg.Section("keymap"), o.Folders)
 
 	// Keyboard and controller mappings.
 	applyKeymap(cfg.Section("keymap"), &o.Keymap)

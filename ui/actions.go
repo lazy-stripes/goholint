@@ -190,10 +190,10 @@ func (u *UI) ToggleVoice4(state uint8) {
 
 // Actions available in Paused state.
 func (u *UI) OpenROM() {
-	openROMDialog := widgets.NewFileDialog(u.screenRect, "./bin/roms/")
-	u.ShowDialog(openROMDialog, func(res widgets.DialogResult) {
+	openDialog := widgets.NewFileDialog(u.screenRect, options.Run.Folders["roms"])
+	u.ShowDialog(openDialog, func(res widgets.DialogResult) {
 		if res == widgets.DialogOK {
-			path := openROMDialog.Selected().Value().(string)
+			path := openDialog.Selected().Value().(string)
 			fmt.Printf("Opening ROM %s\n", path)
 
 			// FIXME(?): GIF
