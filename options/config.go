@@ -164,9 +164,9 @@ var buttonNames = map[string]sdl.GameControllerButton{
 //
 // This requires that the destination keymap be set to a default value that
 // contains all available actions.
-func applyKeymap(keymapSection *ini.Section, dst *Keymap) {
+func applyKeymap(keymapSection *ini.Section, dst Keymap) {
 	// Set keymap here. Build on top of default. TODO: validate, and helper function.
-	for actionName := range *dst {
+	for actionName := range dst {
 		// Key() will return the empty string if it doesn't exist, it's fine.
 		keyName := keymapSection.Key(actionName).String()
 		if keyName == "" {
@@ -188,15 +188,15 @@ func applyKeymap(keymapSection *ini.Section, dst *Keymap) {
 		keySym := sdl.GetKeyFromName(strokes[len(strokes)-1])
 
 		if keySym != sdl.K_UNKNOWN {
-			(*dst)[actionName] = KeyStroke{Code: keySym, Mod: modifiers}
+			dst[actionName] = KeyStroke{Code: keySym, Mod: modifiers}
 		} else {
 			fmt.Printf("Unknown key name '%s' for action '%s'.\n", keyName, actionName)
 		}
 	}
 }
 
-func applyJoymap(joymapSection *ini.Section, dst *Joymap) {
-	for actionName := range *dst {
+func applyJoymap(joymapSection *ini.Section, dst Joymap) {
+	for actionName := range dst {
 		// Key() will return the empty string if it doesn't exist, it's fine.
 		btnName := joymapSection.Key(actionName).String()
 		if btnName == "" {
@@ -208,7 +208,7 @@ func applyJoymap(joymapSection *ini.Section, dst *Joymap) {
 		// and which expects names not fitting the keymap's case and style.
 		button, ok := buttonNames[btnName]
 		if ok {
-			(*dst)[actionName] = button
+			dst[actionName] = button
 		} else {
 			fmt.Printf("Unknown button name '%s' for action '%s'.\n", btnName, actionName)
 		}
@@ -283,8 +283,8 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 	applyFolders(cfg.Section("keymap"), o.Folders)
 
 	// Keyboard and controller mappings.
-	applyKeymap(cfg.Section("keymap"), &o.Keymap)
-	applyJoymap(cfg.Section("joymap"), &o.Joymap)
+	applyKeymap(cfg.Section("keymap"), o.Keymap)
+	applyJoymap(cfg.Section("joymap"), o.Joymap)
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")
