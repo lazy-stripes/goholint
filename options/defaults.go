@@ -47,19 +47,17 @@ const (
 # screenshots = screenshots
 # roms = roms
 
-# Customize the default GB palette and UI colors here. Use hex RGB format.
+# Customize the UI colors here. Use hex RGB format.
 [colors]
-gb-0  = e0f0e7 # Lightest
-gb-1  = 8ba394 # Light
-gb-2  = 55645a # Dark
-gb-3  = 343d37 # Darkest
-ui-bg = ffffff # UI Background (outline)
-ui-fg = 000000 # UI foreground (text)
+#ui-bg = ffffff # UI Background (outline)
+#ui-fg = 000000 # UI foreground (text)
 
 # Define custom palettes here. Use short names and hex RGB format for colors.
 # Format is: <name> = <lightest> <light> <dark> <darkest>
-# The following are courtesy of lospec.com. They have tons more.
+# If you want to change the default colors, redefine the "default" palette.
+# The extra ones are courtesy of lospec.com. They have tons more.
 [palettes]
+#default   = e0f0e7 8ba394 55645a 343d37
 awakening = ffffb5 7bc67b 6b8c42 5a3921 # https://lospec.com/palette-list/links-awakening-sgb
 icarus    = cef7f7 f78e50 9e0000 1e0000 # https://lospec.com/palette-list/kid-icarus-sgb
 kirby     = f7bef7 e78686 7733e7 2c2c96 # https://lospec.com/palette-list/kirby-sgb
@@ -201,11 +199,14 @@ var ColorDarkGray = color.RGBA{ColorDarkGrayR, ColorDarkGrayG, ColorDarkGrayB, 0
 var ColorBlack = color.RGBA{ColorBlackR, ColorBlackG, ColorBlackB, 0xff}
 
 // DefaultPalette represents the selectable colors in the DMG.
-var DefaultPalette = []color.RGBA{
-	ColorWhite,
-	ColorLightGray,
-	ColorDarkGray,
-	ColorBlack,
+var DefaultPalette = Palette{
+	Name: "default",
+	Colors: [4]color.RGBA{
+		ColorWhite,
+		ColorLightGray,
+		ColorDarkGray,
+		ColorBlack,
+	},
 }
 
 // Default UI colors. Black text, white outline.

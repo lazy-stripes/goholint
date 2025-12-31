@@ -40,21 +40,21 @@ func (u *UI) Home(state uint8) {
 }
 
 // NextPalette switches colors to the next defined palette, wrapping around.
-// There should always be at least a default palette in the config object.
+// There should always be at least a default palette defined.
 func (u *UI) NextPalette(state uint8) {
 	if state != sdl.PRESSED {
 		return
 	}
 
-	// TODO: options.GetPalette(index) -> Palette (make new type)
+	// TODO: options.GetPalette(index) -> Palette
 	u.paletteIndex = (u.paletteIndex + 1) % len(options.Run.Palettes)
-	u.screen.Palette(options.Run.Palettes[u.paletteIndex])
-	u.screen.Message(options.Run.PaletteNames[u.paletteIndex], 2)
+	pal := options.Run.Palettes[u.paletteIndex]
+	u.screen.Palette(pal)
+	u.screen.Message(pal.Name, 2)
 }
 
 // PreviousPalette switches colors to the previous defined palette, wrapping
-// around. There should always be at least a default palette in the config
-// object.
+// around. There should always be at least a default palette defined.
 func (u *UI) PreviousPalette(state uint8) {
 	if state != sdl.PRESSED {
 		return
@@ -65,8 +65,9 @@ func (u *UI) PreviousPalette(state uint8) {
 		// Wrap around (can't use % with negative values).
 		u.paletteIndex = len(options.Run.Palettes) - 1
 	}
-	u.screen.Palette(options.Run.Palettes[u.paletteIndex])
-	u.screen.Message(options.Run.PaletteNames[u.paletteIndex], 2)
+	pal := options.Run.Palettes[u.paletteIndex]
+	u.screen.Palette(pal)
+	u.screen.Message(pal.Name, 2)
 }
 
 // Screenshot saves the current frame to disk as a PNG file.

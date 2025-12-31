@@ -47,8 +47,8 @@ type Screen struct {
 
 	statesCallbacks [4][]func() // Lists of callbacks indexed by PPU state.
 
-	newPalette []color.RGBA // Requested new palette, will be set next VBlank.
-	palette    []color.RGBA // Current palette.
+	newPalette *options.Palette // Requested new palette, will be set next VBlank.
+	palette    *options.Palette // Current palette.
 
 	///Rectangle image.Rectangle
 
@@ -299,7 +299,7 @@ func (s *Screen) Write(colorIndex uint8) {
 		return
 	}
 
-	col := s.palette[colorIndex]
+	col := s.palette.Colors[colorIndex]
 	s.backBuffer.Pix[s.offset+0] = col.R
 	s.backBuffer.Pix[s.offset+1] = col.G
 	s.backBuffer.Pix[s.offset+2] = col.B
@@ -504,6 +504,6 @@ func (s *Screen) StopRecord() {
 
 // Palette will set a new palette for the display and GIF. The new palette will
 // only go into effect at VBlank time.
-func (s *Screen) Palette(p []color.RGBA) {
+func (s *Screen) Palette(p *options.Palette) {
 	s.newPalette = p
 }

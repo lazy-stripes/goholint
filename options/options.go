@@ -31,6 +31,12 @@ type Keymap map[string]KeyStroke
 // Joymap associates an action name (same as keymap) to a controller input.
 type Joymap map[string]sdl.GameControllerButton
 
+// Palette type associating a name to an array of four colors.
+type Palette struct {
+	Name   string
+	Colors [4]color.RGBA
+}
+
 // Options structure grouping command line flags and config file values.
 type Options struct {
 	configDir string // Path to config folder. May be altered via -config.
@@ -46,8 +52,7 @@ type Options struct {
 	Keymap       Keymap            // From config.
 	Joymap       Joymap            // From config.
 	Mono         bool              // -mono
-	Palettes     [][]color.RGBA    // From config.
-	PaletteNames []string          // From config, same order.
+	Palettes     []*Palette        // From config.
 	ROMPath      string            // -rom <path>
 	SavePath     string            // -save <full path>
 	UIBackground color.RGBA        // From config.
@@ -200,8 +205,7 @@ func Parse() *Options {
 	Run.Joymap = DefaultJoymap
 
 	// Always include the default palette as palette 0.
-	Run.Palettes = append(Run.Palettes, DefaultPalette)
-	Run.PaletteNames = append(Run.PaletteNames, "default")
+	Run.Palettes = append(Run.Palettes, &DefaultPalette)
 
 	Run.UIBackground = DefaultUIBackground
 	Run.UIForeground = DefaultUIForeground

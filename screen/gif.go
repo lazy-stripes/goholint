@@ -94,7 +94,7 @@ func (g *GIF) IsOpen() bool {
 
 // Open starts recording a new GIF file to the provided descriptor using the
 // given palette.
-func (g *GIF) Open(file *os.File, palette []color.RGBA) {
+func (g *GIF) Open(file *os.File, palette *options.Palette) {
 	if g.IsOpen() {
 		log.Sub("gif").Warning("GIF recording already in progress, closing it.")
 		g.Close()
@@ -103,7 +103,12 @@ func (g *GIF) Open(file *os.File, palette []color.RGBA) {
 	log.Sub("gif").Infof("recording to %s", file.Name())
 
 	// Convert the current palette's RGBA array to Color interface slice.
-	g.palette = []color.Color{palette[0], palette[1], palette[2], palette[3]}
+	g.palette = []color.Color{
+		palette.Colors[0],
+		palette.Colors[1],
+		palette.Colors[2],
+		palette.Colors[3],
+	}
 
 	// Pre-instanciate "disabled screen" frame with current palette.
 	g.disabled = image.NewPaletted(FrameBounds, g.palette)

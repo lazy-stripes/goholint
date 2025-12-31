@@ -92,21 +92,27 @@ func (o *Options) addPalette(name, value string) {
 		return
 	}
 
-	palette := make([]color.RGBA, 4)
-	for i := range palette {
+	palette := Palette{Name: name}
+	for i := range palette.Colors {
 		// Colors should be in hexadecimal (without 0x prefix).
 		if rgb, err := strconv.ParseUint(hexColors[i], 16, 32); err == nil {
-			palette[i].R = uint8((rgb >> 16) & 0xff)
-			palette[i].G = uint8((rgb >> 8) & 0xff)
-			palette[i].B = uint8(rgb & 0xff)
-			palette[i].A = 0xff
+			palette.Colors[i].R = uint8((rgb >> 16) & 0xff)
+			palette.Colors[i].G = uint8((rgb >> 8) & 0xff)
+			palette.Colors[i].B = uint8(rgb & 0xff)
+			palette.Colors[i].A = 0xff
 		} else {
 			fmt.Printf("Invalid value for color %d in palette %s: %v\n", i, name, err)
 			return // Ignore palettes with invalid colors
 		}
 	}
-	o.Palettes = append(o.Palettes, palette)
-	o.PaletteNames = append(o.PaletteNames, name)
+
+	// Technically, palette names are not unique, but we'll replace the default
+	// one if needed.
+	if name == "default" {
+		o.Palettes[0] = &palette
+	} else {
+		o.Palettes = append(o.Palettes, &palette)
+	}
 }
 
 // Apply subfolder paths from config.
@@ -288,13 +294,6 @@ func (o *Options) Update(configPath string, flags map[string]bool) {
 
 	// Set colors here. Build on top of default as well.
 	colorSection := cfg.Section("colors")
-
-	// Default palette is palette 0. TODO: "default" entry in [palettes] section.
-	applyColor(colorSection, "gb-0", &o.Palettes[0][0])
-	applyColor(colorSection, "gb-1", &o.Palettes[0][1])
-	applyColor(colorSection, "gb-2", &o.Palettes[0][2])
-	applyColor(colorSection, "gb-3", &o.Palettes[0][3])
-
 	applyColor(colorSection, "ui-bg", &o.UIBackground)
 	applyColor(colorSection, "ui-fg", &o.UIForeground)
 
