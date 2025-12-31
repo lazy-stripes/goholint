@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"testing"
 )
 
@@ -78,7 +78,7 @@ func TestMMU(t *testing.T) {
 	ram := NewRAM(0, 0xffff)
 	boot := NewMMU([]Addressable{rom, ram})
 
-	romdump, err := ioutil.ReadFile(rompath)
+	romdump, err := os.ReadFile(rompath)
 	if err != nil {
 		t.Errorf("Invalid ROM path '%s'", rompath)
 	}

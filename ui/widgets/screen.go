@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"io/ioutil"
+	"os"
 	"time"
 	"unsafe"
 
@@ -481,7 +481,7 @@ func (s *Screen) drawSpriteBorders() {
 
 // Dump writes the current pixel buffer to file for debugging purposes.
 func (s *Screen) Dump() {
-	ioutil.WriteFile("lcd-buffer-dump.bin", s.frontBuffer.Pix, 0644)
+	os.WriteFile("lcd-buffer-dump.bin", s.frontBuffer.Pix, 0644)
 }
 
 // StartRecord will create a new GIF file and output frames into it until

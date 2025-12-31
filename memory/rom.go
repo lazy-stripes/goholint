@@ -3,7 +3,8 @@ package memory
 import (
 	"archive/zip"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func NewROMFromFile(filename string) *ROM {
 	switch err {
 	case zip.ErrFormat:
 		// Not a ZIP file, treat as GB ROM directly.
-		bytes, err = ioutil.ReadFile(filename)
+		bytes, err = os.ReadFile(filename)
 		if err != nil {
 			panic(fmt.Sprintf(" !!! Cannot read ROM file %s (%s)\n", filename, err))
 		}
@@ -46,7 +47,7 @@ func NewROMFromFile(filename string) *ROM {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			bytes, err = ioutil.ReadAll(rc)
+			bytes, err = io.ReadAll(rc)
 			if err != nil {
 				log.Fatal(err.Error())
 			}

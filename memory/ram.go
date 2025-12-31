@@ -3,7 +3,7 @@ package memory
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // RAM as an array of R/W bytes at addresses starting from a given offset.
@@ -50,7 +50,7 @@ func (r *RAM) Load(filename string) error {
 	oldSavefile := r.saveFile
 	r.saveFile = filename
 
-	bytes, err := ioutil.ReadFile(filename)
+	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		// The file may not yet exist, it's fine.
 		return fmt.Errorf("couldn't load RAM file %s (%s)", filename, err)
@@ -79,5 +79,5 @@ func (r *RAM) Save() error {
 		return errors.New("trying to Save() RAM with no save file defined")
 	}
 
-	return ioutil.WriteFile(r.saveFile, r.Bytes, 0644)
+	return os.WriteFile(r.saveFile, r.Bytes, 0644)
 }

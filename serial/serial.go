@@ -75,19 +75,21 @@ func (s *Serial) Contains(addr uint16) bool {
 }
 
 func (s *Serial) Read(addr uint16) uint8 {
-	if addr == AddrSB {
+	switch addr {
+	case AddrSB:
 		return s.SB
-	} else if addr == AddrSC {
+	case AddrSC:
 		return s.SC
-	} else {
+	default:
 		panic(fmt.Sprintf("broken MMU: illegal address %04x requested!", addr))
 	}
 }
 
 func (s *Serial) Write(addr uint16, value uint8) {
-	if addr == AddrSB {
+	switch addr {
+	case AddrSB:
 		s.SB = value
-	} else if addr == AddrSC {
+	case AddrSC:
 		// FIXME: What to do if a transfer is already in progress?
 		// The Serial register is used by a lot of test ROMs for printing
 		// out logs to standard output. We'll still do it if logging is
