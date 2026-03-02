@@ -187,7 +187,8 @@ type MBC2 struct {
 	battery bool
 
 	// Max number of ROM/RAM banks.
-	romBanks uint8 // MBC2 has max 256 KByte ROM (16 banks)
+	romBanks     uint8 // MBC2 has max 256 KByte ROM (16 banks)
+	romBanksMask uint
 }
 
 // NewMBC2 creates an address space emulating a cartridge with an MBC2 chip.
@@ -207,8 +208,9 @@ func NewMBC2(rom *ROM, romBanks uint8, battery bool, savePath string) *MBC2 {
 		ROM: NewBankedROM(rom.Bytes),
 		RAM: ram,
 
-		romBanks: romBanks,
-		battery:  battery,
+		romBanks:     romBanks,
+		romBanksMask: uint(romBanks - 1),
+		battery:      battery,
 	}
 
 	// [PANMBC2] The ROM bank is set to 1 by default.
@@ -223,7 +225,7 @@ func (m *MBC2) Contains(addr uint16) bool {
 }
 
 // Read returns the byte at requested address in current ROM bank or RAM. RAM
-// values are stored on 4 bits, the high nibble will be zeroed out. RAM is also
+// values are stored on 4 bits, high nibble will always read 0xf. RAM is also
 // only 512 bytes and wraps around.
 func (m *MBC2) Read(addr uint16) uint8 {
 	switch {
@@ -234,7 +236,7 @@ func (m *MBC2) Read(addr uint16) uint8 {
 		if m.RAMEnabled {
 			// Wrap around every 512 bytes (only 9 lowest bits of address used).
 			wrappedAddr := AddrExternalRAM + (addr & (MBC2RAMSize - 1))
-			value := m.RAM.Read(wrappedAddr) & 0x0f
+			value := m.RAM.Read(wrappedAddr) | 0xf0
 			log.Sub("mbc/read").Desperatef("RAM[%04x]: 0x%02x", addr, value)
 			return value
 		}
@@ -260,9 +262,15 @@ func (m *MBC2) Write(addr uint16, value uint8) {
 			// [PANMBC2] Specifically, the lower 4 bits of the value written to
 			// this address range specify the ROM bank number. If bank 0 is
 			// written, the resulting bank will be bank 1 instead.
-			m.ROM.Bank1 = uint(value & 0x0f)
-			if m.ROM.Bank1 == 0 {
+
+			// Mooneye tests seem to expect that requesting a bank higher than
+			// what is available should wrap around and thus allow mapping
+			// bank 0 there.
+			bank := uint(value & 0x0f)
+			if bank == 0 {
 				m.ROM.Bank1 = 1
+			} else {
+				m.ROM.Bank1 = uint(bank) & m.romBanksMask
 			}
 			log.Sub("mbc/write").Debugf("ROMBank=0x%02x", m.ROM.Bank1)
 		}
