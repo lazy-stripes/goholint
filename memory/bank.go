@@ -87,9 +87,3 @@ func (r *BankedROM) offset(addr uint16) uint {
 func (r *BankedROM) Read(addr uint16) uint8 {
 	return r.Bytes[r.offset(addr)]
 }
-
-// Write sets stores the given value at the given address in ROM, handling
-// offsets and bank switching.
-func (r *BankedROM) Write(addr uint16, value uint8) {
-	r.Bytes[r.offset(addr)] = value
-}
