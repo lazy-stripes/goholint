@@ -1,10 +1,10 @@
 module github.com/lazy-stripes/goholint
 
-go 1.22.2
+go 1.25.0
 
 require (
 	github.com/veandco/go-sdl2 v0.4.40
-	golang.org/x/image v0.19.0
+	golang.org/x/image v0.38.0
 	gopkg.in/ini.v1 v1.62.0
 )
 
