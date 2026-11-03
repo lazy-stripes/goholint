@@ -1,5 +1,7 @@
 package memory
 
+import "fmt"
+
 // Memory banking for larger ROMs or cartridges containing more than 8Kb RAM.
 
 // Initialize sub-logger for banked memory accesses.
@@ -12,8 +14,72 @@ const (
 	ROMBankSize = 0x4000
 )
 
-// RAM as an array of R/W bytes at addresses starting from a given offset.
-// If dealing with a battery-backed RAM, this can also be saved to a file.
+// Bank represents an addressable memory space that can be backed by a larger
+// byte array.
+type Bank struct {
+	memory []uint8
+	offset int
+
+	// For debugging only.
+	bank      int    // Current bank selected
+	addrRange string // Address range for this bank.
+
+	Start uint16
+	Size  uint16
+}
+
+// NewBank returns a Bank instance representing a memory area starting at address
+// `start` and of length `size`. This area is backed by the `memory` array, which
+// must be a multiple of `size`. The exposed area will be determined by the given
+// `bank` number.
+func NewBank(start, size uint16, bank int, memory []uint8) *Bank {
+	b := Bank{
+		memory:    memory,
+		addrRange: fmt.Sprintf("[%04x-%04x]", start, start+size-1),
+		Start:     start,
+		Size:      size,
+	}
+	b.Set(bank)
+	return &b
+}
+
+// Contains returns whether the requested address is managed by this bank.
+func (b *Bank) Contains(addr uint16) bool {
+	return addr >= b.Start && addr < b.Start+b.Size
+}
+
+// Read returns the byte at the given address, taking the current bank number
+// into account.
+func (b *Bank) Read(addr uint16) (value uint8) {
+	real := int(addr-b.Start) + b.offset
+	value = b.memory[real]
+
+	log.Sub("bank").Desperatef("%s Read at 0x%04x in bank %d (real 0x%x): %d (%#x)",
+		b.addrRange, addr, b.bank, real, value, value)
+
+	return value
+}
+
+// Write modifies the byte at the given address with the given value, taking the
+// current bank number into account.
+func (b *Bank) Write(addr uint16, value uint8) {
+	real := int(addr-b.Start) + b.offset
+
+	log.Sub("bank").Desperatef("%s Write at 0x%04x in bank %d (real 0x%x): %d (%#x)",
+		b.addrRange, addr, b.bank, real, value, value)
+
+	b.memory[real] = value
+}
+
+// Set modifies the current bank number and recomputes the offset that will be
+// used to read or write values from the underlying memory array.
+func (b *Bank) Set(bank int) {
+	b.bank = bank
+	b.offset = (bank * int(b.Size)) % len(b.memory)
+}
+
+// BankedRAM wraps an array of R/W bytes at addresses starting from a given
+// offset. The array can be larger than 8kb and accessed through banking.
 type BankedRAM struct {
 	*RAM
 
