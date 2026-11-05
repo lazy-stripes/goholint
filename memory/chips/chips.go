@@ -49,3 +49,10 @@ var RAMBanks = map[uint8]uint8{
 	0x04: 16,
 	0x05: 8,
 }
+
+// HasBattery is true for cartridge types that include a battery-backed RAM.
+var HasBattery = map[uint8]bool{
+	MBC1RAMBattery: true,
+	MBC2Battery:    true,
+	ROMRAMBattery:  true,
+}
