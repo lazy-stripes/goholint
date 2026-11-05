@@ -32,6 +32,7 @@ type TickResult struct {
 
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
+	cart    memory.Cartridge
 	display screen.Display
 
 	ticks  uint64
@@ -200,6 +201,11 @@ func (g *GameBoy) Tick() (res TickResult) {
 	if g.ticks%apu.SoundOutRate == 0 {
 		res.Left, res.Right = g.APU.Sample()
 		res.Play = true
+	}
+
+	// TODO: if VBlank AND battery-backed RAM, save it.
+	if res.VBlank && g.cart != nil && g.cart.HasBattery() {
+		g.cart.SaveRAM()
 	}
 
 	return
