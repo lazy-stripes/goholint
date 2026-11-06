@@ -11,19 +11,21 @@ const BootAddr = 0xff50
 // Boot address space holding Boot ROM and BOOT register to disable it.
 type Boot struct {
 	Register uint8
-	ROM      ROM
+	ROM      *ROM
 	disabled bool
 }
 
 // NewBoot returns a new Boot address space containing the given boot ROM.
 func NewBoot(data []byte) *Boot {
-	return &Boot{ROM: *NewROM(data)}
+	return &Boot{ROM: NewROM(data)}
 }
 
 // NewBootFromFile returns a new Boot address space containing the boot ROM
 // in the given file.
 func NewBootFromFile(filename string) *Boot {
-	return &Boot{ROM: *NewROMFromFile(filename)}
+	r := &ROM{}
+	r.Load(filename)
+	return &Boot{ROM: r}
 }
 
 // Contains returns true if the given address belongs to the ROM or BOOT

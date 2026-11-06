@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -24,47 +23,52 @@ type Addressable interface {
 }
 
 type Memory struct {
-	data     []uint8
-	saveFile string
+	Bytes []uint8
+	Start uint16
+}
+
+// New instantiates a zeroed slice of the given size to represent memory.
+func New(start uint16, size int) *Memory {
+	return &Memory{
+		Bytes: make([]uint8, size),
+		Start: start,
+	}
+}
+
+// Read returns the value stored at the given address in RAM, handling offsets.
+func (m *Memory) Read(addr uint16) uint8 {
+	return m.Bytes[addr-m.Start]
+}
+
+// Write sets stores the given value at the given address in RAM, handling offsets.
+func (m *Memory) Write(addr uint16, value uint8) {
+	m.Bytes[addr-m.Start] = value
+}
+
+// Contains indicates true as long as address fits in the slice. Careful not
+// to wrap uint16 here.
+func (m *Memory) Contains(addr uint16) bool {
+	return addr >= m.Start && addr < m.Start+uint16(len(m.Bytes))
 }
 
 // Load sets the current memory contents from the given file, and stores the
 // path to that file for subsequent saves.
 func (m *Memory) Load(filename string) error {
-	if len(m.saveFile) > 0 && m.saveFile != filename {
-		log.Warningf("calling Load(%s) on memory with an existing save file (%s)",
-			filename, m.saveFile)
-	}
-	oldSavefile := m.saveFile
-	m.saveFile = filename
-
 	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("couldn't load file %s in memory (%w)", filename, err)
 	}
 
-	// Token attempt at checking file validity.
-	if len(bytes) != len(m.data) {
-		// In this specific case, reset saveFile because this may well be an
-		// innocent mistake and we don't want that file overwritten later.
-		m.saveFile = oldSavefile
-
+	// Token attempt at checking file validity. Allow replacing an empty data
+	// array (e.g. for one-time loading of ROMs).
+	if len(m.Bytes) > 0 && len(bytes) != len(m.Bytes) {
 		return fmt.Errorf("memory size (0x%04x) does not match file size (0x%04x)",
-			len(m.data), len(bytes))
+			len(m.Bytes), len(bytes))
 	}
 
 	// Replace current (normally empty) memory with file contents.
-	m.data = bytes
-	log.Infof("loading memory values from %s", filename)
+	m.Bytes = bytes
+	log.Infof("loaded memory values from %s", filename)
 
 	return nil
-}
-
-// Save dumps the current memory contents into the associated save file (if any).
-func (m *Memory) Save() error {
-	if m.saveFile == "" {
-		return errors.New("trying to Save() memory with no save file defined")
-	}
-
-	return os.WriteFile(m.saveFile, m.data, 0644)
 }

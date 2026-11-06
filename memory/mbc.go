@@ -34,10 +34,10 @@ type MBC1 struct {
 	// 01h = RAM Banking Mode (up to 32KByte RAM, 512KByte ROM)
 	BankingMode uint8
 
-	// If true, save RAM values. (FIXME: when?)
+	// If true, save RAM values. (FIXME: remove, this will be handled at a higher level)
 	battery bool
 
-	// Max number of ROM/RAM banks.
+	// Max number of ROM/RAM banks. (FIXME: is it still needed now we have Banked types?)
 	romBanks uint8 // MBC1 has max 2 MByte ROM (128 banks)
 	ramBanks uint8
 
