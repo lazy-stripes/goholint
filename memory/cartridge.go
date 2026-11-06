@@ -295,11 +295,11 @@ func OpenROM(filename string) (data []byte, err error) {
 			log.Debugf("Extracting %s from %s", f.Name, filename)
 			rc, err := f.Open()
 			if err != nil {
-				log.Fatal(err.Error())
+				return nil, fmt.Errorf("opening ROM inside ZIP failed: %w", err)
 			}
 			data, err = io.ReadAll(rc)
 			if err != nil {
-				log.Fatal(err.Error())
+				return nil, fmt.Errorf("reading ROM inside ZIP failed: %w", err)
 			}
 			rc.Close()
 			break
@@ -330,8 +330,9 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 	}
 
 	// Make sure we have at least enough bytes to parse the header.
+	// XXX: Any reason why I should accept less than 32Kb anyway?
 	if len(romData) < 0x150 {
-		return nil, fmt.Errorf("truncated ROM failed: %w", err)
+		return nil, fmt.Errorf("truncated ROM: %[1]d (0x%[1]X) bytes", len(romData))
 	}
 
 	// Check what kind of chip is in the ROM, select the proper struct. Also
@@ -378,24 +379,27 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 	}
 
 	// TODO: validate
+	var bus Addressable
+	var ram Persistable
 
 	switch cartType {
 	case chips.ROMOnly:
-		cart = rom
+		bus = NewROM(romData)
 	case chips.MBC1:
-		cart = NewMBC1(rom, uint8(romBanks), 0, false, "")
+		bus = NewMBC1(rom, uint8(romBanks), 0, false, "")
 	case chips.MBC1RAM:
-		cart = NewMBC1(rom, uint8(romBanks), ramBanks, false, "")
+		bus = NewMBC1(rom, uint8(romBanks), ramBanks, false, "")
 	case chips.MBC1RAMBattery:
-		cart = NewMBC1(rom, uint8(romBanks), ramBanks, true, savePath)
+		bus = NewMBC1(rom, uint8(romBanks), ramBanks, true, savePath)
 	case chips.MBC2:
-		cart = NewMBC2(rom, uint8(romBanks), false, "")
+		bus = NewMBC2(rom, uint8(romBanks), false, "")
 	case chips.MBC2Battery:
-		cart = NewMBC2(rom, uint8(romBanks), true, savePath)
+		bus = NewMBC2(rom, uint8(romBanks), true, savePath)
 
 	default:
 		// It's easier for developing if we actually stop here.
-		log.Fatalf("Unknown cartridge type 0x%02x (%s)", cartType, chips.Names[cartType])
+		return nil, fmt.Errorf("unknown cartridge type 0x%02x (%s)",
+			cartType, chips.Names[cartType])
 	}
 
 	return cart

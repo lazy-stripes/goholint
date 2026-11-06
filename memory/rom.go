@@ -5,17 +5,17 @@ func init() {
 	log.Add("rom", "Unexpected writes and overflows in ROM address spaces")
 }
 
-// ROM is a read-only special case of RAM, initialized from a binary file.
+// ROM is a read-only memory array that always starts from address zero.
 type ROM struct {
-	RAM
+	*Memory
 }
 
 func NewROM(data []byte) *ROM {
-	return &ROM{RAM{Start: 0, Bytes: data}}
+	return &ROM{Memory: &Memory{Start: 0, Bytes: data}}
 }
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
 func (r *ROM) Write(addr uint16, value uint8) {
-	log.Sub("rom").Warningf("Attempt to write %x to read-only address space at %#x",
-		value, addr)
+	log.Sub("rom").Warningf("Ignoring Write(%04x, %02x) to read-only memory",
+		addr, value)
 }

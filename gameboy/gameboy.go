@@ -32,7 +32,7 @@ type TickResult struct {
 
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
-	cart    memory.Cartridge
+	cart    *memory.Cartridge
 	display screen.Display
 
 	ticks  uint64
