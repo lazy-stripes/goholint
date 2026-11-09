@@ -26,8 +26,8 @@ type MBC1 struct {
 
 	RAMEnabled bool // 0000-1FFF - RAM Enable
 
-	BankLow  uint8 // 2000-3FFF - ROM Bank Number (bits 0-4)
-	BankHigh uint8 // 4000-5FFF - RAM Bank Number / ROM Bank Number (bits 5-6)
+	BankLow  int // 2000-3FFF - ROM Bank Number (bits 0-4)
+	BankHigh int // 4000-5FFF - RAM Bank Number / ROM Bank Number (bits 5-6)
 
 	// 6000-7FFF - ROM/RAM Mode Select
 	// 00h = ROM Banking Mode (up to 8KByte RAM, 2MByte ROM) (default)
@@ -43,7 +43,7 @@ type MBC1 struct {
 
 	// Pre-computed mask for ROM bank number. Set to (romBanks - 1).
 	// E.g. 32 banks need 5 bits for addressing, so mask is 31 (0x11111).
-	romBanksMask uint
+	romBanksMask int
 }
 
 // NewMBC1 creates an address space emulating a cartridge with an MBC1 chip.
@@ -67,9 +67,9 @@ func NewMBC1(rom *ROM, romBanks uint8, ramBanks uint8, battery bool, savePath st
 		RAM:     ram,
 		BankLow: 1,
 
+		romBanksMask: rom.Bank1.Banks() - 1,
 		romBanks:     romBanks,
 		ramBanks:     ramBanks,
-		romBanksMask: uint(romBanks - 1),
 		battery:      battery,
 	}
 }
@@ -122,7 +122,7 @@ func (m *MBC1) recomputeBanks() {
 	}
 
 	// 4000-7fff range uses all 7 bank number bits regardless of mode.
-	m.ROM.Bank1 = uint((m.BankHigh<<5)+m.BankLow) & m.romBanksMask
+	m.ROM.Bank1.Set(((m.BankHigh << 5) + m.BankLow) & m.romBanksMask)
 }
 
 // Write value to RAM, enable RAM or select ROM/RAM banks.
@@ -136,7 +136,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 	// 2000-3FFF - ROM Bank Number
 	case addr >= 0x2000 && addr <= 0x3fff:
 
-		m.BankLow = value & 0x1f
+		m.BankLow = int(value & 0x1f)
 		if m.BankLow == 0 {
 			m.BankLow = 1
 		}
@@ -145,7 +145,7 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 
 	// 4000-5FFF - RAM Bank Number - or - Upper Bits of ROM Bank Number
 	case addr >= 0x4000 && addr <= 0x5fff:
-		m.BankHigh = value & 3
+		m.BankHigh = int(value & 3)
 		m.recomputeBanks()
 		log.Sub("mbc/write").Debugf("BankHigh=0x%02x", value&3)
 

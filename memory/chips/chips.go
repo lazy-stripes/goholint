@@ -25,7 +25,7 @@ var Names = map[uint8]string{
 }
 
 // ROMBanks number depending on "ROM Size" cartridge header.
-var ROMBanks = map[uint8]uint16{
+var ROMBanks = map[uint8]int{
 	0x00: 2,
 	0x01: 4,
 	0x02: 8,
@@ -41,7 +41,7 @@ var ROMBanks = map[uint8]uint16{
 }
 
 // RAMBanks number depending on "RAM Size" cartridge header.
-var RAMBanks = map[uint8]uint8{
+var RAMBanks = map[uint8]int{
 	0x00: 0,
 	0x01: 1, // Technically 1/4th of a 8KB bank?
 	0x02: 1,
