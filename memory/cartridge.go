@@ -262,6 +262,11 @@ func (c *Cartridge) LoadRAM(path string) error {
 	if !c.battery {
 		return errors.New("cannot load RAM contents for a cartridge with no battery")
 	}
+
+	if c.ram == nil {
+		return errors.New("cannot load RAM contents for a cartridge with no RAM")
+	}
+
 	return c.ram.Load(path)
 }
 
@@ -269,6 +274,11 @@ func (c *Cartridge) SaveRAM() error {
 	if !c.battery {
 		return errors.New("cannot save RAM contents for a cartridge with no battery")
 	}
+
+	if c.ram == nil {
+		return errors.New("cannot save RAM contents for a cartridge with no RAM")
+	}
+
 	return c.ram.Save()
 }
 
@@ -335,6 +345,9 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 		return nil, fmt.Errorf("truncated ROM: %[1]d (0x%[1]X) bytes", len(romData))
 	}
 
+	// Fill in Cartridge instance as we read the header.
+	cart = &Cartridge{}
+
 	// Check what kind of chip is in the ROM, select the proper struct. Also
 	// store metadata for nice logging and maybe using templates in file names.
 	cartType := romData[0x0147]
@@ -378,23 +391,25 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 		log.Infof("Licensee: %s", licensee)
 	}
 
-	// TODO: validate
-	var bus Addressable
-	var ram Persistable
+	// TODO: validate sizes. We shouldn't really need romBanks/ramBanks.
 
 	switch cartType {
 	case chips.ROMOnly:
-		bus = NewROM(romData)
+		cart.bus = NewROM(romData)
 	case chips.MBC1:
-		bus = NewMBC1(rom, uint8(romBanks), 0, false, "")
-	case chips.MBC1RAM:
-		bus = NewMBC1(rom, uint8(romBanks), ramBanks, false, "")
+		cart.bus = NewMBC1(NewBankedROM(romData), nil)
 	case chips.MBC1RAMBattery:
-		bus = NewMBC1(rom, uint8(romBanks), ramBanks, true, savePath)
-	case chips.MBC2:
-		bus = NewMBC2(rom, uint8(romBanks), false, "")
+		cart.battery = true
+		fallthrough
+	case chips.MBC1RAM:
+		ram := NewBankedRAM(AddrExternalRAM, 0x2000*ramBanks)
+		cart.bus = NewMBC1(NewBankedROM(romData), ram)
+		cart.ram = ram
 	case chips.MBC2Battery:
-		bus = NewMBC2(rom, uint8(romBanks), true, savePath)
+		cart.battery = true
+		fallthrough
+	case chips.MBC2:
+		cart.bus = NewMBC2(NewBankedROM(romData))
 
 	default:
 		// It's easier for developing if we actually stop here.
@@ -402,5 +417,5 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 			cartType, chips.Names[cartType])
 	}
 
-	return cart
+	return cart, nil
 }
