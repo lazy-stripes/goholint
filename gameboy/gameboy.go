@@ -32,8 +32,8 @@ type TickResult struct {
 
 // GameBoy structure grouping all our state machines to tick them together.
 type GameBoy struct {
-	cart    *memory.Cartridge
 	display screen.Display
+	cart    *memory.Cartridge
 
 	ticks  uint64
 	APU    *apu.APU
@@ -148,14 +148,19 @@ func (g *GameBoy) Reset() {
 	if options.Run.ROMPath != "" {
 		// Build save path in case the cartridge uses one. Or use one
 		// specified by the user.
-		savePath := options.Run.SavePath
+		savePath := options.Run.SavePath // FIXME: remove this option, maybe implement some extra Load() to use saved snapshots or something.
 		if savePath == "" {
 			prefix := filepath.Dir(options.Run.ROMPath)
 			suffix := filepath.Base(options.Run.ROMPath)
 			savePath = prefix + "/" + suffix + ".sav"
 		}
 		// TODO: save-related error management.
-		mmu.Add(memory.NewCartridge(options.Run.ROMPath, savePath))
+		cart, err := memory.NewCartridge(options.Run.ROMPath, savePath)
+		if err == nil {
+			mmu.Add(cart.Bus())
+		} else {
+			panic(err)
+		}
 	}
 }
 
