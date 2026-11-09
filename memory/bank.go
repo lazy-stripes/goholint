@@ -19,28 +19,38 @@ const (
 type Banked struct {
 	*Memory
 
-	offset int
+	Start    uint16 // Start address of banked memory area.
+	BankSize uint16 // Size of banked memory area (8Kb for RAM, 16Kb for ROM).
 
-	// For debugging only.
-	bank      int    // Current bank selected
-	addrRange string // Address range for this bank.
+	banks int // Total number of availabe banks.
 
-	Start    uint16
-	BankSize uint16
+	offset int // Offset to apply to read/write addresses based on current bank.
+
+	bank      int    // Current bank selected. For debug messages.
+	addrRange string // Address range for this bank. For debug messages.
 }
 
 // NewBanked returns a Banked instance representing a memory area with a start
 // address and a size, which is the size of the bank, not the underlying memory.
 // The backing memory array must be a multiple of the given size, and its
-// accessible range will be determined by the given bank number.
+// initially accessible range will be determined by the given bank number.
 func NewBanked(start, bankSize uint16, bank int, memory *Memory) *Banked {
 	b := Banked{
 		Memory:    memory,
 		Start:     start,
 		BankSize:  bankSize,
+		banks:     len(memory.Bytes) / int(bankSize),
 		addrRange: fmt.Sprintf("[%04x-%04x]", start, start+bankSize-1),
 	}
-	b.Set(bank)
+
+	// FIXME: I probably should return errors here if size is wrong.
+	if len(memory.Bytes)%int(bankSize) != 0 {
+		log.Fatalf("Memory size %d for range %s is not a multiple of %d",
+			len(memory.Bytes), b.addrRange, bankSize)
+	}
+
+	b.Set(bank) // Set initial bank. Mostly useful for ROM banks.
+
 	return &b
 }
 
@@ -77,6 +87,14 @@ func (b *Banked) Write(addr uint16, value uint8) {
 func (b *Banked) Set(bank int) {
 	b.bank = bank
 	b.offset = (bank * int(b.BankSize)) % len(b.Bytes) // TODO: subtract Start here directly?
+}
+
+// Banks returns the number of available banks for the current instance, which
+// is:
+//
+//	len(b.Memory.Bytes) / b.Size
+func (b *Banked) Banks() int {
+	return b.banks
 }
 
 // BankedRAM wraps an array of R/W bytes at addresses starting from a given
