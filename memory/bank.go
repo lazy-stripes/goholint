@@ -112,8 +112,9 @@ func NewBankedRAM(start uint16, size int) *BankedRAM {
 	return &BankedRAM{RAM: ram, Banked: banked}
 }
 
-// ROM as an array of R/W bytes at addresses starting from a given offset.
-// If dealing with a battery-backed ROM, this can also be saved to a file.
+// ROM as an array of read-only bytes at addresses starting from a given offset
+// and that can be accessed through two memory ranges: 0x0000-0x3fff (low bank)
+// and 0x4000-0x7fff (high bank).
 type BankedROM struct {
 	*ROM
 

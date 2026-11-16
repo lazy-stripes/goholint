@@ -17,7 +17,7 @@ const (
 	RAMBanking = 0x01
 )
 
-const AddrExternalRAM = 0xa000
+const AddrExternalRAM = 0xa000 // TODO: move to memory.go?
 
 // MBC1 (max 2MByte ROM and/or 32KByte RAM)
 type MBC1 struct {
@@ -36,16 +36,22 @@ type MBC1 struct {
 
 	// Pre-computed mask for ROM bank number. Set to (ROM.Banks() - 1).
 	// E.g. 32 banks need 5 bits for addressing, so mask is 31 (0x11111).
+	// This assumes that ROM size is always a power of 2. We are ignoring the
+	// weird ROM size values mentioned in the Pan Docs (see
+	// https://gbdev.io/pandocs/The_Cartridge_Header.html#footnote-weird_rom_sizes)
 	romBanksMask int
 }
 
 // NewMBC1 creates an address space emulating a cartridge with an MBC1 mapper.
-// Takes instances of BankedROM (and BankedRAM is available) because file
+// Takes instances of BankedROM (and BankedRAM if available) because file
 // handling (and RAM loading/saving) is handled at the Cartridge level.
 func NewMBC1(rom *BankedROM, ram *BankedRAM) *MBC1 {
 	return &MBC1{
-		ROM:     rom,
-		RAM:     ram,
+		ROM: rom,
+		RAM: ram,
+
+		// All of the MBC1 registers default to $00 on power-up, which for the
+		// “ROM Bank Number” register is treated as $01. [PANMBC]
 		BankLow: 1,
 
 		romBanksMask: rom.Bank1.Banks() - 1,
@@ -58,16 +64,16 @@ func (m *MBC1) Contains(addr uint16) bool {
 }
 
 // Read returns the byte at requested address in current ROM or RAM bank.
-func (m *MBC1) Read(addr uint16) uint8 {
+func (m *MBC1) Read(addr uint16) (value uint8) {
 	switch {
 	case addr < 0x8000:
-		value := m.ROM.Read(addr)
+		value = m.ROM.Read(addr)
 		log.Sub("mbc/read").Desperatef("ROM[%04x]: 0x%02x", addr, value)
 		return value
 
 	case addr >= 0xa000 && addr < 0xc000:
 		if m.RAMEnabled && (m.RAM != nil) {
-			value := m.RAM.Read(addr)
+			value = m.RAM.Read(addr)
 			log.Sub("mbc/read").Desperatef("RAM[%04x]: 0x%02x", addr, value)
 			return value
 		}
@@ -125,9 +131,9 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 
 	// 6000-7FFF - ROM/RAM Mode Select
 	case addr >= 0x6000 && addr < 0x8000:
-		log.Sub("mbc/write").Debugf("Banking Mode 0x%02x selected", value)
 		m.BankingMode = value & 1
 		m.recomputeBanks()
+		log.Sub("mbc/write").Debugf("Banking Mode 0x%02x selected", value)
 
 	// A000-BFFF - RAM Bank 00-03, if any
 	case addr >= 0xa000 && addr < 0xc000:

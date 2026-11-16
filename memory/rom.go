@@ -22,6 +22,6 @@ func NewROMFromFile(filename string) *ROM {
 
 // Write does nothing and displays an error, for reasons I hope are obvious.
 func (r *ROM) Write(addr uint16, value uint8) {
-	log.Sub("rom").Warningf("Ignoring Write(%04x, %02x) to read-only memory",
+	log.Sub("rom").Warningf("Ignoring Write(%#04x, %#02x) to read-only memory",
 		addr, value)
 }
