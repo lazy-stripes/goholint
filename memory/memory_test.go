@@ -97,7 +97,7 @@ func TestMMU(t *testing.T) {
 		}
 	}
 
-	for addr := uint16(0x100); addr <= 0xffff; addr++ {
+	for addr := uint16(0x100); addr >= 0x100; addr++ {
 		want := boot.Read(addr) + 1
 		boot.Write(addr, want)
 		got := boot.Read(addr)
