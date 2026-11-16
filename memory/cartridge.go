@@ -409,7 +409,9 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 		cart.battery = true
 		fallthrough
 	case chips.MBC2:
-		cart.bus = NewMBC2(NewBankedROM(romData))
+		mbc2 := NewMBC2(NewBankedROM(romData))
+		cart.bus = mbc2
+		cart.ram = mbc2.RAM
 
 	default:
 		// It's easier for developing if we actually stop here.
