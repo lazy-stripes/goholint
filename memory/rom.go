@@ -15,7 +15,7 @@ func NewROM(data []byte) *ROM {
 }
 
 func NewROMFromFile(filename string) *ROM {
-	r := &ROM{}
+	r := &ROM{Memory: &Memory{Start: 0}}
 	r.Load(filename)
 	return r
 }
