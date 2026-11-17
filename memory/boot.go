@@ -23,9 +23,7 @@ func NewBoot(data []byte) *Boot {
 // NewBootFromFile returns a new Boot address space containing the boot ROM
 // in the given file.
 func NewBootFromFile(filename string) *Boot {
-	r := &ROM{}
-	r.Load(filename)
-	return &Boot{ROM: r}
+	return &Boot{ROM: NewROMFromFile(filename)}
 }
 
 // Contains returns true if the given address belongs to the ROM or BOOT
