@@ -146,20 +146,21 @@ func (g *GameBoy) Reset() {
 	g.CPU.Memory = mem
 
 	if options.Run.ROMPath != "" {
-		// Build save path in case the cartridge uses one. Or use one
-		// specified by the user.
-		savePath := options.Run.SavePath // FIXME: remove this option, maybe implement some extra Load() to use saved snapshots or something.
-		if savePath == "" {
-			prefix := filepath.Dir(options.Run.ROMPath)
-			suffix := filepath.Base(options.Run.ROMPath)
-			savePath = prefix + "/" + suffix + ".sav"
-		}
 		// TODO: save-related error management.
-		cart, err := memory.NewCartridge(options.Run.ROMPath, savePath)
+		cart, err := memory.NewCartridge(options.Run.ROMPath)
 		if err == nil {
 			mmu.Add(cart.Bus())
+			g.cart = cart
+
+			// Build save path in case the cartridge uses battery-backed RAM.
+			if cart.HasBattery() {
+				prefix := filepath.Dir(options.Run.ROMPath)
+				suffix := filepath.Base(options.Run.ROMPath)
+				savePath := prefix + "/" + suffix + ".sav"
+				cart.LoadRAM(savePath)
+			}
 		} else {
-			panic(err)
+			panic(err) // TODO: signal UI somehow.
 		}
 	}
 }
@@ -208,7 +209,7 @@ func (g *GameBoy) Tick() (res TickResult) {
 		res.Play = true
 	}
 
-	// TODO: if VBlank AND battery-backed RAM, save it.
+	// If cartridges has a battery, persist RAM at VBlank time.
 	if res.VBlank && g.cart != nil && g.cart.HasBattery() {
 		g.cart.SaveRAM()
 	}
@@ -221,6 +222,10 @@ func (g *GameBoy) Tick() (res TickResult) {
 func (g *GameBoy) Stop() {
 	// FIXME: Make sure GIF file is written to disk. That sounds like a UI-problem.
 	// g.Display.Close()
+
+	if g.cart != nil && g.cart.HasBattery() {
+		g.cart.SaveRAM()
+	}
 
 	// If debugging at all, dump debug info.
 	if options.Run.DebugModules != nil {
