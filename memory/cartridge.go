@@ -244,10 +244,11 @@ type Cartridge struct {
 	ram Persistable
 
 	cartType uint8
-	romSize  uint8
-	ramSize  uint8
 	battery  bool
+
 	// TODO: more details from header (game name, etc)
+	title    string
+	licensee string
 }
 
 func (c *Cartridge) Bus() Addressable {
@@ -328,7 +329,7 @@ func OpenROM(filename string) (data []byte, err error) {
 // NewCartridge instantiates the proper kind of adress space depending on the
 // given ROM's header.
 // TODO: implement missing mappers.
-func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
+func NewCartridge(romPath string) (cart *Cartridge, err error) {
 	log := log.Sub("cartridge") // Override default logger
 	if romPath == "" {
 		return nil, errors.New("empty path given, cannot load ROM")
@@ -344,9 +345,6 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 	if len(romData) < 0x150 {
 		return nil, fmt.Errorf("truncated ROM: %[1]d (0x%[1]X) bytes", len(romData))
 	}
-
-	// Fill in Cartridge instance as we read the header.
-	cart = &Cartridge{}
 
 	// Check what kind of chip is in the ROM, select the proper struct. Also
 	// store metadata for nice logging and maybe using templates in file names.
@@ -389,6 +387,13 @@ func NewCartridge(romPath, savePath string) (cart *Cartridge, err error) {
 	log.Infof("Title: %s", title)
 	if licensee != "" {
 		log.Infof("Licensee: %s", licensee)
+	}
+
+	// Store needed header metadata in Cartridge.
+	cart = &Cartridge{
+		cartType: cartType,
+		title:    title,
+		licensee: licensee,
 	}
 
 	// TODO: validate sizes. We shouldn't really need romBanks/ramBanks.
