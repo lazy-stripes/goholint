@@ -35,12 +35,12 @@ func New(start uint16, size int) *Memory {
 	}
 }
 
-// Read returns the value stored at the given address in RAM, handling offsets.
+// Read returns the value stored at the given address, handling offsets.
 func (m *Memory) Read(addr uint16) uint8 {
 	return m.Bytes[addr-m.Start]
 }
 
-// Write sets stores the given value at the given address in RAM, handling offsets.
+// Write stores the given value at the given address, handling offsets.
 func (m *Memory) Write(addr uint16, value uint8) {
 	m.Bytes[addr-m.Start] = value
 }
@@ -51,8 +51,9 @@ func (m *Memory) Contains(addr uint16) bool {
 	return addr >= m.Start && addr < m.Start+uint16(len(m.Bytes))
 }
 
-// Load sets the current memory contents from the given file, and stores the
-// path to that file for subsequent saves.
+// Load sets the current memory contents from the given file. If the Memory
+// instance already contains bytes, they will only be replaced if the loaded
+// data is the same size.
 func (m *Memory) Load(filename string) error {
 	bytes, err := os.ReadFile(filename)
 	if err != nil {

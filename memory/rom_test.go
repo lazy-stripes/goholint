@@ -8,6 +8,7 @@ import (
 // Use the one ROM file officially shipping with Goholint.
 const testROMPath = "../assets/boot.rom"
 
+// Validate that the given byte array and rom share the same contents.
 func validateROMData(romData []byte, rom *ROM, t *testing.T) {
 	for addr, expected := range romData {
 		value := rom.Read(uint16(addr))
