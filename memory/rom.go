@@ -10,10 +10,15 @@ type ROM struct {
 	*Memory
 }
 
+// NewROM returns a ROM instance with its contents set to the given data.
 func NewROM(data []byte) *ROM {
 	return &ROM{Memory: &Memory{Start: 0, Bytes: data}}
 }
 
+// NewROMFromFile returns a ROM instance with its contents loaded from the
+// given path.
+//
+// FIXME: error handling.
 func NewROMFromFile(filename string) *ROM {
 	r := &ROM{Memory: &Memory{Start: 0}}
 	r.Load(filename)

@@ -22,7 +22,7 @@ type Banked struct {
 	Start    uint16 // Start address of banked memory area.
 	BankSize uint16 // Size of banked memory area (8Kb for RAM, 16Kb for ROM).
 
-	banks int // Total number of availabe banks.
+	banks int // Total number of available banks.
 
 	offset int // Offset to apply to read/write addresses based on current bank.
 
@@ -75,11 +75,10 @@ func (b *Banked) Read(addr uint16) (value uint8) {
 // current bank number into account.
 func (b *Banked) Write(addr uint16, value uint8) {
 	real := int(addr-b.Start) + b.offset
+	b.Bytes[real] = value
 
 	log.Sub("bank").Desperatef("%s Write at 0x%04x in bank %d (real 0x%x): %d (%#x)",
 		b.addrRange, addr, b.bank, real, value, value)
-
-	b.Bytes[real] = value
 }
 
 // Set modifies the current bank number and recomputes the offset that will be
@@ -92,7 +91,7 @@ func (b *Banked) Set(bank int) {
 // Banks returns the number of available banks for the current instance, which
 // is:
 //
-//	len(b.Memory.Bytes) / b.Size
+//	len(b.Bytes) / b.BankSize
 func (b *Banked) Banks() int {
 	return b.banks
 }
@@ -112,7 +111,7 @@ func NewBankedRAM(start uint16, size int) *BankedRAM {
 	return &BankedRAM{RAM: ram, Banked: banked}
 }
 
-// ROM as an array of read-only bytes at addresses starting from a given offset
+// BankedROM wraps an array of read-only bytes at addresses starting from zero
 // and that can be accessed through two memory ranges: 0x0000-0x3fff (low bank)
 // and 0x4000-0x7fff (high bank).
 type BankedROM struct {
@@ -132,6 +131,7 @@ func NewBankedROM(data []byte) *BankedROM {
 	return &BankedROM{ROM: rom, Bank0: bank0, Bank1: bank1}
 }
 
+// Contains returns whether the requested address is in ROM, regardless of bank.
 func (r *BankedROM) Contains(addr uint16) bool {
 	return addr < 0x8000
 }
