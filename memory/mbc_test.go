@@ -124,7 +124,7 @@ func testMBC1MapLowerZeroBankToHighROMForBanks(t *testing.T, banks int) {
 }
 
 func TestMBC1MapLowerZeroBankToHighROM(t *testing.T) {
-	// Test behavior for all ROM sizes between 32KB and 256KB.
+	// Test behavior for all ROM sizes 1MB and over.
 	for _, banks := range mbc1MapLowerZeroBankToHighROMBanks {
 		testMBC1MapLowerZeroBankToHighROMForBanks(t, banks)
 	}
