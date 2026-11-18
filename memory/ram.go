@@ -6,14 +6,19 @@ import (
 	"os"
 )
 
-// RAM as an array of R/W bytes at addresses starting from a given offset.
-// If dealing with a battery-backed RAM, this can also be saved to a file.
+// RAM as an array of R/W bytes at addresses starting from a given offset. If
+// dealing with a battery-backed RAM, this can also be saved to a file.
+//
+// This type mostly just wraps Memory and adds some extra bookkeeping for
+// loading and saving RAM contents to disk.
 type RAM struct {
 	*Memory
 
 	saveFile string // For battery-backed RAM chips
 }
 
+// NewRAM returns a zeroed-out block of memory of the given size starting at the
+// given address.
 func NewRAM(start uint16, size int) *RAM {
 	return &RAM{Memory: New(start, size)}
 }

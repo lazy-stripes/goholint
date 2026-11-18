@@ -22,12 +22,16 @@ type Addressable interface {
 	Write(addr uint16, value uint8)
 }
 
+// Memory represents a chunk of randomly accessible memory starting at a given
+// address. It implements the Adressable interface and has a Load() method for
+// one-time initialization of memory contents.
 type Memory struct {
 	Bytes []uint8
 	Start uint16
 }
 
-// New instantiates a zeroed slice of the given size to represent memory.
+// New instantiates a zeroed slice of the given size to represent memory starting
+// at the given address.
 func New(start uint16, size int) *Memory {
 	return &Memory{
 		Bytes: make([]uint8, size),
@@ -45,8 +49,7 @@ func (m *Memory) Write(addr uint16, value uint8) {
 	m.Bytes[addr-m.Start] = value
 }
 
-// Contains indicates true as long as address fits in the slice. Careful not
-// to wrap uint16 here.
+// Contains returns true if the given address is covered by this Memory instance.
 func (m *Memory) Contains(addr uint16) bool {
 	return addr >= m.Start && addr < m.Start+uint16(len(m.Bytes))
 }

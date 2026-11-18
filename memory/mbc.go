@@ -115,7 +115,6 @@ func (m *MBC1) Write(addr uint16, value uint8) {
 
 	// 2000-3FFF - ROM Bank Number
 	case addr >= 0x2000 && addr < 0x4000:
-
 		m.BankLow = int(value & 0x1f)
 		if m.BankLow == 0 {
 			m.BankLow = 1
