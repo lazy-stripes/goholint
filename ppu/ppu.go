@@ -154,7 +154,7 @@ func (p *PPU) setLY(value uint8) {
 	}
 }
 
-// updateEnabled checks LCDC's 7th bit then enables or disables the PPCU as
+// updateEnabled checks LCDC's 7th bit then enables or disables the PPU as
 // needed. It's called whenever LCDC is writen into.
 func (p *PPU) updateEnabled() {
 	enable := p.LCDC&LCDCDisplayEnable != 0
@@ -265,7 +265,7 @@ func (p *PPU) Tick() (vblank bool) {
 			y := p.LY - p.WY
 			tileLine := y % 8
 			tileOffset := (p.x - p.WX + 7) / 8
-			tileMapRowAddr := p.WindowMap() + (uint16(y/8) * 32)
+			tileMapRowAddr := p.WindowMap() + uint16(y*4) // (y/8)×32
 			tileDataAddr, signedID := p.TileData()
 			p.Fetcher.Start(tileMapRowAddr, tileDataAddr, tileOffset, tileLine, signedID)
 			return

@@ -53,13 +53,13 @@ func (f *FIFO) Size() int {
 // Mix sprite pixel data in the lower half of the FIFO. Priorities are hard to
 // understand in most docs I've seen, so this is empirical at best.
 func (f *FIFO) Mix(offset int, pixel Pixel) {
-	index := (f.out + offset) % len(f.fifo)
-	current := f.fifo[index]
-
 	// Discard pixel if it's transparent.
 	if pixel.Color == 0 {
 		return
 	}
+
+	index := (f.out + offset) % len(f.fifo)
+	current := f.fifo[index]
 
 	// Mix pixel in if the current one is from the background.
 	// TODO: OAM index, possibly needed in Pixel struct.
