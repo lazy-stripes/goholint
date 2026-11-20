@@ -1,15 +1,17 @@
-package memory
+package memory_test
 
 import (
 	"math/rand"
 	"testing"
+
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // testRegisters stores addresses and register values in a bespoke struct that
 // embeds Registers, the way it's supposed to be used. The used addressed and
 // values are available to basically validate that Registers acts like a map.
 type testRegisters struct {
-	Registers
+	memory.Registers
 
 	addresses []uint16
 	values    []byte
@@ -20,7 +22,7 @@ type testRegisters struct {
 // stored in the order they were set for further validation.
 func newRandomTestRegisters(size int) *testRegisters {
 	tr := &testRegisters{
-		Registers: make(Registers),
+		Registers: make(memory.Registers),
 		addresses: make([]uint16, size),
 		values:    make([]byte, size),
 	}

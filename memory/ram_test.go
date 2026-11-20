@@ -152,4 +152,44 @@ func TestRAMLoadErrors(t *testing.T) {
 	validateCleanRAM(ram, t)
 }
 
-// TODO: test file save.
+// Validate that saving RAM persists its current contents to disk.
+func TestRAMSave(t *testing.T) {
+	size := 0x2000
+	start := uint16(0x4000)
+
+	tmpfile, ramValues, err := createTempRAMFile(size)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile) // Clean up when test is done
+
+	ram := memory.NewRAM(start, size)
+	err = ram.Load(tmpfile)
+	if err != nil {
+		t.Fatalf("Loading %s to RAM failed: %v", tmpfile, err)
+	}
+
+	// Modify all bytes and save RAM.
+	for i, val := range ramValues {
+		newVal := ^val
+		ramValues[i] = newVal
+		addr := start + uint16(i)
+		ram.Write(addr, newVal)
+	}
+	err = ram.Save()
+	if err != nil {
+		t.Fatalf("Saving RAM to %s failed: %v", tmpfile, err)
+	}
+
+	// Check that new values were properly written.
+	newRamValues, err := os.ReadFile(tmpfile)
+	if err != nil {
+		t.Fatalf("Loading RAM values from %s failed: %v", tmpfile, err)
+	}
+	for i, newVal := range newRamValues {
+		if ramValues[i] != newVal {
+			t.Fatalf("Invalid RAM value saved at offset %d (expected %#02x, read %#02x)",
+				i, newVal, ramValues[i])
+		}
+	}
+}
