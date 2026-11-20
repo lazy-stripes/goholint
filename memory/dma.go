@@ -2,7 +2,13 @@ package memory
 
 // DMA implementation. Source:
 // [VIDEO] http://gbdev.gg8.se/wiki/articles/Video_Display#FF46_-_DMA_-_DMA_Transfer_and_Start_Address_.28R.2FW.29
-// TODO: restrict CPU access to HRAM while a transfer is active.
+
+// FIXME: gekkio confirms that the "only HRAM is accessible during DMA" is a myth. It's more complicated than that.
+// [GEKKIODMA] https://www.reddit.com/r/EmuDev/comments/5hahss/gb_readwrite_memory_during_an_oam_dma/daz9cbi/
+// TODO: start downloading and storing those sources offline, because we never know.
+// TL;DR:
+// external bus: $0000-$7FFF, $A000-$FDFF
+// video ram bus: $8000-$9FFF
 
 // Initialize sub-logger for DMA transfers.
 func init() {
