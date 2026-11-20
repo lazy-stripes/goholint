@@ -1,8 +1,10 @@
-package memory
+package memory_test
 
 import (
 	"slices"
 	"testing"
+
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // ROM sizes to test for mapping bank 0 to high ROM (<=256KB).
@@ -17,16 +19,16 @@ func testMBC1MapHighRomToBank0ForBanks(t *testing.T, banks int) {
 
 	t.Logf("Testing MBC1 with %dKB ROM (%d banks)", 16*banks, banks)
 
-	data := make([]byte, ROMBankSize*banks) // 32KB to 256KB ROM
+	data := make([]byte, memory.ROMBankSize*banks) // 32KB to 256KB ROM
 	for bank := range banks {
-		for i := range ROMBankSize {
-			data[(ROMBankSize*bank)+i] = byte(bank)
+		for i := range memory.ROMBankSize {
+			data[(memory.ROMBankSize*bank)+i] = byte(bank)
 		}
 	}
-	mbc1 := NewMBC1(NewBankedROM(data), nil)
+	mbc1 := memory.NewMBC1(memory.NewBankedROM(data), nil)
 
 	// Validate low rom (should always be bank 0)
-	for i := range uint16(ROMBankSize) {
+	for i := range uint16(memory.ROMBankSize) {
 		v := mbc1.Read(i)
 		if v != 0x00 {
 			t.Fatalf("Invalid value %#02x for bank 0", v)
@@ -45,7 +47,7 @@ func testMBC1MapHighRomToBank0ForBanks(t *testing.T, banks int) {
 		//t.Logf("Testing bank %d, expecting value %d", bank, expected)
 
 		// Read high rom contents. Should reflect bank number.
-		for i := uint16(ROMBankSize); i < 0x8000; i++ {
+		for i := uint16(memory.ROMBankSize); i < 0x8000; i++ {
 			v := mbc1.Read(i)
 			if v != expected {
 				t.Fatalf("Invalid value %#02x for selected bank %#02x (expected %#02x)",
@@ -80,17 +82,17 @@ func testMBC1MapLowerZeroBankToHighROMForBanks(t *testing.T, banks int) {
 
 	t.Logf("Testing MBC1 with %dMB ROM (%d banks)", banks/64, banks)
 
-	data := make([]byte, ROMBankSize*banks) // 1MB or 2MB ROM
+	data := make([]byte, memory.ROMBankSize*banks) // 1MB or 2MB ROM
 
 	for bank := range banks {
-		for i := range ROMBankSize {
-			data[(ROMBankSize*bank)+i] = byte(bank)
+		for i := range memory.ROMBankSize {
+			data[(memory.ROMBankSize*bank)+i] = byte(bank)
 		}
 	}
-	mbc1 := NewMBC1(NewBankedROM(data), nil)
+	mbc1 := memory.NewMBC1(memory.NewBankedROM(data), nil)
 
 	// Validate low rom (should always be bank 0)
-	for i := range uint16(ROMBankSize) {
+	for i := range uint16(memory.ROMBankSize) {
 		v := mbc1.Read(i)
 		if v != 0x00 {
 			t.Fatalf("Invalid value %#02x for bank 0", v)
@@ -113,7 +115,7 @@ func testMBC1MapLowerZeroBankToHighROMForBanks(t *testing.T, banks int) {
 
 		// Read high rom contents. Should reflect bank number except for our
 		// special cases.
-		for i := uint16(ROMBankSize); i < 0x8000; i++ {
+		for i := uint16(memory.ROMBankSize); i < 0x8000; i++ {
 			v := mbc1.Read(i)
 			if v != expected {
 				t.Fatalf("Invalid value %#02x for selected bank %#02x (expected %#02x)",

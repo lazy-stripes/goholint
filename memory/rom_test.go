@@ -1,15 +1,17 @@
-package memory
+package memory_test
 
 import (
 	"os"
 	"testing"
+
+	"github.com/lazy-stripes/goholint/memory"
 )
 
 // Use the one ROM file officially shipping with Goholint.
 const testROMPath = "../assets/boot.rom"
 
 // Validate that the given byte array and rom share the same contents.
-func validateROMData(romData []byte, rom *ROM, t *testing.T) {
+func validateROMData(romData []byte, rom *memory.ROM, t *testing.T) {
 	for addr, expected := range romData {
 		value := rom.Read(uint16(addr))
 		if value != expected {
@@ -27,7 +29,7 @@ func TestNewROM(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	rom := NewROM(romData)
+	rom := memory.NewROM(romData)
 	validateROMData(romData, rom, t)
 }
 
@@ -38,7 +40,7 @@ func TestNewROMFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	rom := NewROMFromFile(testROMPath)
+	rom := memory.NewROMFromFile(testROMPath)
 	validateROMData(romData, rom, t)
 }
 
@@ -49,7 +51,7 @@ func TestReadOnlyROM(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	rom := NewROM(romData)
+	rom := memory.NewROM(romData)
 
 	// Try overwriting each byte with its complement.
 	for addr := range uint16(len(romData)) {
