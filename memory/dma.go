@@ -5,6 +5,7 @@ package memory
 
 // FIXME: gekkio confirms that the "only HRAM is accessible during DMA" is a myth. It's more complicated than that.
 // [GEKKIODMA] https://www.reddit.com/r/EmuDev/comments/5hahss/gb_readwrite_memory_during_an_oam_dma/daz9cbi/
+// [BUSES] https://iceboy.a-singer.de/doc/mem_patterns.html
 // TODO: start downloading and storing those sources offline, because we never know.
 // TL;DR:
 // external bus: $0000-$7FFF, $A000-$FDFF
@@ -18,6 +19,38 @@ func init() {
 // AddrDMA is the address of DMA register in DMG address space.
 const AddrDMA = 0xff46
 
+// Bus identifiers returned by TargetBus. See TargetBus documentation for
+// details.
+type Bus int
+
+const (
+	ExternalBus Bus = iota // 0x0000-0x7fff, 0xa000-0xfdff
+	VideoBus               // 0x8000-0x9fff, 0xfe00-0xfeff
+	InternalBus            // 0xff00-0xffff
+)
+
+// TargetBus returns the identifier of the bus that contains the given address.
+// We define the following buses based on available documentation (not 100%
+// accurate but hopefully sufficient for our needs):
+//
+//   - External bus: 0x0000-0x7fff (ROM) and 0xa000-0xfdff (RAM + "echo" RAM)
+//   - Video bus: 0x8000-0x9fff (VRAM) and 0xfe00-0xfeff (OAM)
+//   - Internal bus: all other addresses (0xff00-0xffff, always reachable)
+func TargetBus(addr uint16) Bus {
+	switch {
+	case addr < 0x8000:
+		return ExternalBus
+	case addr >= 0x8000 && addr < 0xa000:
+		return VideoBus
+	case addr >= 0xa000 && addr < 0xfe00:
+		return ExternalBus
+	case addr >= 0xfe00 && addr < 0xfea0:
+		return VideoBus
+	default:
+		return InternalBus
+	}
+}
+
 // DMA address space taking care of memory transfers between main MMU and
 // OAM memory.
 type DMA struct {
@@ -26,14 +59,16 @@ type DMA struct {
 	OAM Addressable
 
 	pending   bool // For initial delay
-	isActive  bool
+	running   bool
 	written   uint // Total bytes written
 	src, dest uint16
+
+	srcBus Bus // For blocking reads/writes
 }
 
 // NewDMA returns an instance of DMA managing the actual register and memory
-// transfers. Parameter is an Addressable that must span source and destination
-// address spaces.
+// transfers. Parameter is an Addressable that must span source (0x0000-0xdfff)
+// and destination (0xfe00-0xfe9f) address spaces.
 func NewDMA(mmu, oam Addressable) *DMA {
 	return &DMA{MMU: mmu, OAM: oam}
 }
@@ -52,7 +87,8 @@ func (d *DMA) Read(addr uint16) uint8 {
 // initiates said transfer.
 func (d *DMA) Write(addr uint16, value uint8) {
 	d.DMA = value
-	d.src = uint16(value) * 0x100
+	d.src = uint16(value) * 0x100 // FIXME: if value is > 0xdf, what do?
+	d.srcBus = TargetBus(d.src)
 	d.dest = 0xfe00 // OAM RAM
 	d.written = 0
 	d.pending = true
@@ -64,12 +100,12 @@ func (d *DMA) Write(addr uint16, value uint8) {
 func (d *DMA) Tick() {
 	// Start DMA transfer with a 1-cycle delay according to [GEKKIO].
 	if d.pending {
-		d.isActive = true
+		d.running = true
 		d.pending = false
 		return
 	}
 
-	if !d.isActive {
+	if !d.running {
 		return
 	}
 
@@ -89,7 +125,7 @@ func (d *DMA) Tick() {
 	}
 
 	log.Sub("dma").Debug("DMA transfer done")
-	d.isActive = false
+	d.running = false
 }
 
 // DMAMemory wraps the whole address space to forbid memory access to the CPU
@@ -106,24 +142,32 @@ func NewDMAMemory(mmu, oam Addressable) *DMAMemory {
 	return &DMAMemory{Addressable: mmu, DMA: NewDMA(mmu, oam)}
 }
 
-// Read overrides the embedded Addressable method to only allow reading from
-// high RAM if a DMA transfer is currently taking place.
+// Read overrides the embedded Addressable method to block reads from buses that
+// a DMA transfer is currently using. A DMA transfer always blocks the Video bus
+// and will also block the External bus if transferring data from it.
 func (d *DMAMemory) Read(addr uint16) uint8 {
-	if d.DMA.isActive && addr < 0xfe00 {
-		log.Sub("dma").Desperatef("read to %x during DMA transfer", addr)
-		return 0xff
-	} else {
-		return d.Addressable.Read(addr)
+	if d.DMA.running {
+		bus := TargetBus(addr)
+		if bus == VideoBus || (bus == d.DMA.srcBus) {
+			log.Sub("dma").Desperatef("blocked read to %x during DMA transfer",
+				addr)
+			return 0xff
+		}
 	}
+	return d.Addressable.Read(addr)
 }
 
-// Write overrides the embedded Addressable method to only allow writing to high
-// RAM if a DMA transfer is currently taking place.
+// Write overrides the embedded Addressable method to block writes from buses that
+// a DMA transfer is currently using. A DMA transfer always blocks the Video bus
+// and will also block the External bus if transferring data from it.
 func (d *DMAMemory) Write(addr uint16, value uint8) {
-	if d.DMA.isActive && addr < 0xfe00 {
-		log.Sub("dma").Desperatef("write to %x during DMA transfer", addr)
-		return
-	} else {
-		d.Addressable.Write(addr, value)
+	if d.DMA.running {
+		bus := TargetBus(addr)
+		if bus == VideoBus || (bus == d.DMA.srcBus) {
+			log.Sub("dma").Desperatef("blocked write to %x during DMA transfer",
+				addr)
+			return
+		}
 	}
+	d.Addressable.Write(addr, value)
 }
