@@ -14,8 +14,8 @@ type VRAM struct {
 	mode *states.State // Display mode (equivalent to ppu.STAT&3)
 }
 
-// NewOAM creates an OAM address space. Takes a reference to a PPU instance so
-// it can access the LY and LCDC registers.
+// NewVRAM creates block of video RAM. Takes a reference to a PPU instance so
+// it can access its state and block accesses when the PPU is busy with VRAM.
 func NewVRAM(ppu *PPU) *VRAM {
 	v := VRAM{
 		RAM:  memory.NewRAM(AddrVRAM, 0x2000),
@@ -25,7 +25,7 @@ func NewVRAM(ppu *PPU) *VRAM {
 	return &v
 }
 
-// Read overrides RAM method to restrict access to OAM to PPU modes 0, 1 and 2.
+// Read overrides RAM method to restrict access to VRAM to PPU modes 0, 1 and 2.
 // [https://gbdev.io/pandocs/Accessing_VRAM_and_OAM.html]
 func (v *VRAM) Read(addr uint16) uint8 {
 	if *v.mode != states.PixelTransfer {

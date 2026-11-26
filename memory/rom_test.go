@@ -10,7 +10,7 @@ import (
 // Use the one ROM file officially shipping with Goholint.
 const testROMPath = "../assets/boot.rom"
 
-// Validate that the given byte array and rom share the same contents.
+// Validate that the given byte array and ROM share the same contents.
 func validateROMData(romData []byte, rom *memory.ROM, t *testing.T) {
 	for addr, expected := range romData {
 		value := rom.Read(uint16(addr))
@@ -34,7 +34,7 @@ func TestNewROM(t *testing.T) {
 }
 
 // Validate that creating a ROM from a file creates a copy of that file in the
-// ROMs internal byte array.
+// ROM's internal byte array.
 func TestNewROMFromFile(t *testing.T) {
 	romData, err := os.ReadFile(testROMPath)
 	if err != nil {

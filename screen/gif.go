@@ -59,7 +59,7 @@ func (g *GIF) Write(colorIndex uint8) {
 // SaveFrame adds the current frame to GIF slice and pre-instantiate next. We
 // detect if the display was disabled. If so, save a "disabled screen" frame
 // instead.
-// TODO: stream saved frames to disk.
+// TODO: stream saved frames to disk. This will require rolling out our own implementation.
 func (g *GIF) SaveFrame() {
 	// Pixel offset should be at the very end of the frame. If not, screen was
 	// off and we save the "disabled" frame instead.

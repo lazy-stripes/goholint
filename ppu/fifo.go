@@ -33,7 +33,8 @@ func (f *FIFO) Push(pixel Pixel) error {
 	return nil
 }
 
-// Pop an item out of the FIFO.
+// Pop removes the oldest pixel from the FIFO and returns it. If the FIFO
+// currently contains only 8 pixels or less, it returns errFIFOUnderrun instead.
 func (f *FIFO) Pop() (pixel Pixel, err error) {
 	// Do nothing if we only have the minimum length or less to shift out.
 	if f.len <= 8 {

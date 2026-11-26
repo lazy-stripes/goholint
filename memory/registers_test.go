@@ -8,7 +8,7 @@ import (
 )
 
 // testRegisters stores addresses and register values in a bespoke struct that
-// embeds Registers, the way it's supposed to be used. The used addressed and
+// embeds Registers, the way it's supposed to be used. The used addresses and
 // values are available to basically validate that Registers acts like a map.
 type testRegisters struct {
 	memory.Registers

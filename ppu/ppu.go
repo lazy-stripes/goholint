@@ -154,8 +154,8 @@ func (p *PPU) setLY(value uint8) {
 	}
 }
 
-// updateEnabled checks LCDC's 7th bit then enables or disables the PPCU as
-// needed. It's called whenever LCDC is writen into.
+// updateEnabled checks LCDC's 7th bit then enables or disables the PPU as
+// needed. It's called whenever LCDC is written to.
 func (p *PPU) updateEnabled() {
 	enable := p.LCDC&LCDCDisplayEnable != 0
 	switch {
@@ -214,7 +214,7 @@ func (p *PPU) Read(addr uint16) uint8 {
 	return p.MMU.Read(addr)
 }
 
-// Tick advances the CPU state one step. Return whether we reached VBlank so
+// Tick advances the PPU state one step. Return whether we reached VBlank so
 // that event polling can happen then.
 func (p *PPU) Tick() (vblank bool) {
 	if !p.enabled {
@@ -401,6 +401,12 @@ func (p *PPU) Drop() uint8 {
 	return p.pop(true)
 }
 
+// pop tries shifting a pixel out of the FIFO to write it to the display, unless
+// the drop parameter is true, in which case the pixel is silently discarded. If
+// the FIFO does not contain enough pixels, nothing happens.
+//
+// Returns the number of pixels removed from the fifo (0 or 1), regardless of
+// whether the pixel was written to display or dropped.
 func (p *PPU) pop(drop bool) uint8 {
 	if pixel, err := p.FIFO.Pop(); err == nil {
 		if !drop {

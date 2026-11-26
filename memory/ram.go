@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-// RAM as an array of R/W bytes at addresses starting from a given offset. If
-// dealing with a battery-backed RAM, this can also be saved to a file.
+// RAM is an array of R/W bytes at addresses starting from a given offset. If
+// dealing with a battery-backed RAM, it can also be saved to a file.
 //
 // This type mostly just wraps Memory and adds some extra bookkeeping for
 // loading and saving RAM contents to disk.
