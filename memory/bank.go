@@ -49,7 +49,7 @@ func NewBanked(start, bankSize uint16, bank int, memory *Memory) *Banked {
 			len(memory.Bytes), b.addrRange, bankSize)
 	}
 
-	b.Set(bank) // Set initial bank. Mostly useful for ROM banks.
+	b.SetBank(bank) // Set initial bank. Mostly useful for ROM banks.
 
 	return &b
 }
@@ -81,9 +81,9 @@ func (b *Banked) Write(addr uint16, value uint8) {
 		b.addrRange, addr, b.bank, real, value, value)
 }
 
-// Set modifies the current bank number and recomputes the offset that will be
-// used to read or write values from the underlying memory array.
-func (b *Banked) Set(bank int) {
+// SetBank modifies the current bank number and recomputes the offset that will
+// be used to read or write values from the underlying memory array.
+func (b *Banked) SetBank(bank int) {
 	b.bank = bank
 	b.offset = (bank * int(b.BankSize)) % len(b.Bytes) // TODO: subtract Start here directly?
 }
@@ -143,4 +143,23 @@ func (r *BankedROM) Read(addr uint16) uint8 {
 		return r.Bank0.Read(addr)
 	}
 	return r.Bank1.Read(addr)
+}
+
+// Banks is a convenience function returning the number of banks available for
+// this ROM (usually in the high range, although some mappers allow mapping
+// banks to the 0x0000-0x3fff space).
+func (r *BankedROM) Banks() int {
+	return r.Bank1.Banks()
+}
+
+// SetLowBank sets the bank number to be used when accessing the 0x0000-0x3fff
+// range.
+func (r *BankedROM) SetLowBank(bank int) {
+	r.Bank0.SetBank(bank)
+}
+
+// SetHighBank sets the bank number to be used when accessing the 0x4000-0x7fff
+// range.
+func (r *BankedROM) SetHighBank(bank int) {
+	r.Bank1.SetBank(bank)
 }

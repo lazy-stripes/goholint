@@ -54,7 +54,7 @@ func NewMBC1(rom *BankedROM, ram *BankedRAM) *MBC1 {
 		// “ROM Bank Number” register is treated as $01. [PANMBC]
 		BankLow: 1,
 
-		romBanksMask: rom.Bank1.Banks() - 1,
+		romBanksMask: rom.Banks() - 1,
 	}
 }
 
@@ -90,19 +90,19 @@ func (m *MBC1) recomputeBanks() {
 	if (m.BankingMode == RAMBanking) && (m.RAM != nil) {
 		if m.BankHigh < m.RAM.Banks() {
 			// FIXME: confirm behavior. We could just do SetBank() and let it wrap from within BankedRAM.
-			m.RAM.Set(m.BankHigh)
+			m.RAM.SetBank(m.BankHigh)
 		}
 
-		m.ROM.Bank0.Set((m.BankHigh << 5) & m.romBanksMask)
+		m.ROM.SetLowBank((m.BankHigh << 5) & m.romBanksMask)
 	} else {
 		if m.RAM != nil {
-			m.RAM.Set(0)
+			m.RAM.SetBank(0)
 		}
-		m.ROM.Bank0.Set(0)
+		m.ROM.SetLowBank(0)
 	}
 
 	// 4000-7fff range uses all 7 bank number bits regardless of mode.
-	m.ROM.Bank1.Set(((m.BankHigh << 5) + m.BankLow) & m.romBanksMask)
+	m.ROM.SetHighBank(((m.BankHigh << 5) + m.BankLow) & m.romBanksMask)
 }
 
 // Write value to RAM, enable RAM or select ROM/RAM banks.
@@ -173,7 +173,7 @@ func NewMBC2(rom *BankedROM) *MBC2 {
 	}
 
 	// [PANMBC2] The ROM bank is set to 1 by default.
-	m.ROM.Bank1.Set(1)
+	m.ROM.SetHighBank(1)
 
 	return m
 }
@@ -225,7 +225,7 @@ func (m *MBC2) Write(addr uint16, value uint8) {
 			if bank == 0 {
 				bank = 1
 			}
-			m.ROM.Bank1.Set(bank)
+			m.ROM.SetHighBank(bank)
 			log.Sub("mbc/write").Debugf("ROMBank=0x%02x (bank %d)", value, bank)
 		}
 
